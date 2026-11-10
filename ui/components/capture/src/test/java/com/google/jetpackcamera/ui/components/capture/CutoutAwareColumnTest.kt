@@ -74,6 +74,12 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+private const val BOX_DYNAMIC_ITEM_0_TAG = "box_dynamic_item_0"
+private const val BOX_DYNAMIC_ITEM_1_TAG = "box_dynamic_item_1"
+private val DYNAMIC_ITEM_TAGS = listOf(BOX_DYNAMIC_ITEM_0_TAG, BOX_DYNAMIC_ITEM_1_TAG)
+private const val PILL_PUBLIC_VERTICAL_TAG = "pill_public_vertical"
+private const val PILL_PUBLIC_DELEGATED_VERTICAL_TAG = "pill_public_delegated_vertical"
+
 /**
  * Tests for [CutoutAwareColumn] and [VerticalIndicatorPill] verifying vertical cutout avoidance,
  * LTR/RTL width and coordinate symmetry, pill segment grouping/splitting, vertical animation
@@ -256,24 +262,27 @@ class CutoutAwareColumnTest {
                 cutoutRectsOverride = cutouts
             ) {
                 for (i in 0 until itemCount) {
-                    Box(Modifier.size(24.dp).testTag("dyn$i"))
+                    Box(Modifier.size(24.dp).testTag(DYNAMIC_ITEM_TAGS[i]))
                 }
             }
         }
 
-        // With cutout at [44, 90] + 8dp clearance -> [36, 98], dyn1 is locked at 98dp.
-        assertThat(composeTestRule.onNodeWithTag("dyn1").getUnclippedBoundsInRoot().top)
-            .isEqualTo(98.dp)
+        // With cutout at [44, 90] + 8dp clearance -> [36, 98], second item is locked at 98dp.
+        assertThat(
+            composeTestRule.onNodeWithTag(BOX_DYNAMIC_ITEM_1_TAG).getUnclippedBoundsInRoot().top
+        ).isEqualTo(98.dp)
 
-        // Remove dyn1 from composition so lockedMinY prunes indices >= 1, then clear cutouts.
+        // Remove second item from composition so lockedMinY prunes indices >= 1, then clear
+        // cutouts.
         itemCount = 1
         composeTestRule.waitForIdle()
         cutouts = emptyList()
         itemCount = 2
         composeTestRule.waitForIdle()
 
-        assertThat(composeTestRule.onNodeWithTag("dyn1").getUnclippedBoundsInRoot().top)
-            .isEqualTo(32.dp)
+        assertThat(
+            composeTestRule.onNodeWithTag(BOX_DYNAMIC_ITEM_1_TAG).getUnclippedBoundsInRoot().top
+        ).isEqualTo(32.dp)
     }
 
     @Test
@@ -752,6 +761,17 @@ class CutoutAwareColumnTest {
                 ) {
                     FlashModeIndicator(flashModeUiState = activeFlashUiState())
                 }
+                VerticalIndicatorPill(
+                    modifier = Modifier.testTag(PILL_PUBLIC_VERTICAL_TAG)
+                ) {
+                    FlashModeIndicator(flashModeUiState = activeFlashUiState())
+                }
+                IndicatorPill(
+                    modifier = Modifier.testTag(PILL_PUBLIC_DELEGATED_VERTICAL_TAG),
+                    isVertical = true
+                ) {
+                    FlashModeIndicator(flashModeUiState = activeFlashUiState())
+                }
             }
         }
 
@@ -762,6 +782,9 @@ class CutoutAwareColumnTest {
         composeTestRule.onNodeWithTag("horizontal_pill_direct").assert(isTraversalGroupMatcher)
         composeTestRule.onNodeWithTag("horizontal_pill").assert(isTraversalGroupMatcher)
         composeTestRule.onNodeWithTag("delegated_vertical_pill").assert(isTraversalGroupMatcher)
+        composeTestRule.onNodeWithTag(PILL_PUBLIC_VERTICAL_TAG).assert(isTraversalGroupMatcher)
+        composeTestRule.onNodeWithTag(PILL_PUBLIC_DELEGATED_VERTICAL_TAG)
+            .assert(isTraversalGroupMatcher)
     }
 
     @Test
@@ -924,7 +947,7 @@ class CutoutAwareColumnTest {
     }
 
     @Test
-    fun resolveColumnLocalCutoutRects_multipleWindowCutouts_transformsToLocalCoordinates() {
+    fun resolveLocalCutoutRects_multipleWindowCutouts_transformsToLocalCoordinates() {
         val windowCutoutRects = listOf(
             android.graphics.Rect(0, 0, 48, 36),
             android.graphics.Rect(20, 100, 52, 140),
@@ -933,7 +956,7 @@ class CutoutAwareColumnTest {
         val anchor = WindowAnchor(left = 12, top = 40, width = 48)
 
         assertThat(
-            resolveColumnLocalCutoutRects(
+            resolveLocalCutoutRects(
                 cutoutRectsOverride = null,
                 windowCutoutRects = windowCutoutRects,
                 windowAnchor = anchor,
@@ -949,7 +972,7 @@ class CutoutAwareColumnTest {
         // In RTL with a resolved windowAnchor, horizontal coordinates mirror around anchor.width
         // while vertical coordinates stay top-to-bottom.
         assertThat(
-            resolveColumnLocalCutoutRects(
+            resolveLocalCutoutRects(
                 cutoutRectsOverride = null,
                 windowCutoutRects = windowCutoutRects,
                 windowAnchor = anchor,
@@ -964,7 +987,7 @@ class CutoutAwareColumnTest {
     }
 
     @Test
-    fun resolveColumnLocalCutoutRects_nullAnchorAndOverride_handlesFallbackAndPrecedence() {
+    fun resolveLocalCutoutRects_nullAnchorAndOverride_handlesFallbackAndPrecedence() {
         val windowCutoutRects = listOf(
             android.graphics.Rect(4, 10, 44, 50),
             android.graphics.Rect(10, 120, 38, 160)
@@ -973,7 +996,7 @@ class CutoutAwareColumnTest {
         // When windowAnchor is null, offsets default to (0, 0) and RTL mirrors around
         // rtlReferenceWidth.
         assertThat(
-            resolveColumnLocalCutoutRects(
+            resolveLocalCutoutRects(
                 cutoutRectsOverride = null,
                 windowCutoutRects = windowCutoutRects,
                 windowAnchor = null,
@@ -986,7 +1009,7 @@ class CutoutAwareColumnTest {
         ).inOrder()
 
         assertThat(
-            resolveColumnLocalCutoutRects(
+            resolveLocalCutoutRects(
                 cutoutRectsOverride = null,
                 windowCutoutRects = windowCutoutRects,
                 windowAnchor = null,
@@ -1004,7 +1027,7 @@ class CutoutAwareColumnTest {
             IntRect(left = 12, top = 110, right = 48, bottom = 150)
         )
         assertThat(
-            resolveColumnLocalCutoutRects(
+            resolveLocalCutoutRects(
                 cutoutRectsOverride = overrideRects,
                 windowCutoutRects = windowCutoutRects,
                 windowAnchor = WindowAnchor(left = 100, top = 100, width = 48),

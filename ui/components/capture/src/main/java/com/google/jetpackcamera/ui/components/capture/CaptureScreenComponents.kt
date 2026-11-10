@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.icu.text.MessageFormat
@@ -1204,25 +1203,47 @@ private object IndicatorPillTokens {
  *
  * @param modifier the [Modifier] to be applied to this pill container.
  * @param isVertical whether the indicators stack vertically (`true`) or horizontally (`false`).
- * @param cutoutRectsOverride optional list of cutout bounding rectangles in the container's local
- *   pixel coordinate space, used for deterministic testing and previews.
- * @param onPillSegmentsPlaced optional callback invoked with the physical local [IntRect] bounds
- *   of each active pill segment after layout, used for testing.
  * @param content the status indicator children.
  */
-@SuppressLint("AvoidNullableCollections", "NullableCollection")
 @Composable
 fun IndicatorPill(
     modifier: Modifier = Modifier,
     isVertical: Boolean = false,
-    cutoutRectsOverride: List<IntRect>? = null,
+    content: @Composable () -> Unit
+) {
+    IndicatorPill(
+        cutoutRectsOverride = null,
+        modifier = modifier,
+        isVertical = isVertical,
+        onPillSegmentsPlaced = null,
+        content = content
+    )
+}
+
+/**
+ * Internal overload of [IndicatorPill] exposing [cutoutRectsOverride] and [onPillSegmentsPlaced]
+ * hooks for deterministic cutout testing and previews.
+ *
+ * @param cutoutRectsOverride optional list of cutout bounding rectangles in the container's local
+ *   pixel coordinate space, used for deterministic testing and previews.
+ * @param modifier the [Modifier] to be applied to this pill container.
+ * @param isVertical whether the indicators stack vertically (`true`) or horizontally (`false`).
+ * @param onPillSegmentsPlaced optional callback invoked with the physical local [IntRect] bounds
+ *   of each active pill segment after layout, used for testing.
+ * @param content the status indicator children.
+ */
+@Composable
+internal fun IndicatorPill(
+    cutoutRectsOverride: List<IntRect>?,
+    modifier: Modifier = Modifier,
+    isVertical: Boolean = false,
     onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     if (isVertical) {
         VerticalIndicatorPill(
-            modifier = modifier,
             cutoutRectsOverride = cutoutRectsOverride,
+            modifier = modifier,
             onPillSegmentsPlaced = onPillSegmentsPlaced
         ) {
             content()
@@ -1256,9 +1277,8 @@ fun IndicatorPill(
  *   of each active pill segment after layout, used for testing.
  * @param content the status indicator children, scoped to [RowScope].
  */
-@SuppressLint("AvoidNullableCollections", "NullableCollection")
 @Composable
-fun HorizontalIndicatorPill(
+internal fun HorizontalIndicatorPill(
     modifier: Modifier = Modifier,
     cutoutRectsOverride: List<IntRect>? = null,
     onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,

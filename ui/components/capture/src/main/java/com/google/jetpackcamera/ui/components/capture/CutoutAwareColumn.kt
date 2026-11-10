@@ -15,12 +15,10 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,9 +32,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.LookaheadScope
+import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.Measured
+import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.VerticalAlignmentLine
-import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.isTraversalGroup
@@ -50,7 +49,6 @@ import androidx.core.view.ViewCompat
 import com.google.jetpackcamera.core.common.ignoreResult
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
 
 private object CutoutAwareColumnTokens {
     val DefaultVerticalSpacing = 8.dp
@@ -107,9 +105,8 @@ private object CutoutAwareColumnTokens {
  * @param content the column children, scoped to [ColumnScope].
  */
 // TODO: Confirm final vertical status indicator stacking order with UX.
-@SuppressLint("AvoidNullableCollections", "NullableCollection")
 @Composable
-fun CutoutAwareColumn(
+internal fun CutoutAwareColumn(
     modifier: Modifier = Modifier,
     verticalSpacing: Dp = CutoutAwareColumnTokens.DefaultVerticalSpacing,
     cutoutClearance: Dp = CutoutAwareColumnTokens.DefaultCutoutClearance,
@@ -133,14 +130,7 @@ fun CutoutAwareColumn(
             modifier = modifier
                 .semantics { isTraversalGroup = true }
                 .onGloballyPositioned { coordinates ->
-                    val bounds = coordinates.boundsInWindow()
-                    val left = bounds.left.roundToInt()
-                    val right = bounds.right.roundToInt()
-                    val anchor = WindowAnchor(
-                        left = left,
-                        top = bounds.top.roundToInt(),
-                        width = right - left
-                    )
+                    val anchor = coordinates.toWindowAnchor()
                     if (windowAnchor != anchor) {
                         windowAnchor = anchor
                     }
@@ -196,226 +186,224 @@ fun CutoutAwareColumn(
             val columnWidth = max(maxChildWidth, effectiveMinWidth)
                 .coerceAtMost(constraints.maxWidth)
 
-            val isRtl = layoutDirection == LayoutDirection.Rtl
-            val localCutoutRects = resolveColumnLocalCutoutRects(
+            val localCutoutRects = resolveLocalCutoutRects(
                 cutoutRectsOverride = cutoutRectsOverride,
                 windowCutoutRects = ViewCompat.getRootWindowInsets(view)
                     ?.displayCutout?.boundingRects.orEmpty(),
                 windowAnchor = windowAnchor,
-                isRtl = isRtl,
+                isRtl = layoutDirection == LayoutDirection.Rtl,
                 rtlReferenceWidth = columnWidth
             )
+            val verticalCutouts = computeVerticalKeepOutRanges(
+                localCutoutRects = localCutoutRects,
+                columnWidth = columnWidth,
+                clearancePx = clearancePx
+            )
+            val placement = calculateVerticalCutoutPlacement(
+                measurables = measurables,
+                placeables = placeables,
+                maxChildWidthConstraint = constraints.maxWidth,
+                columnWidth = columnWidth,
+                spacingPx = spacingPx,
+                pillPadPx = pillPadPx,
+                pillMinWidthPx = pillMinWidthPx,
+                horizontalAlignment = horizontalAlignment,
+                layoutDirection = layoutDirection,
+                verticalCutouts = verticalCutouts,
+                isLookingAhead = isLookingAhead,
+                lockedMinY = lockedMinY
+            )
 
-            // Convert horizontally overlapping cutout rects into sorted vertical keep-out ranges.
-            val verticalCutouts = if (localCutoutRects.isEmpty()) {
-                emptyList()
-            } else {
-                localCutoutRects
-                    .filter { rect ->
-                        rect.width > 0 && rect.height > 0 && rect.right > 0 &&
-                            rect.left < columnWidth && rect.bottom + clearancePx > 0
-                    }
-                    .map { rect ->
-                        IntRange(
-                            start = (rect.top - clearancePx).coerceAtLeast(0),
-                            endInclusive = rect.bottom + clearancePx
-                        )
-                    }
-                    .sortedBy { it.first }
-            }
-
-            if (!isLookingAhead) {
-                lockedMinY.keys.removeAll { it >= placeables.size }
-            }
-
-            val yPositions = IntArray(placeables.size)
-            val isActive = BooleanArray(placeables.size)
-            val resolvedPillSegments = mutableListOf<IntRect>()
-
-            var collisionCursor = 0
-            var placeCursor = 0
-            var inOpenGroup = false
-            var currentGroupStartPx = 0
-            var currentGroupVisibleBottomPx = -1
-            var currentGroupMaxWidthPx = 0
-            var maxBottom = 0
-
-            fun closeCurrentGroup() {
-                if (inOpenGroup) {
-                    if (currentGroupVisibleBottomPx >= 0 && pillPadPx > 0) {
-                        val groupEndPx = currentGroupVisibleBottomPx + pillPadPx
-                        val pillWidth = max(currentGroupMaxWidthPx, pillMinWidthPx)
-                            .coerceAtMost(columnWidth)
-                        val pillLeft = horizontalAlignment.align(
-                            pillWidth,
-                            columnWidth,
-                            layoutDirection
-                        )
-                        resolvedPillSegments.add(
-                            IntRect(
-                                left = pillLeft,
-                                top = currentGroupStartPx,
-                                right = pillLeft + pillWidth,
-                                bottom = groupEndPx
-                            )
-                        )
-                        maxBottom = max(maxBottom, groupEndPx)
-                    }
-                    collisionCursor += pillPadPx
-                    inOpenGroup = false
-                    currentGroupVisibleBottomPx = -1
-                    currentGroupMaxWidthPx = 0
-                }
-            }
-
-            for (i in placeables.indices) {
-                val placeable = placeables[i]
-                // Query maxIntrinsicHeight so children wrapped in AnimatedVisibility
-                // (whose ExpandShrinkModifier passes intrinsics through to the unclipped child)
-                // evaluate cutout collisions against their full target height throughout
-                // both enter (expandVertically) and exit (shrinkVertically) animations,
-                // including the initial 0-height frame of an enter transition.
-                val collisionHeight = max(
-                    placeable.height,
-                    measurables[i].maxIntrinsicHeight(constraints.maxWidth)
-                )
-                if (collisionHeight <= 0) {
-                    yPositions[i] = placeCursor
-                    if (!isLookingAhead) {
-                        lockedMinY.remove(i)
-                    }
-                    continue
-                }
-                isActive[i] = true
-
-                val minY = if (!isLookingAhead) (lockedMinY[i] ?: 0) else 0
-
-                if (inOpenGroup) {
-                    val candidateCollisionY = collisionCursor + spacingPx
-                    val collidesWithCutout = verticalCutouts.any { cut ->
-                        candidateCollisionY + collisionHeight + pillPadPx > cut.first &&
-                            collisionCursor < cut.last
-                    }
-                    if (candidateCollisionY < minY || collidesWithCutout) {
-                        closeCurrentGroup()
-                    }
-                }
-
-                if (!inOpenGroup) {
-                    var groupStart = if (collisionCursor > 0) collisionCursor + spacingPx else 0
-                    if (!isLookingAhead && minY > 0) {
-                        groupStart = max(groupStart, minY - pillPadPx)
-                    }
-                    val neededGroupHeight = collisionHeight + 2 * pillPadPx
-                    for (cut in verticalCutouts) {
-                        if (groupStart + neededGroupHeight > cut.first && groupStart < cut.last) {
-                            groupStart = max(groupStart, cut.last)
-                        }
-                    }
-                    inOpenGroup = true
-                    currentGroupStartPx = groupStart
-                    currentGroupVisibleBottomPx = -1
-                    currentGroupMaxWidthPx = 0
-                    collisionCursor = groupStart + pillPadPx
-                    placeCursor = groupStart + pillPadPx
-                } else {
-                    collisionCursor += spacingPx
-                }
-
-                if (isLookingAhead) {
-                    val groupStartForCutout = currentGroupStartPx
-                    val requiredMinY = verticalCutouts
-                        .filter { groupStartForCutout >= it.last }
-                        .maxOfOrNull { it.last + pillPadPx } ?: 0
-                    lockedMinY[i] = requiredMinY
-                }
-
-                collisionCursor += collisionHeight
-                yPositions[i] = placeCursor
-                if (placeable.height > 0) {
-                    val itemBottom = placeCursor + placeable.height
-                    currentGroupVisibleBottomPx = itemBottom
-                    currentGroupMaxWidthPx = max(currentGroupMaxWidthPx, placeable.width)
-                    maxBottom = max(maxBottom, itemBottom)
-                    placeCursor = itemBottom + spacingPx
-                }
-            }
-            closeCurrentGroup()
-
-            val columnHeight = max(maxBottom, constraints.minHeight)
+            val columnHeight = max(placement.contentHeight, constraints.minHeight)
                 .coerceAtMost(constraints.maxHeight)
 
             layout(columnWidth, columnHeight) {
                 if (!isLookingAhead) {
-                    if (pillSegments != resolvedPillSegments) {
-                        pillSegments = resolvedPillSegments
+                    if (pillSegments != placement.pillSegments) {
+                        pillSegments = placement.pillSegments
                     }
-                    onPillSegmentsPlaced?.invoke(resolvedPillSegments)
+                    onPillSegmentsPlaced?.invoke(placement.pillSegments)
                 }
                 for (i in placeables.indices) {
-                    if (!isActive[i]) continue
+                    if (!placement.isActive[i]) continue
                     val placeable = placeables[i]
                     val x = horizontalAlignment.align(
                         placeable.width,
                         columnWidth,
                         layoutDirection
                     )
-                    placeable.place(x, yPositions[i])
+                    placeable.place(x, placement.yPositions[i])
                 }
             }
         }
     }
 }
 
-/**
- * Window-space anchor of a [CutoutAwareColumn], capturing horizontal bounds and top offset so
- * vertical height animations do not invalidate cutout coordinate resolution.
- */
-@Immutable
-internal data class WindowAnchor(val left: Int, val top: Int, val width: Int)
+private class VerticalCutoutPlacement(
+    val yPositions: IntArray,
+    val isActive: BooleanArray,
+    val pillSegments: List<IntRect>,
+    val contentHeight: Int
+)
 
-/**
- * Resolves display cutout bounding rectangles into the column's local coordinate space, using
- * [cutoutRectsOverride] when provided or offsetting [windowCutoutRects] by [windowAnchor], and
- * mirroring horizontal coordinates in RTL while keeping vertical coordinates top-to-bottom.
- */
-@SuppressLint("AvoidNullableCollections", "NullableCollection")
-internal fun resolveColumnLocalCutoutRects(
-    cutoutRectsOverride: List<IntRect>?,
-    windowCutoutRects: List<android.graphics.Rect>,
-    windowAnchor: WindowAnchor?,
-    isRtl: Boolean,
-    rtlReferenceWidth: Int
-): List<IntRect> {
-    val ltrRects = cutoutRectsOverride ?: run {
-        val offsetX = windowAnchor?.left ?: 0
-        val offsetY = windowAnchor?.top ?: 0
-        windowCutoutRects.map { rect ->
-            IntRect(
-                left = rect.left - offsetX,
-                top = rect.top - offsetY,
-                right = rect.right - offsetX,
-                bottom = rect.bottom - offsetY
+private fun computeVerticalKeepOutRanges(
+    localCutoutRects: List<IntRect>,
+    columnWidth: Int,
+    clearancePx: Int
+): List<IntRange> {
+    if (localCutoutRects.isEmpty()) return emptyList()
+    return localCutoutRects
+        .filter { rect ->
+            rect.width > 0 && rect.height > 0 && rect.right > 0 &&
+                rect.left < columnWidth && rect.bottom + clearancePx > 0
+        }
+        .map { rect ->
+            IntRange(
+                start = (rect.top - clearancePx).coerceAtLeast(0),
+                endInclusive = rect.bottom + clearancePx
             )
         }
+        .sortedBy { it.first }
+}
+
+private fun calculateVerticalCutoutPlacement(
+    measurables: List<Measurable>,
+    placeables: List<Placeable>,
+    maxChildWidthConstraint: Int,
+    columnWidth: Int,
+    spacingPx: Int,
+    pillPadPx: Int,
+    pillMinWidthPx: Int,
+    horizontalAlignment: Alignment.Horizontal,
+    layoutDirection: LayoutDirection,
+    verticalCutouts: List<IntRange>,
+    isLookingAhead: Boolean,
+    lockedMinY: MutableMap<Int, Int>
+): VerticalCutoutPlacement {
+    if (!isLookingAhead) {
+        lockedMinY.keys.removeAll { it >= placeables.size }
     }
-    return if (isRtl) {
-        val startEdgeX = if (cutoutRectsOverride == null && windowAnchor != null) {
-            windowAnchor.width
+
+    val yPositions = IntArray(placeables.size)
+    val isActive = BooleanArray(placeables.size)
+    val resolvedPillSegments = mutableListOf<IntRect>()
+
+    var collisionCursor = 0
+    var placeCursor = 0
+    var inOpenGroup = false
+    var currentGroupStartPx = 0
+    var currentGroupVisibleBottomPx = -1
+    var currentGroupMaxWidthPx = 0
+    var maxBottom = 0
+
+    fun closeCurrentGroup() {
+        if (inOpenGroup) {
+            if (currentGroupVisibleBottomPx >= 0 && pillPadPx > 0) {
+                val groupEndPx = currentGroupVisibleBottomPx + pillPadPx
+                val pillWidth = max(currentGroupMaxWidthPx, pillMinWidthPx)
+                    .coerceAtMost(columnWidth)
+                val pillLeft = horizontalAlignment.align(
+                    pillWidth,
+                    columnWidth,
+                    layoutDirection
+                )
+                resolvedPillSegments.add(
+                    IntRect(
+                        left = pillLeft,
+                        top = currentGroupStartPx,
+                        right = pillLeft + pillWidth,
+                        bottom = groupEndPx
+                    )
+                )
+                maxBottom = max(maxBottom, groupEndPx)
+            }
+            collisionCursor += pillPadPx
+            inOpenGroup = false
+            currentGroupVisibleBottomPx = -1
+            currentGroupMaxWidthPx = 0
+        }
+    }
+
+    for (i in placeables.indices) {
+        val placeable = placeables[i]
+        // Query maxIntrinsicHeight so children wrapped in AnimatedVisibility
+        // (whose ExpandShrinkModifier passes intrinsics through to the unclipped child)
+        // evaluate cutout collisions against their full target height throughout
+        // both enter (expandVertically) and exit (shrinkVertically) animations,
+        // including the initial 0-height frame of an enter transition.
+        val collisionHeight = max(
+            placeable.height,
+            measurables[i].maxIntrinsicHeight(maxChildWidthConstraint)
+        )
+        if (collisionHeight <= 0) {
+            yPositions[i] = placeCursor
+            if (!isLookingAhead) {
+                lockedMinY.remove(i)
+            }
+            continue
+        }
+        isActive[i] = true
+
+        val minY = if (!isLookingAhead) (lockedMinY[i] ?: 0) else 0
+
+        if (inOpenGroup) {
+            val candidateCollisionY = collisionCursor + spacingPx
+            val collidesWithCutout = verticalCutouts.any { cut ->
+                candidateCollisionY + collisionHeight + pillPadPx > cut.first &&
+                    collisionCursor < cut.last
+            }
+            if (candidateCollisionY < minY || collidesWithCutout) {
+                closeCurrentGroup()
+            }
+        }
+
+        if (!inOpenGroup) {
+            var groupStart = if (collisionCursor > 0) collisionCursor + spacingPx else 0
+            if (!isLookingAhead && minY > 0) {
+                groupStart = max(groupStart, minY - pillPadPx)
+            }
+            val neededGroupHeight = collisionHeight + 2 * pillPadPx
+            for (cut in verticalCutouts) {
+                if (groupStart + neededGroupHeight > cut.first && groupStart < cut.last) {
+                    groupStart = max(groupStart, cut.last)
+                }
+            }
+            inOpenGroup = true
+            currentGroupStartPx = groupStart
+            currentGroupVisibleBottomPx = -1
+            currentGroupMaxWidthPx = 0
+            collisionCursor = groupStart + pillPadPx
+            placeCursor = groupStart + pillPadPx
         } else {
-            rtlReferenceWidth
+            collisionCursor += spacingPx
         }
-        ltrRects.map { rect ->
-            IntRect(
-                left = startEdgeX - rect.right,
-                top = rect.top,
-                right = startEdgeX - rect.left,
-                bottom = rect.bottom
-            )
+
+        if (isLookingAhead) {
+            val groupStartForCutout = currentGroupStartPx
+            val requiredMinY = verticalCutouts
+                .filter { groupStartForCutout >= it.last }
+                .maxOfOrNull { it.last + pillPadPx } ?: 0
+            lockedMinY[i] = requiredMinY
         }
-    } else {
-        ltrRects
+
+        collisionCursor += collisionHeight
+        yPositions[i] = placeCursor
+        if (placeable.height > 0) {
+            val itemBottom = placeCursor + placeable.height
+            currentGroupVisibleBottomPx = itemBottom
+            currentGroupMaxWidthPx = max(currentGroupMaxWidthPx, placeable.width)
+            maxBottom = max(maxBottom, itemBottom)
+            placeCursor = itemBottom + spacingPx
+        }
     }
+    closeCurrentGroup()
+
+    return VerticalCutoutPlacement(
+        yPositions = yPositions,
+        isActive = isActive,
+        pillSegments = resolvedPillSegments,
+        contentHeight = maxBottom
+    )
 }
 
 private object CutoutColumnScope : ColumnScope {

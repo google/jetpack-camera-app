@@ -16,10 +16,12 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.annotation.SuppressLint
+import android.graphics.Rect
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,6 +35,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.LookaheadScope
 import androidx.compose.ui.layout.Measured
 import androidx.compose.ui.layout.boundsInWindow
@@ -107,7 +110,7 @@ fun CutoutAwareRow(
 ) {
     val view = LocalView.current
     val cutoutInsets = WindowInsets.displayCutout
-    var rowBoundsInWindow by remember { mutableStateOf<IntRect?>(null) }
+    var windowAnchor by remember { mutableStateOf<WindowAnchor?>(null) }
     val lockedMinX = remember { mutableMapOf<Int, Int>() }
     var pillSegments by remember { mutableStateOf<List<IntRect>>(emptyList()) }
 
@@ -117,15 +120,9 @@ fun CutoutAwareRow(
             modifier = modifier
                 .semantics { isTraversalGroup = true }
                 .onGloballyPositioned { coordinates ->
-                    val bounds = coordinates.boundsInWindow()
-                    val intRect = IntRect(
-                        left = bounds.left.roundToInt(),
-                        top = bounds.top.roundToInt(),
-                        right = bounds.right.roundToInt(),
-                        bottom = bounds.bottom.roundToInt()
-                    )
-                    if (rowBoundsInWindow != intRect) {
-                        rowBoundsInWindow = intRect
+                    val anchor = coordinates.toWindowAnchor()
+                    if (windowAnchor != anchor) {
+                        windowAnchor = anchor
                     }
                 }
                 .drawBehind {
@@ -190,7 +187,7 @@ fun CutoutAwareRow(
                 cutoutRectsOverride = cutoutRectsOverride,
                 windowCutoutRects = ViewCompat.getRootWindowInsets(view)
                     ?.displayCutout?.boundingRects.orEmpty(),
-                rowBoundsInWindow = rowBoundsInWindow,
+                windowAnchor = windowAnchor,
                 isRtl = isRtl,
                 rtlReferenceWidth = rtlReferenceWidth
             )
@@ -359,17 +356,47 @@ fun CutoutAwareRow(
     }
 }
 
-@SuppressLint("AvoidNullableCollections", "NullableCollection")
+/**
+ * Window-space anchor of a cutout-aware container, capturing horizontal bounds and top offset so
+ * vertical height animations do not invalidate cutout coordinate resolution.
+ *
+ * @property left physical left edge of the container in window coordinates (pixels).
+ * @property top physical top edge of the container in window coordinates (pixels).
+ * @property width physical width of the container in window coordinates (pixels).
+ */
+@Immutable
+internal data class WindowAnchor(val left: Int, val top: Int, val width: Int)
+
+/**
+ * Computes the [WindowAnchor] for these [LayoutCoordinates] in window pixel coordinates.
+ */
+internal fun LayoutCoordinates.toWindowAnchor(): WindowAnchor {
+    val bounds = boundsInWindow()
+    val left = bounds.left.roundToInt()
+    val right = bounds.right.roundToInt()
+    return WindowAnchor(
+        left = left,
+        top = bounds.top.roundToInt(),
+        width = right - left
+    )
+}
+
+/**
+ * Resolves display cutout bounding rectangles into a container's start-relative local coordinate
+ * space, using [cutoutRectsOverride] when provided or offsetting [windowCutoutRects] by
+ * [windowAnchor], and mirroring horizontal coordinates in RTL while keeping vertical coordinates
+ * top-to-bottom.
+ */
 internal fun resolveLocalCutoutRects(
     cutoutRectsOverride: List<IntRect>?,
-    windowCutoutRects: List<android.graphics.Rect>,
-    rowBoundsInWindow: IntRect?,
+    windowCutoutRects: List<Rect>,
+    windowAnchor: WindowAnchor?,
     isRtl: Boolean,
     rtlReferenceWidth: Int
 ): List<IntRect> {
     val ltrRects = cutoutRectsOverride ?: run {
-        val offsetX = rowBoundsInWindow?.left ?: 0
-        val offsetY = rowBoundsInWindow?.top ?: 0
+        val offsetX = windowAnchor?.left ?: 0
+        val offsetY = windowAnchor?.top ?: 0
         windowCutoutRects.map { rect ->
             IntRect(
                 left = rect.left - offsetX,
@@ -380,8 +407,8 @@ internal fun resolveLocalCutoutRects(
         }
     }
     return if (isRtl) {
-        val startEdgeX = if (cutoutRectsOverride == null && rowBoundsInWindow != null) {
-            rowBoundsInWindow.width
+        val startEdgeX = if (cutoutRectsOverride == null && windowAnchor != null) {
+            windowAnchor.width
         } else {
             rtlReferenceWidth
         }

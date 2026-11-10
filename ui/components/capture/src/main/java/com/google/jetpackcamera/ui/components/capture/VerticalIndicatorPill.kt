@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import android.annotation.SuppressLint
 import android.content.res.Configuration
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
@@ -57,9 +56,13 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 
-private object VerticalIndicatorPillPreviewTokens {
-    val ContainerPadding = 8.dp
-    val CutoutBounds = DpRect(
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+private object Tokens {
+    val ContainerWidth = ButtonDefaults.MinHeight
+    val MinSlotWidth = 48.dp
+    val ContainerVerticalPadding = 6.dp
+    val PreviewContainerPadding = 8.dp
+    val PreviewCutoutBounds = DpRect(
         left = 4.dp,
         top = 60.dp,
         right = 44.dp,
@@ -68,15 +71,14 @@ private object VerticalIndicatorPillPreviewTokens {
 }
 
 /**
- * Layout dimension tokens for [VerticalIndicatorPill] and vertically oriented [IndicatorPillIcon]
- * items.
+ * Shared item-padding tokens for vertically oriented [IndicatorPillIcon] instances inside
+ * [VerticalIndicatorPill].
  */
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 internal object VerticalIndicatorPillTokens {
-    val ContainerWidth = ButtonDefaults.MinHeight
-    val MinSlotWidth = 48.dp
-    val ContainerVerticalPadding = 6.dp
+    /** Horizontal start/end padding applied around each status icon in a vertical pill (`8.dp`). */
     val IconHorizontalPadding = 8.dp
+
+    /** Vertical top/bottom padding applied around each status icon in a vertical pill (`6.dp`). */
     val IconVerticalPadding = 6.dp
 }
 
@@ -92,9 +94,8 @@ internal val LocalIndicatorPillOrientation = staticCompositionLocalOf { Orientat
  * connected rounded pills, splitting into separate pills above and below any intersecting display
  * cutout.
  *
- * Enforces a minimum horizontal slot width of [VerticalIndicatorPillTokens.MinSlotWidth] (`48.dp`)
- * while centering a `40.dp`-wide pill background ([VerticalIndicatorPillTokens.ContainerWidth])
- * with `6.dp` top and bottom segment padding within the slot. Provides
+ * Enforces a minimum horizontal slot width of `48.dp` while centering a `40.dp`-wide pill
+ * background with `6.dp` top and bottom segment padding within the slot. Provides
  * [LocalIndicatorPillOrientation] set to [Orientation.Vertical] and `Color.White` content color so
  * child [IndicatorPillIcon]s animate vertically with `8x6.dp` item padding, and inherits
  * `isTraversalGroup = true` from [CutoutAwareColumn] so screen readers traverse all active
@@ -105,18 +106,37 @@ internal val LocalIndicatorPillOrientation = staticCompositionLocalOf { Orientat
  * Stabilization`, non-inverted in RTL).
  *
  * @param modifier the [Modifier] to be applied to this vertical pill container.
+ * @param content the status indicator children, scoped to [ColumnScope].
+ */
+// TODO: Confirm final vertical status indicator stacking order with UX.
+@Composable
+fun VerticalIndicatorPill(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    VerticalIndicatorPill(
+        cutoutRectsOverride = null,
+        modifier = modifier,
+        onPillSegmentsPlaced = null,
+        content = content
+    )
+}
+
+/**
+ * Internal overload of [VerticalIndicatorPill] exposing [cutoutRectsOverride] and
+ * [onPillSegmentsPlaced] hooks for deterministic cutout testing and previews.
+ *
  * @param cutoutRectsOverride optional list of cutout bounding rectangles in the column's local
  *   coordinate space, used for deterministic testing and previews.
+ * @param modifier the [Modifier] to be applied to this vertical pill container.
  * @param onPillSegmentsPlaced optional callback invoked with the physical local [IntRect] bounds of
  *   each active pill segment after layout, used for testing.
  * @param content the status indicator children, scoped to [ColumnScope].
  */
-// TODO: Confirm final vertical status indicator stacking order with UX.
-@SuppressLint("AvoidNullableCollections", "NullableCollection")
 @Composable
-fun VerticalIndicatorPill(
+internal fun VerticalIndicatorPill(
+    cutoutRectsOverride: List<IntRect>?,
     modifier: Modifier = Modifier,
-    cutoutRectsOverride: List<IntRect>? = null,
     onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -125,10 +145,10 @@ fun VerticalIndicatorPill(
         LocalIndicatorPillOrientation provides Orientation.Vertical
     ) {
         CutoutAwareColumn(
-            modifier = modifier.defaultMinSize(minWidth = VerticalIndicatorPillTokens.MinSlotWidth),
+            modifier = modifier.defaultMinSize(minWidth = Tokens.MinSlotWidth),
             verticalSpacing = 0.dp,
-            pillVerticalPadding = VerticalIndicatorPillTokens.ContainerVerticalPadding,
-            pillMinWidth = VerticalIndicatorPillTokens.ContainerWidth,
+            pillVerticalPadding = Tokens.ContainerVerticalPadding,
+            pillMinWidth = Tokens.ContainerWidth,
             pillBackgroundColor = CameraControlBackgroundStyle.BLACK_60.containerColor,
             horizontalAlignment = Alignment.CenterHorizontally,
             cutoutRectsOverride = cutoutRectsOverride,
@@ -159,7 +179,7 @@ private fun VerticalIndicatorPillPreviewContent(cutoutRectDp: DpRect? = null) {
                         colors = listOf(Color.DarkGray, Color.Black)
                     )
                 )
-                .padding(VerticalIndicatorPillPreviewTokens.ContainerPadding)
+                .padding(Tokens.PreviewContainerPadding)
         ) {
             if (cutoutRectDp != null) {
                 Box(
@@ -170,8 +190,8 @@ private fun VerticalIndicatorPillPreviewContent(cutoutRectDp: DpRect? = null) {
                 )
             }
             IndicatorPill(
-                isVertical = true,
-                cutoutRectsOverride = listOfNotNull(cutoutRectPx)
+                cutoutRectsOverride = listOfNotNull(cutoutRectPx),
+                isVertical = true
             ) {
                 FlashModeIndicator(
                     flashModeUiState = FlashModeUiState.Available(
@@ -219,7 +239,7 @@ private fun VerticalIndicatorPillSinglePreview() {
 @Composable
 private fun VerticalIndicatorPillCutoutSplitPreview() {
     VerticalIndicatorPillPreviewContent(
-        cutoutRectDp = VerticalIndicatorPillPreviewTokens.CutoutBounds
+        cutoutRectDp = Tokens.PreviewCutoutBounds
     )
 }
 
@@ -232,6 +252,6 @@ private fun VerticalIndicatorPillCutoutSplitPreview() {
 @Composable
 private fun VerticalIndicatorPillRtlPreview() {
     VerticalIndicatorPillPreviewContent(
-        cutoutRectDp = VerticalIndicatorPillPreviewTokens.CutoutBounds
+        cutoutRectDp = Tokens.PreviewCutoutBounds
     )
 }

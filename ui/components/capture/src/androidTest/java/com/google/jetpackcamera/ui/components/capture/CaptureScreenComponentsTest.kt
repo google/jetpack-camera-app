@@ -71,6 +71,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+private const val PILL_VERTICAL_INDICATOR_TAG = "pill_vertical_indicator"
 private val TEST_COORDINATES = Offset(100f, 100f)
 
 @RunWith(AndroidJUnit4::class)
@@ -380,7 +381,7 @@ class CaptureScreenComponentsTest {
                             .padding(16.dp)
                     ) {
                         VerticalIndicatorPill(
-                            modifier = Modifier.testTag("vertical_indicator_pill"),
+                            modifier = Modifier.testTag(PILL_VERTICAL_INDICATOR_TAG),
                             cutoutRectsOverride = listOf(
                                 IntRect(left = 0, top = 60, right = 48, bottom = 100)
                             )
@@ -414,7 +415,7 @@ class CaptureScreenComponentsTest {
             }
         }
 
-        composeTestRule.onNodeWithTag("vertical_indicator_pill").assert(
+        composeTestRule.onNodeWithTag(PILL_VERTICAL_INDICATOR_TAG).assert(
             SemanticsMatcher.expectValue(SemanticsProperties.IsTraversalGroup, true)
         )
         composeTestRule.onNodeWithContentDescription(flashOnDescription).assertIsDisplayed()
