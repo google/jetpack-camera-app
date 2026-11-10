@@ -123,7 +123,7 @@ private object QuickSettingsOverlayCardTokens {
  *   inside the card content.
  */
 @Composable
-fun QuickSettingsOverlayCard(
+internal fun QuickSettingsOverlayCard(
     isOpen: Boolean,
     onDismissRequest: () -> Unit,
     quickSettingsUiState: QuickSettingsUiState,
