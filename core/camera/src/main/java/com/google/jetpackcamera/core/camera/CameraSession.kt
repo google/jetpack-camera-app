@@ -1515,11 +1515,7 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
 ): Preview.Builder {
     val isFirstFrameTimestampUpdated = atomic(false)
     val targetCameraLogicalId = Camera2CameraInfo.from(targetCameraInfo).cameraId
-    // The zoom range doesn't change while this camera is bound, so it is read once instead of
-    // on every frame. For a camera extension session, reading zoomState queries the extension's
-    // characteristics through the vendor extension service, which is too slow to do for each
-    // capture result and backs up the camera thread that also completes captures and opens and
-    // closes the camera.
+    // Read once per bound camera, since reading zoomState can be expensive for camera extensions.
     var zoomRange: ClosedFloatingPointRange<Float>? = null
     Camera2Interop.Extender(this).setSessionCaptureCallback(
         object : CameraCaptureSession.CaptureCallback() {
