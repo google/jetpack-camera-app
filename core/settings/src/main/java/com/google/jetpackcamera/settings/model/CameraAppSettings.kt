@@ -19,7 +19,6 @@ import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DebugSettings
 import com.google.jetpackcamera.model.DeviceRotation
@@ -63,8 +62,9 @@ data class CameraAppSettings(
      */
     val activeCaptureSubModeId: CaptureSubModeId = CaptureSubModeId.DEFAULT,
     /**
-     * The values replaced by the policy of [activeCaptureSubModeId], restored when that sub-mode
-     * ends. Managed in-memory by the camera system while a sub-mode is active.
+     * The values replaced by the policy of [activeCaptureSubModeId], or requested by the user
+     * while it was active, restored when that sub-mode ends. Managed in-memory by the camera
+     * system while a sub-mode is active.
      */
     val captureSubModeOverrides: PolicyOverrides? = null,
     val cameraLensFacing: LensFacing = LensFacing.BACK,
@@ -81,7 +81,6 @@ data class CameraAppSettings(
     val imageFormat: ImageOutputFormat = ImageOutputFormat.JPEG,
     val audioEnabled: Boolean = true,
     val deviceRotation: DeviceRotation = DeviceRotation.Natural,
-    val concurrentCameraMode: ConcurrentCameraMode = ConcurrentCameraMode.OFF,
     val maxVideoDurationMillis: Long = UNLIMITED_VIDEO_DURATION,
     val lowLightBoostPriority: LowLightBoostPriority = LowLightBoostPriority.PRIORITIZE_AE_MODE,
     val debugSettings: DebugSettings = DebugSettings(),

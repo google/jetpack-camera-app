@@ -78,11 +78,10 @@ class CaptureSlotsTest {
             isRecording = true,
             onDismissQuickSettings = { dismissedCount++ }
         )
-        val offViewfinderScope = CaptureSlotScope(
-            orientation = Orientation.Horizontal,
-            isCompact = false,
+        val offViewfinderScope = PreviewOverlaySlotScope(
             isOverViewfinder = false,
-            isRecording = false
+            orientation = Orientation.Horizontal,
+            isCompact = false
         )
 
         assertThat(overViewfinderScope.orientation).isEqualTo(Orientation.Vertical)
@@ -99,17 +98,19 @@ class CaptureSlotsTest {
         assertThat(offViewfinderScope.orientation).isEqualTo(Orientation.Horizontal)
         assertThat(offViewfinderScope.isCompact).isFalse()
         assertThat(offViewfinderScope.isOverViewfinder).isFalse()
-        assertThat(offViewfinderScope.isRecording).isFalse()
         assertThat(offViewfinderScope.cameraControlContainerColor).isEqualTo(
             CameraControlBackgroundStyle.WHITE_20.containerColor
         )
     }
 
     @Test
-    fun captureSlots_indicatorColumnDefaultsToTopBar_andPlaceholdersRecycleExistingTags() {
+    fun captureSlots_andPlaceholders_adaptAxisAndRecycleExistingTags() {
         val customSlots = CaptureSlots(
             topBar = { modifier ->
                 Box(modifier.size(48.dp).testTag(VIDEO_QUALITY_TAG))
+            },
+            topStartContent = { modifier ->
+                Box(modifier.size(24.dp).testTag(FLIP_CAMERA_BUTTON))
             }
         )
         val defaultPlaceholders = PlaceholderCaptureSlots.default()
@@ -123,7 +124,8 @@ class CaptureSlotsTest {
             Box(modifier = Modifier.size(400.dp)) {
                 PlaceholderViewfinder()
                 with(slotScope) {
-                    customSlots.indicatorColumn(this, Modifier)
+                    customSlots.topBar(this, Modifier)
+                    customSlots.topStartContent(this, Modifier)
                     defaultPlaceholders.zoomControls(
                         this,
                         Modifier.sizeIn(maxHeight = 40.dp)
@@ -139,6 +141,7 @@ class CaptureSlotsTest {
 
         composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).assertIsDisplayed()
         composeTestRule.onNodeWithTag(VIDEO_QUALITY_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertIsDisplayed()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertDoesNotExist()
 
         val clampedZoomBounds = composeTestRule.onNodeWithTag(ZOOM_BUTTON_ROW_TAG).getBoundsInRoot()

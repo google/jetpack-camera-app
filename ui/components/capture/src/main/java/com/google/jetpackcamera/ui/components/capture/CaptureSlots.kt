@@ -27,10 +27,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.ProvidableCompositionLocal
-import androidx.compose.runtime.Stable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -102,7 +98,6 @@ internal object CaptureSlotTokens {
     val ShutterColor = Color(0xFFE53935)
     val FlipCameraColor = Color(0xFF43A047)
     val ImageWellColor = Color(0xFFFB8C00)
-    val PauseAudioColor = Color(0xFFD81B60)
     val ModeToggleColor = Color(0xFF8E24AA)
     val CarouselColor = Color(0xFF546E7A)
     val ElapsedTimeColor = Color(0xFFC62828)
@@ -136,187 +131,69 @@ val LocalCaptureRtlPolicy: ProvidableCompositionLocal<CaptureRtlPolicy> =
     staticCompositionLocalOf { CaptureRtlPolicy() }
 
 /**
- * Receiver scope provided to composables rendered inside [CaptureSlots].
- *
- * Extends [PreviewOverlaySlotScope] with container axis orientation, compact-sizing hints,
- * recording state, and a callback to dismiss an expanded Quick Settings surface.
- */
-@Stable
-interface CaptureSlotScope : PreviewOverlaySlotScope {
-    /**
-     * Primary axis along which the hosting container arranges its controls (for example,
-     * [Orientation.Vertical] in a side rail or [Orientation.Horizontal] in a bottom bar).
-     */
-    val orientation: Orientation
-
-    /**
-     * Whether the hosting container is height- or space-constrained and requests compact control
-     * dimensions.
-     */
-    val isCompact: Boolean
-
-    /**
-     * Whether an active video recording session is currently in progress.
-     */
-    val isRecording: Boolean
-
-    /**
-     * Requests dismissal of the Quick Settings overlay or sheet if it is currently open.
-     */
-    fun dismissQuickSettings()
-}
-
-private class StaticCaptureSlotScope(
-    override val orientation: Orientation,
-    override val isCompact: Boolean,
-    override val isOverViewfinder: Boolean,
-    override val isRecording: Boolean,
-    private val onDismissQuickSettings: () -> Unit
-) : CaptureSlotScope {
-    override val cameraControlContainerColor: Color
-        get() = if (isOverViewfinder) {
-            CameraControlBackgroundStyle.BLACK_60.containerColor
-        } else {
-            CameraControlBackgroundStyle.WHITE_20.containerColor
-        }
-
-    override fun dismissQuickSettings() {
-        onDismissQuickSettings()
-    }
-}
-
-private class DelegatingCaptureSlotScope(
-    private val overlayScope: PreviewOverlaySlotScope,
-    override val orientation: Orientation,
-    override val isCompact: Boolean,
-    override val isRecording: Boolean,
-    private val onDismissQuickSettingsState: State<() -> Unit>
-) : CaptureSlotScope, PreviewOverlaySlotScope by overlayScope {
-    override fun dismissQuickSettings() {
-        onDismissQuickSettingsState.value.invoke()
-    }
-}
-
-/**
- * Creates a standalone [CaptureSlotScope] backed by fixed state values.
- *
- * @param orientation Primary axis along which the hosting container arranges controls.
- * @param isCompact Whether compact control sizing is requested.
- * @param isOverViewfinder Whether the slot content overlaps the viewfinder.
- * @param isRecording Whether video recording is currently active.
- * @param onDismissQuickSettings Callback invoked when [CaptureSlotScope.dismissQuickSettings] is
- *   called.
- * @return A [CaptureSlotScope] exposing the given state values.
- */
-fun CaptureSlotScope(
-    orientation: Orientation = Orientation.Horizontal,
-    isCompact: Boolean = false,
-    isOverViewfinder: Boolean = true,
-    isRecording: Boolean = false,
-    onDismissQuickSettings: () -> Unit = {}
-): CaptureSlotScope = StaticCaptureSlotScope(
-    orientation = orientation,
-    isCompact = isCompact,
-    isOverViewfinder = isOverViewfinder,
-    isRecording = isRecording,
-    onDismissQuickSettings = onDismissQuickSettings
-)
-
-/**
- * Remembers a [CaptureSlotScope] that delegates live viewfinder-overlap queries to this
- * [PreviewOverlaySlotScope] while attaching container layout metadata.
- */
-@Composable
-internal fun PreviewOverlaySlotScope.rememberCaptureSlotScope(
-    orientation: Orientation = Orientation.Horizontal,
-    isCompact: Boolean = false,
-    isRecording: Boolean = false,
-    onDismissQuickSettings: () -> Unit = {}
-): CaptureSlotScope {
-    val currentOnDismiss = rememberUpdatedState(onDismissQuickSettings)
-    return remember(this, orientation, isCompact, isRecording, currentOnDismiss) {
-        DelegatingCaptureSlotScope(
-            overlayScope = this,
-            orientation = orientation,
-            isCompact = isCompact,
-            isRecording = isRecording,
-            onDismissQuickSettingsState = currentOnDismiss
-        )
-    }
-}
-
-/**
  * Hosts a [CaptureSlots] composable inside an [OverlapAwareStyleProvider], binding dynamic
- * overlap styling and container layout metadata into a [CaptureSlotScope].
+ * overlap styling and container layout metadata ([orientation], [isCompact]) into a
+ * [PreviewOverlaySlotScope].
  */
 @Composable
 internal fun OverlapAwareCaptureSlot(
     modifier: Modifier = Modifier,
     orientation: Orientation = Orientation.Horizontal,
     isCompact: Boolean = false,
-    isRecording: Boolean = false,
-    onDismissQuickSettings: () -> Unit = {},
-    content: @Composable CaptureSlotScope.(Modifier) -> Unit
+    content: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit
 ) {
-    OverlapAwareStyleProvider(modifier = modifier) {
-        val slotScope = rememberCaptureSlotScope(
-            orientation = orientation,
-            isCompact = isCompact,
-            isRecording = isRecording,
-            onDismissQuickSettings = onDismissQuickSettings
-        )
-        slotScope.content(Modifier)
+    OverlapAwareStyleProvider(
+        modifier = modifier,
+        orientation = orientation,
+        isCompact = isCompact
+    ) {
+        content(Modifier)
     }
 }
 
 /**
  * Slot table bundling the UI control composables placed by adaptive capture screen layouts.
  *
- * Each slot defaults to an empty composable (or `null` for [shutterStack]) so layouts and tests
- * can populate only the controls relevant to a scenario while omitted controls collapse cleanly.
+ * Each slot defaults to an empty composable so layouts and tests can populate only the controls
+ * relevant to a scenario while omitted controls collapse cleanly. Slots receive
+ * [PreviewOverlaySlotScope], which exposes live viewfinder overlap styling together with
+ * [PreviewOverlaySlotScope.orientation] and [PreviewOverlaySlotScope.isCompact] from the hosting
+ * layout container (and propagates directly into [CaptureSlotScope] when hosted by
+ * [CaptureScaffold]).
  *
- * @property topBar Horizontal status and indicator bar content used in top-bar layouts.
- * @property indicatorColumn Vertical status indicator stack used in side-rail layouts; defaults to
- *   [topBar] when not overridden.
+ * @property topBar Status indicator bar or column content adapting to
+ *   [PreviewOverlaySlotScope.orientation].
  * @property topBarTrailingContent Optional trailing content aligned to the end of [topBar].
- * @property zoomControls Zoom control bar or button cluster, adapting to [CaptureSlotScope.orientation].
+ * @property zoomControls Zoom control bar or button cluster, adapting to
+ *   [PreviewOverlaySlotScope.orientation].
  * @property quickSettingsButton Trigger button that toggles the Quick Settings surface.
  * @property captureButton Primary photo/video shutter button.
  * @property flipCameraButton Lens-facing toggle button.
  * @property imageWell Thumbnail button opening the most recently captured media item.
- * @property pauseToggleButton Video recording pause/resume toggle button.
- * @property audioToggleButton Video recording microphone mute/unmute toggle button.
- * @property shutterStack Optional custom shutter cluster override receiving a [Modifier] and
- *   whether compact height sizing is active; when `null`, side rails compose the default shutter
- *   cluster from [flipCameraButton], [captureButton], [imageWell], and [pauseToggleButton].
  * @property captureModeToggle Photo/video capture mode toggle switch.
  * @property captureModeCarousel Secondary sub-mode selector carousel.
  * @property elapsedTimeDisplay Active video recording duration readout.
- * @property viewfinderTopStart Overlay content anchored to the top-start of the viewfinder region.
- * @property viewfinderTopEnd Overlay content anchored to the top-end of the viewfinder region.
+ * @property topStartContent Overlay content anchored to the top-start of the capture region.
+ * @property viewfinderTopEndContent Overlay content anchored to the top-end of the viewfinder.
  * @property quickSettingsOverlay Expanded Quick Settings panel or sheet content.
  * @property snackBar Transient message host paired with a [SnackbarHostState].
  * @property errorDialog In-hierarchy modal error dialog drawn above capture chrome.
  */
 @Immutable
-data class CaptureSlots(
-    val topBar: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val indicatorColumn: @Composable CaptureSlotScope.(Modifier) -> Unit = topBar,
-    val topBarTrailingContent: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val zoomControls: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val quickSettingsButton: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val captureButton: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val flipCameraButton: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val imageWell: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val pauseToggleButton: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val audioToggleButton: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val shutterStack: (@Composable CaptureSlotScope.(Modifier, Boolean) -> Unit)? = null,
-    val captureModeToggle: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val captureModeCarousel: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val elapsedTimeDisplay: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val viewfinderTopStart: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val viewfinderTopEnd: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
-    val quickSettingsOverlay: @Composable CaptureSlotScope.(Modifier) -> Unit = {},
+internal data class CaptureSlots(
+    val topBar: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    val topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    val zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    val quickSettingsButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    val captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    val flipCameraButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    val imageWell: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    val captureModeToggle: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    val captureModeCarousel: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    val elapsedTimeDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    val topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    val viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    val quickSettingsOverlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     val snackBar: @Composable (Modifier, SnackbarHostState) -> Unit = { _, _ -> },
     val errorDialog: @Composable (Modifier) -> Unit = {}
 )
@@ -337,7 +214,7 @@ data class CaptureSlots(
  * @param testTag Optional semantics test tag attached to the outer box.
  */
 @Composable
-fun PlaceholderControlBox(
+internal fun PlaceholderControlBox(
     label: String,
     width: Dp,
     height: Dp,
@@ -378,7 +255,7 @@ fun PlaceholderControlBox(
  * @param label Debug label centered inside the placeholder frame.
  */
 @Composable
-fun PlaceholderViewfinder(modifier: Modifier = Modifier, label: String = "Viewfinder") {
+internal fun PlaceholderViewfinder(modifier: Modifier = Modifier, label: String = "Viewfinder") {
     Box(
         modifier = modifier
             .testTag(PREVIEW_DISPLAY)
@@ -402,7 +279,7 @@ fun PlaceholderViewfinder(modifier: Modifier = Modifier, label: String = "Viewfi
  * Factory of colored [PlaceholderControlBox]-backed [CaptureSlots] configurations for Compose
  * previews and structural layout tests.
  */
-object PlaceholderCaptureSlots {
+internal object PlaceholderCaptureSlots {
     /**
      * Returns the default placeholder [CaptureSlots] set, delegating to [sideRail].
      *
@@ -416,30 +293,24 @@ object PlaceholderCaptureSlots {
      * adaptive layout verification.
      *
      * @param isCompactHeight Whether controls default to compact-height dimensions even when the
-     *   hosting [CaptureSlotScope.isCompact] flag is `false`.
+     *   hosting [PreviewOverlaySlotScope.isCompact] flag is `false`.
      * @param includeImageWell Whether to populate [CaptureSlots.imageWell] or leave it empty.
-     * @param includePauseSlot Whether to populate [CaptureSlots.pauseToggleButton] or leave it
-     *   empty.
      * @param includeElapsedTime Whether to populate [CaptureSlots.elapsedTimeDisplay] or leave it
      *   empty.
      * @param tagQuickSettingsOverlay Whether the inner [CaptureSlots.quickSettingsOverlay] carries
      *   [QUICK_SETTINGS_BOTTOM_SHEET]; defaults to `false` so outer Quick Settings card containers
      *   can own that tag without duplicate semantics nodes.
-     * @param pauseSlotTag Optional test tag applied to [CaptureSlots.pauseToggleButton] when
-     *   [includePauseSlot] is `true`.
      * @param includeErrorDialog Whether to populate [CaptureSlots.errorDialog] with a placeholder
      *   tagged with [CAMERA_ERROR_DIALOG_TAG].
      */
     fun sideRail(
         isCompactHeight: Boolean = false,
         includeImageWell: Boolean = true,
-        includePauseSlot: Boolean = false,
         includeElapsedTime: Boolean = false,
         tagQuickSettingsOverlay: Boolean = false,
-        pauseSlotTag: String? = AUDIO_INPUT_TOGGLE,
         includeErrorDialog: Boolean = false
-    ): CaptureSlots {
-        val indicatorSlot: @Composable CaptureSlotScope.(Modifier) -> Unit = { slotModifier ->
+    ): CaptureSlots = CaptureSlots(
+        topBar = { slotModifier ->
             val compact = isCompactHeight || isCompact
             if (orientation == Orientation.Vertical) {
                 PlaceholderControlBox(
@@ -468,66 +339,80 @@ object PlaceholderCaptureSlots {
                     testTag = VIDEO_QUALITY_TAG
                 )
             }
-        }
-
-        return CaptureSlots(
-            topBar = indicatorSlot,
-            indicatorColumn = indicatorSlot,
-            zoomControls = { slotModifier ->
-                val compact = isCompactHeight || isCompact
-                val mainAxisSize = if (compact) {
-                    CaptureSlotTokens.ZoomCompactMainAxisSize
-                } else {
-                    CaptureSlotTokens.ZoomStandardMainAxisSize
-                }
-                val width = if (orientation == Orientation.Vertical) {
-                    CaptureSlotTokens.ZoomCrossAxisSize
-                } else {
-                    mainAxisSize
-                }
-                val height = if (orientation == Orientation.Vertical) {
-                    mainAxisSize
-                } else {
-                    CaptureSlotTokens.ZoomCrossAxisSize
-                }
-                PlaceholderControlBox(
-                    label = "Zoom",
-                    width = width,
-                    height = height,
-                    modifier = slotModifier,
-                    color = CaptureSlotTokens.ZoomColor,
-                    testTag = ZOOM_BUTTON_ROW_TAG
-                )
-            },
-            quickSettingsButton = { slotModifier ->
-                PlaceholderControlBox(
-                    label = "QS",
-                    width = CaptureSlotTokens.IconTouchTargetSize,
-                    height = CaptureSlotTokens.IconTouchTargetSize,
-                    modifier = slotModifier,
-                    color = CaptureSlotTokens.QuickSettingsButtonColor,
-                    shape = CircleShape,
-                    testTag = QUICK_SETTINGS_DROP_DOWN
-                )
-            },
-            captureButton = { slotModifier ->
-                val compact = isCompactHeight || isCompact
-                val diameter = if (compact) {
-                    CaptureSlotTokens.ShutterCompactDiameter
-                } else {
-                    CaptureSlotTokens.ShutterStandardDiameter
-                }
-                PlaceholderControlBox(
-                    label = "Cap",
-                    width = diameter,
-                    height = diameter,
-                    modifier = slotModifier,
-                    color = CaptureSlotTokens.ShutterColor,
-                    shape = CircleShape,
-                    testTag = CAPTURE_BUTTON
-                )
-            },
-            flipCameraButton = { slotModifier ->
+        },
+        zoomControls = { slotModifier ->
+            val compact = isCompactHeight || isCompact
+            val mainAxisSize = if (compact) {
+                CaptureSlotTokens.ZoomCompactMainAxisSize
+            } else {
+                CaptureSlotTokens.ZoomStandardMainAxisSize
+            }
+            val width = if (orientation == Orientation.Vertical) {
+                CaptureSlotTokens.ZoomCrossAxisSize
+            } else {
+                mainAxisSize
+            }
+            val height = if (orientation == Orientation.Vertical) {
+                mainAxisSize
+            } else {
+                CaptureSlotTokens.ZoomCrossAxisSize
+            }
+            PlaceholderControlBox(
+                label = "Zoom",
+                width = width,
+                height = height,
+                modifier = slotModifier,
+                color = CaptureSlotTokens.ZoomColor,
+                testTag = ZOOM_BUTTON_ROW_TAG
+            )
+        },
+        quickSettingsButton = { slotModifier ->
+            PlaceholderControlBox(
+                label = "QS",
+                width = CaptureSlotTokens.IconTouchTargetSize,
+                height = CaptureSlotTokens.IconTouchTargetSize,
+                modifier = slotModifier,
+                color = CaptureSlotTokens.QuickSettingsButtonColor,
+                shape = CircleShape,
+                testTag = QUICK_SETTINGS_DROP_DOWN
+            )
+        },
+        captureButton = { slotModifier ->
+            val compact = isCompactHeight || isCompact
+            val diameter = if (compact) {
+                CaptureSlotTokens.ShutterCompactDiameter
+            } else {
+                CaptureSlotTokens.ShutterStandardDiameter
+            }
+            PlaceholderControlBox(
+                label = "Cap",
+                width = diameter,
+                height = diameter,
+                modifier = slotModifier,
+                color = CaptureSlotTokens.ShutterColor,
+                shape = CircleShape,
+                testTag = CAPTURE_BUTTON
+            )
+        },
+        flipCameraButton = { slotModifier ->
+            val compact = isCompactHeight || isCompact
+            val size = if (compact) {
+                CaptureSlotTokens.SecondaryActionCompactSize
+            } else {
+                CaptureSlotTokens.SecondaryActionStandardSize
+            }
+            PlaceholderControlBox(
+                label = "Flip",
+                width = size,
+                height = size,
+                modifier = slotModifier,
+                color = CaptureSlotTokens.FlipCameraColor,
+                shape = CircleShape,
+                testTag = FLIP_CAMERA_BUTTON
+            )
+        },
+        imageWell = if (includeImageWell) {
+            { slotModifier ->
                 val compact = isCompactHeight || isCompact
                 val size = if (compact) {
                     CaptureSlotTokens.SecondaryActionCompactSize
@@ -535,150 +420,105 @@ object PlaceholderCaptureSlots {
                     CaptureSlotTokens.SecondaryActionStandardSize
                 }
                 PlaceholderControlBox(
-                    label = "Flip",
+                    label = "Well",
                     width = size,
                     height = size,
                     modifier = slotModifier,
-                    color = CaptureSlotTokens.FlipCameraColor,
-                    shape = CircleShape,
-                    testTag = FLIP_CAMERA_BUTTON
+                    color = CaptureSlotTokens.ImageWellColor,
+                    shape = RoundedCornerShape(CaptureSlotTokens.ImageWellCornerRadius),
+                    testTag = IMAGE_WELL_TAG
                 )
-            },
-            imageWell = if (includeImageWell) {
-                { slotModifier ->
-                    val compact = isCompactHeight || isCompact
-                    val size = if (compact) {
-                        CaptureSlotTokens.SecondaryActionCompactSize
-                    } else {
-                        CaptureSlotTokens.SecondaryActionStandardSize
-                    }
-                    PlaceholderControlBox(
-                        label = "Well",
-                        width = size,
-                        height = size,
-                        modifier = slotModifier,
-                        color = CaptureSlotTokens.ImageWellColor,
-                        shape = RoundedCornerShape(CaptureSlotTokens.ImageWellCornerRadius),
-                        testTag = IMAGE_WELL_TAG
-                    )
-                }
-            } else {
-                {}
-            },
-            pauseToggleButton = if (includePauseSlot) {
-                { slotModifier ->
-                    PlaceholderControlBox(
-                        label = "Pause",
-                        width = CaptureSlotTokens.IconTouchTargetSize,
-                        height = CaptureSlotTokens.IconTouchTargetSize,
-                        modifier = slotModifier,
-                        color = CaptureSlotTokens.PauseAudioColor,
-                        shape = CircleShape,
-                        testTag = pauseSlotTag
-                    )
-                }
-            } else {
-                {}
-            },
-            audioToggleButton = { slotModifier ->
-                PlaceholderControlBox(
-                    label = "Mic",
-                    width = CaptureSlotTokens.IconTouchTargetSize,
-                    height = CaptureSlotTokens.IconTouchTargetSize,
-                    modifier = slotModifier,
-                    color = CaptureSlotTokens.PauseAudioColor,
-                    shape = CircleShape,
-                    testTag = AUDIO_INPUT_TOGGLE
-                )
-            },
-            captureModeToggle = { slotModifier ->
-                val compact = isCompactHeight || isCompact
-                PlaceholderControlBox(
-                    label = "Mode",
-                    width = if (compact) {
-                        CaptureSlotTokens.ModeToggleCompactWidth
-                    } else {
-                        CaptureSlotTokens.ModeToggleStandardWidth
-                    },
-                    height = if (compact) {
-                        CaptureSlotTokens.ModeToggleCompactHeight
-                    } else {
-                        CaptureSlotTokens.ModeToggleStandardHeight
-                    },
-                    modifier = slotModifier,
-                    color = CaptureSlotTokens.ModeToggleColor,
-                    testTag = CAPTURE_MODE_TOGGLE_BUTTON
-                )
-            },
-            captureModeCarousel = { slotModifier ->
-                val compact = isCompactHeight || isCompact
-                PlaceholderControlBox(
-                    label = "Modes",
-                    width = if (compact) {
-                        CaptureSlotTokens.CarouselCompactWidth
-                    } else {
-                        CaptureSlotTokens.CarouselStandardWidth
-                    },
-                    height = CaptureSlotTokens.CarouselHeight,
-                    modifier = slotModifier,
-                    color = CaptureSlotTokens.CarouselColor,
-                    testTag = CAPTURE_MODE_CAROUSEL
-                )
-            },
-            elapsedTimeDisplay = if (includeElapsedTime) {
-                { slotModifier ->
-                    val compact = isCompactHeight || isCompact
-                    PlaceholderControlBox(
-                        label = "00:12",
-                        width = CaptureSlotTokens.ElapsedTimeWidth,
-                        height = if (compact) {
-                            CaptureSlotTokens.ElapsedTimeCompactHeight
-                        } else {
-                            CaptureSlotTokens.ElapsedTimeStandardHeight
-                        },
-                        modifier = slotModifier,
-                        color = CaptureSlotTokens.ElapsedTimeColor,
-                        testTag = ELAPSED_TIME_TAG
-                    )
-                }
-            } else {
-                {}
-            },
-            quickSettingsOverlay = { slotModifier ->
-                val compact = isCompactHeight || isCompact
-                PlaceholderControlBox(
-                    label = "Quick Settings",
-                    width = if (compact) {
-                        CaptureSlotTokens.QuickSettingsCompactWidth
-                    } else {
-                        CaptureSlotTokens.QuickSettingsStandardWidth
-                    },
-                    height = if (compact) {
-                        CaptureSlotTokens.QuickSettingsCompactHeight
-                    } else {
-                        CaptureSlotTokens.QuickSettingsStandardHeight
-                    },
-                    modifier = slotModifier,
-                    color = CaptureSlotTokens.OverlayPlaceholderColor,
-                    shape = RoundedCornerShape(CaptureSlotTokens.OverlayCornerRadius),
-                    testTag = if (tagQuickSettingsOverlay) QUICK_SETTINGS_BOTTOM_SHEET else null
-                )
-            },
-            errorDialog = if (includeErrorDialog) {
-                { dialogModifier ->
-                    PlaceholderControlBox(
-                        label = "Camera Error",
-                        width = CaptureSlotTokens.ErrorDialogWidth,
-                        height = CaptureSlotTokens.ErrorDialogHeight,
-                        modifier = dialogModifier,
-                        color = CaptureSlotTokens.ErrorDialogColor,
-                        shape = RoundedCornerShape(CaptureSlotTokens.OverlayCornerRadius),
-                        testTag = CAMERA_ERROR_DIALOG_TAG
-                    )
-                }
-            } else {
-                {}
             }
-        )
-    }
+        } else {
+            {}
+        },
+        captureModeToggle = { slotModifier ->
+            val compact = isCompactHeight || isCompact
+            PlaceholderControlBox(
+                label = "Mode",
+                width = if (compact) {
+                    CaptureSlotTokens.ModeToggleCompactWidth
+                } else {
+                    CaptureSlotTokens.ModeToggleStandardWidth
+                },
+                height = if (compact) {
+                    CaptureSlotTokens.ModeToggleCompactHeight
+                } else {
+                    CaptureSlotTokens.ModeToggleStandardHeight
+                },
+                modifier = slotModifier,
+                color = CaptureSlotTokens.ModeToggleColor,
+                testTag = CAPTURE_MODE_TOGGLE_BUTTON
+            )
+        },
+        captureModeCarousel = { slotModifier ->
+            val compact = isCompactHeight || isCompact
+            PlaceholderControlBox(
+                label = "Modes",
+                width = if (compact) {
+                    CaptureSlotTokens.CarouselCompactWidth
+                } else {
+                    CaptureSlotTokens.CarouselStandardWidth
+                },
+                height = CaptureSlotTokens.CarouselHeight,
+                modifier = slotModifier,
+                color = CaptureSlotTokens.CarouselColor,
+                testTag = CAPTURE_MODE_CAROUSEL
+            )
+        },
+        elapsedTimeDisplay = if (includeElapsedTime) {
+            { slotModifier ->
+                val compact = isCompactHeight || isCompact
+                PlaceholderControlBox(
+                    label = "00:12",
+                    width = CaptureSlotTokens.ElapsedTimeWidth,
+                    height = if (compact) {
+                        CaptureSlotTokens.ElapsedTimeCompactHeight
+                    } else {
+                        CaptureSlotTokens.ElapsedTimeStandardHeight
+                    },
+                    modifier = slotModifier,
+                    color = CaptureSlotTokens.ElapsedTimeColor,
+                    testTag = ELAPSED_TIME_TAG
+                )
+            }
+        } else {
+            {}
+        },
+        quickSettingsOverlay = { slotModifier ->
+            val compact = isCompactHeight || isCompact
+            PlaceholderControlBox(
+                label = "Quick Settings",
+                width = if (compact) {
+                    CaptureSlotTokens.QuickSettingsCompactWidth
+                } else {
+                    CaptureSlotTokens.QuickSettingsStandardWidth
+                },
+                height = if (compact) {
+                    CaptureSlotTokens.QuickSettingsCompactHeight
+                } else {
+                    CaptureSlotTokens.QuickSettingsStandardHeight
+                },
+                modifier = slotModifier,
+                color = CaptureSlotTokens.OverlayPlaceholderColor,
+                shape = RoundedCornerShape(CaptureSlotTokens.OverlayCornerRadius),
+                testTag = if (tagQuickSettingsOverlay) QUICK_SETTINGS_BOTTOM_SHEET else null
+            )
+        },
+        errorDialog = if (includeErrorDialog) {
+            { dialogModifier ->
+                PlaceholderControlBox(
+                    label = "Camera Error",
+                    width = CaptureSlotTokens.ErrorDialogWidth,
+                    height = CaptureSlotTokens.ErrorDialogHeight,
+                    modifier = dialogModifier,
+                    color = CaptureSlotTokens.ErrorDialogColor,
+                    shape = RoundedCornerShape(CaptureSlotTokens.OverlayCornerRadius),
+                    testTag = CAMERA_ERROR_DIALOG_TAG
+                )
+            }
+        } else {
+            {}
+        }
+    )
 }
