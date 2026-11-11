@@ -52,21 +52,23 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
@@ -101,48 +103,32 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.onKeyEvent
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.ProgressBarRangeInfo
-import androidx.compose.ui.semantics.SemanticsPropertyKey
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.onClick
-import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntRect
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
@@ -179,13 +165,7 @@ import kotlinx.coroutines.flow.onCompletion
 
 private const val TAG = "CaptureScreenComponents"
 private val LOADING_SPINNER_SIZE = 40.dp
-private const val LOADING_SPINNER_STATIC_PROGRESS = 0.75f
 private val ViewfinderCornerRadius = 16.dp
-private val ViewfinderMinTouchTargetSize = 48.dp
-
-@VisibleForTesting
-internal val PreviewBlinkAlphaProviderKey =
-    SemanticsPropertyKey<() -> Float>("PreviewBlinkAlphaProvider")
 
 private val SnackbarMinHeight = 48.dp
 private val SnackbarHorizontalMargin = 16.dp
@@ -198,6 +178,41 @@ private val SnackbarIconSize = 24.dp
 private val SnackbarIconToTextSpacing = 10.dp
 private val SnackbarTextToActionSpacing = 8.dp
 private val SnackbarElevation = 6.dp
+private val CameraControlIconButtonSize = 40.dp
+
+/**
+ * A circular icon button styled for camera overlay controls.
+ *
+ * The container color automatically adapts to viewfinder overlap via
+ * [LocalCameraControlBackgroundStyle].
+ *
+ * @param onClick callback invoked when this button is clicked.
+ * @param modifier the [Modifier] to be applied to this button.
+ * @param enabled controls the enabled state of this button.
+ * @param content the icon content to display inside the button.
+ */
+@Composable
+fun CameraControlIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    content: @Composable () -> Unit
+) {
+    val backgroundStyle = LocalCameraControlBackgroundStyle.current
+    FilledIconButton(
+        onClick = onClick,
+        modifier = modifier.size(CameraControlIconButtonSize),
+        enabled = enabled,
+        shape = CircleShape,
+        colors = IconButtonDefaults.filledIconButtonColors(
+            containerColor = backgroundStyle.containerColor,
+            contentColor = Color.White,
+            disabledContainerColor = backgroundStyle.disabledContainerColor,
+            disabledContentColor = Color.White.copy(alpha = 0.38f)
+        ),
+        content = content
+    )
+}
 
 /**
  * A custom [SnackbarHost] that displays snackbars with a rounded shape and a leading status icon.
@@ -797,44 +812,6 @@ private fun DetectWindowColorModeChanges(
 }
 
 /**
- * Calculates the fitted viewfinder dimensions inside the available container bounds while
- * preserving the target [aspectRatio] without cropping.
- *
- * When [useLandscapeAspectRatio] is `true` and [maxWidth] strictly exceeds [maxHeight], the
- * landscape orientation of [aspectRatio] (e.g., 4:3 instead of 3:4) is used so wide containers
- * frame horizontal camera output naturally. Otherwise, the portrait [AspectRatio.toFloat] ratio is
- * preserved.
- *
- * @param maxWidth the maximum available container width.
- * @param maxHeight the maximum available container height.
- * @param aspectRatio the target [AspectRatio] for the preview.
- * @param useLandscapeAspectRatio whether to orient [aspectRatio] horizontally when [maxWidth]
- * exceeds [maxHeight].
- * @return the fitted [DpSize], or [DpSize.Zero] if either bound is non-positive.
- */
-@VisibleForTesting
-internal fun calculateViewfinderSize(
-    maxWidth: Dp,
-    maxHeight: Dp,
-    aspectRatio: AspectRatio,
-    useLandscapeAspectRatio: Boolean
-): DpSize {
-    if (maxWidth <= 0.dp || maxHeight <= 0.dp) {
-        return DpSize.Zero
-    }
-    val maxAspectRatio: Float = maxWidth / maxHeight
-    val aspectRatioFloat: Float = if (useLandscapeAspectRatio && maxWidth > maxHeight) {
-        aspectRatio.toLandscapeFloat()
-    } else {
-        aspectRatio.toFloat()
-    }
-    val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
-    val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
-    val height = if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
-    return DpSize(width, height)
-}
-
-/**
  * A composable that displays the camera preview and handles user input gestures.
  *
  * This component is the core of the camera's UI, showing the live feed from the camera.
@@ -842,9 +819,6 @@ internal fun calculateViewfinderSize(
  * - **Single Tap:** Triggers a tap-to-focus event at the tapped location.
  * - **Double Tap:** Flips the camera between front and back lenses.
  * - **Pinch Gesture:** Scales the camera's zoom level.
- *
- * Assistive technologies and hardware keyboards can also focus the center of the viewfinder via
- * its click semantics action or activation keys (`Enter`, `Space`, `DirectionCenter`).
  *
  * @param previewDisplayUiState the [PreviewDisplayUiState] for this component.
  * @param onTapToFocus the callback for tapping to focus.
@@ -854,9 +828,6 @@ internal fun calculateViewfinderSize(
  * @param surfaceRequest the [SurfaceRequest] for the preview.
  * @param focusMeteringUiState the [FocusMeteringUiState] for this component.
  * @param modifier the modifier for this component.
- * @param contentAlignment the alignment of the fitted viewfinder within the available bounds.
- * @param useLandscapeAspectRatio whether to orient the target [AspectRatio] horizontally
- * (e.g., 4:3 instead of 3:4) when the available container width exceeds its height.
  */
 @Composable
 fun PreviewDisplay(
@@ -867,300 +838,150 @@ fun PreviewDisplay(
     onRequestWindowColorMode: (Int) -> Unit,
     surfaceRequest: SurfaceRequest?,
     focusMeteringUiState: FocusMeteringUiState,
-    modifier: Modifier = Modifier,
-    contentAlignment: Alignment = Alignment.TopCenter,
-    useLandscapeAspectRatio: Boolean = false
+    modifier: Modifier = Modifier
 ) {
     val aspectRatio =
         (previewDisplayUiState.aspectRatioUiState as? AspectRatioUiState.Available)
             ?.selectedAspectRatio ?: AspectRatio.THREE_FOUR
 
-    val currentOnTapToFocus by rememberUpdatedState(onTapToFocus)
-    val currentOnFlipCamera by rememberUpdatedState(onFlipCamera)
-    val currentOnScaleZoom by rememberUpdatedState(onScaleZoom)
-
+    @Suppress("DEPRECATION")
     val transformableState = rememberTransformableState(
-        onTransformation = { _, pinchZoomChange, _, _ ->
-            currentOnScaleZoom(pinchZoomChange)
+        onTransformation = { pinchZoomChange, _, _ ->
+            onScaleZoom(pinchZoomChange)
         }
     )
 
-    val layoutSolution = LocalCameraLayoutSolution.current
-    var imageVisible by remember { mutableStateOf(true) }
-    val targetBoundsState = LocalOverlapTargetBounds.current
-
-    val disableAnimations = LocalDisableAnimations.current
-    val currentDisableAnimations by rememberUpdatedState(disableAnimations)
-    val imageAlphaState = animateFloatAsState(
-        targetValue = if (imageVisible || disableAnimations) 1f else 0f,
-        animationSpec = if (disableAnimations) {
-            snap()
+    BoxWithConstraints(
+        modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.TopCenter
+    ) {
+        val maxAspectRatio: Float = maxWidth / maxHeight
+        val aspectRatioFloat: Float = aspectRatio.toFloat()
+        val layoutSolution = LocalCameraLayoutSolution.current
+        val solvedBand = if (maxHeight > maxWidth) {
+            layoutSolution?.viewfinderBandFor(aspectRatioFloat)
         } else {
-            tween(
-                durationMillis = (BLINK_TIME / 2).toInt(),
-                easing = LinearEasing
-            )
-        },
-        label = "PreviewBlinkAlpha"
-    )
-    val blinkAlphaProvider = remember { { imageAlphaState.value } }
-    val viewfinderShape = remember { RoundedCornerShape(ViewfinderCornerRadius) }
-
-    LaunchedEffect(disableAnimations) {
-        if (disableAnimations) {
-            imageVisible = true
+            null
         }
-    }
+        val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
+        val width = if (solvedBand != null || shouldUseMaxWidth) {
+            maxWidth
+        } else {
+            maxHeight * aspectRatioFloat
+        }
+        val height = solvedBand?.height
+            ?: if (!shouldUseMaxWidth) maxHeight else maxWidth / aspectRatioFloat
+        val topOffset = solvedBand?.top ?: 0.dp
+        var imageVisible by remember { mutableStateOf(true) }
+        val targetBoundsState = LocalOverlapTargetBounds.current
 
-    LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
-        if (previewDisplayUiState.lastBlinkTimeStamp != 0L && !currentDisableAnimations) {
-            imageVisible = false
-            try {
+        val disableAnimations = LocalDisableAnimations.current
+        val imageAlpha: Float by animateFloatAsState(
+            targetValue = if (imageVisible) 1f else 0f,
+            animationSpec = if (disableAnimations) {
+                snap()
+            } else {
+                tween(
+                    durationMillis = (BLINK_TIME / 2).toInt(),
+                    easing = LinearEasing
+                )
+            },
+            label = ""
+        )
+
+        LaunchedEffect(previewDisplayUiState.lastBlinkTimeStamp) {
+            if (previewDisplayUiState.lastBlinkTimeStamp != 0L) {
+                imageVisible = false
                 delay(BLINK_TIME)
-            } finally {
                 imageVisible = true
             }
         }
-    }
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color.Black),
-        contentAlignment = contentAlignment
-    ) {
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-            Box(
-                modifier = Modifier
-                    // Reports the top edge of the visible frame to PreviewLayout, which anchors
-                    // viewfinder-relative content to it.
-                    .layout { measurable, constraints ->
-                        val maxWidth = constraints.maxWidth.toDp()
-                        val maxHeight = constraints.maxHeight.toDp()
-                        val solvedBand = if (maxHeight > maxWidth) {
-                            layoutSolution?.viewfinderBandFor(aspectRatio.toFloat())
-                        } else {
-                            null
-                        }
-                        val topOffsetPx = (solvedBand?.top ?: 0.dp).roundToPx()
-                            .coerceIn(0, constraints.maxHeight)
-                        val size = if (solvedBand != null) {
-                            DpSize(maxWidth, solvedBand.height)
-                        } else {
-                            calculateViewfinderSize(
-                                maxWidth = maxWidth,
-                                maxHeight = maxHeight,
-                                aspectRatio = aspectRatio,
-                                useLandscapeAspectRatio = useLandscapeAspectRatio
-                            )
-                        }
-                        val widthPx = size.width.roundToPx().coerceIn(0, constraints.maxWidth)
-                        val heightPx = size.height.roundToPx()
-                            .coerceIn(0, (constraints.maxHeight - topOffsetPx).coerceAtLeast(0))
-                        val placeable = measurable.measure(Constraints.fixed(widthPx, heightPx))
-                        val totalHeight =
-                            (topOffsetPx + placeable.height).coerceAtMost(constraints.maxHeight)
-                        layout(
-                            width = placeable.width,
-                            height = totalHeight,
-                            alignmentLines = mapOf(ViewfinderTopLine to topOffsetPx)
-                        ) {
-                            placeable.place(0, topOffsetPx)
-                        }
-                    }
-                    .testTag(PREVIEW_DISPLAY)
-                    .semantics {
-                        this[PreviewBlinkAlphaProviderKey] = blinkAlphaProvider
-                    }
-                    .onGloballyPositioned { coordinates ->
-                        val bounds = coordinates.boundsInWindow()
-                        if (targetBoundsState.value != bounds) {
-                            targetBoundsState.value = bounds
-                        }
-                    }
-                    .transformable(state = transformableState)
-                    .graphicsLayer {
-                        alpha = imageAlphaState.value
-                        shape = viewfinderShape
-                        clip = true
-                    }
-            ) {
-                if (surfaceRequest != null) {
-                    val implementationMode = when {
-                        Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
-                        else -> ImplementationMode.EMBEDDED
-                    }
-
-                    DetectWindowColorModeChanges(
-                        surfaceRequest = surfaceRequest,
-                        implementationMode = implementationMode,
-                        onRequestWindowColorMode = onRequestWindowColorMode
-                    )
-
-                    val coordinateTransformer = remember { MutableCoordinateTransformer() }
-                    var viewfinderSize by remember { mutableStateOf(IntSize.Zero) }
-                    val minTouchTargetPx = with(LocalDensity.current) {
-                        ViewfinderMinTouchTargetSize.roundToPx()
-                    }
-                    val hasInteractiveBounds = viewfinderSize.width >= minTouchTargetPx &&
-                        viewfinderSize.height >= minTouchTargetPx
-                    val viewfinderDescription =
-                        stringResource(R.string.preview_viewfinder_content_description)
-                    val focusActionLabel =
-                        stringResource(R.string.preview_tap_to_focus_action_label)
-                    val focusAtViewfinderOffset: (Offset) -> Unit = { offset ->
-                        with(coordinateTransformer) {
-                            val surfaceCoords = offset.transform()
-                            Log.d(
-                                TAG,
-                                "onTapToFocus: input{$offset} -> surface{$surfaceCoords}"
-                            )
-                            currentOnTapToFocus(surfaceCoords.x, surfaceCoords.y)
-                        }
-                    }
-                    val triggerCenterFocus: () -> Boolean = {
-                        if (viewfinderSize.width > 0 && viewfinderSize.height > 0) {
-                            focusAtViewfinderOffset(
-                                Offset(
-                                    viewfinderSize.width / 2f,
-                                    viewfinderSize.height / 2f
-                                )
-                            )
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                    CameraXViewfinder(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .onSizeChanged { viewfinderSize = it }
-                            .semantics {
-                                contentDescription = viewfinderDescription
-                                if (hasInteractiveBounds) {
-                                    onClick(label = focusActionLabel) { triggerCenterFocus() }
-                                }
-                            }
-                            .onKeyEvent { event ->
-                                val isActivationKey = event.key == Key.Enter ||
-                                    event.key == Key.NumPadEnter ||
-                                    event.key == Key.DirectionCenter ||
-                                    event.key == Key.Spacebar
-                                if (hasInteractiveBounds && isActivationKey) {
-                                    when (event.type) {
-                                        KeyEventType.KeyUp -> triggerCenterFocus()
-                                        KeyEventType.KeyDown -> true
-                                        else -> false
-                                    }
-                                } else {
-                                    false
-                                }
-                            }
-                            .focusable(enabled = hasInteractiveBounds)
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onDoubleTap = { offset ->
-                                        // double tap to flip camera
-                                        Log.d(TAG, "onDoubleTap $offset")
-                                        currentOnFlipCamera()
-                                    },
-                                    onTap = { offset ->
-                                        focusAtViewfinderOffset(offset)
-                                    }
-                                )
-                            },
-                        surfaceRequest = surfaceRequest,
-                        implementationMode = implementationMode,
-                        coordinateTransformer = coordinateTransformer
-                    )
-                    FocusMeteringIndicator(
-                        focusMeteringUiState = focusMeteringUiState,
-                        coordinateTransformer = coordinateTransformer
-                    )
-                } else {
-                    val loadingDescription = stringResource(R.string.camera_not_ready)
-                    val indicatorModifier = Modifier
-                        .align(Alignment.Center)
-                        .size(LOADING_SPINNER_SIZE)
-                        .clearAndSetSemantics {
-                            contentDescription = loadingDescription
-                            progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate
-                        }
-                    if (disableAnimations) {
-                        CircularProgressIndicator(
-                            progress = { LOADING_SPINNER_STATIC_PROGRESS },
-                            modifier = indicatorModifier,
-                            color = Color.White,
-                            trackColor = Color.Transparent
-                        )
-                    } else {
-                        CircularProgressIndicator(
-                            modifier = indicatorModifier,
-                            color = Color.White
-                        )
+        Box(
+            modifier = Modifier
+                .padding(top = topOffset)
+                // Reports the top edge of the visible frame to CaptureScaffoldLayout, which anchors
+                // viewfinder-relative content to it.
+                .layout { measurable, frameConstraints ->
+                    val placeable = measurable.measure(frameConstraints)
+                    layout(
+                        placeable.width,
+                        placeable.height,
+                        alignmentLines = mapOf(ViewfinderTopLine to 0)
+                    ) {
+                        placeable.place(0, 0)
                     }
                 }
+                .testTag(PREVIEW_DISPLAY)
+                .onGloballyPositioned { coordinates ->
+                    val bounds = coordinates.boundsInWindow()
+                    if (targetBoundsState.value != bounds) {
+                        targetBoundsState.value = bounds
+                    }
+                }
+                .width(width)
+                .height(height)
+                .transformable(state = transformableState)
+                .alpha(imageAlpha)
+                .clip(RoundedCornerShape(ViewfinderCornerRadius))
+        ) {
+            if (surfaceRequest != null) {
+                val implementationMode = when {
+                    Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
+                    else -> ImplementationMode.EMBEDDED
+                }
+
+                DetectWindowColorModeChanges(
+                    surfaceRequest = surfaceRequest,
+                    implementationMode = implementationMode,
+                    onRequestWindowColorMode = onRequestWindowColorMode
+                )
+
+                val coordinateTransformer = remember { MutableCoordinateTransformer() }
+                val viewfinderDescription =
+                    stringResource(R.string.camera_viewfinder_content_description)
+                CameraXViewfinder(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .semantics { contentDescription = viewfinderDescription }
+                        .pointerInput(onFlipCamera) {
+                            detectTapGestures(
+                                onDoubleTap = { offset ->
+                                    // double tap to flip camera
+                                    Log.d(TAG, "onDoubleTap $offset")
+                                    onFlipCamera()
+                                },
+                                onTap = {
+                                    with(coordinateTransformer) {
+                                        val surfaceCoords = it.transform()
+                                        Log.d(
+                                            "TAG",
+                                            "onTapToFocus: " +
+                                                "input{$it} -> surface{$surfaceCoords}"
+                                        )
+                                        onTapToFocus(surfaceCoords.x, surfaceCoords.y)
+                                    }
+                                }
+                            )
+                        },
+                    surfaceRequest = surfaceRequest,
+                    implementationMode = implementationMode,
+                    coordinateTransformer = coordinateTransformer
+                )
+                FocusMeteringIndicator(
+                    focusMeteringUiState = focusMeteringUiState,
+                    coordinateTransformer = coordinateTransformer
+                )
+            } else {
+                CircularProgressIndicator(
+                    modifier = Modifier.align(Alignment.Center).size(LOADING_SPINNER_SIZE),
+                    color = Color.White
+                )
             }
         }
     }
-}
-
-@Composable
-private fun PreviewDisplaySample(
-    aspectRatio: AspectRatio = AspectRatio.THREE_FOUR,
-    contentAlignment: Alignment = Alignment.TopCenter,
-    useLandscapeAspectRatio: Boolean = false
-) {
-    MaterialTheme(colorScheme = darkColorScheme()) {
-        PreviewDisplay(
-            previewDisplayUiState = PreviewDisplayUiState(
-                aspectRatioUiState = AspectRatioUiState.Available(
-                    selectedAspectRatio = aspectRatio,
-                    availableAspectRatios = listOf(
-                        SingleSelectableUiState.SelectableUi(aspectRatio)
-                    )
-                )
-            ),
-            onTapToFocus = { _, _ -> },
-            onFlipCamera = {},
-            onScaleZoom = {},
-            onRequestWindowColorMode = {},
-            surfaceRequest = null,
-            focusMeteringUiState = FocusMeteringUiState.Unspecified,
-            contentAlignment = contentAlignment,
-            useLandscapeAspectRatio = useLandscapeAspectRatio
-        )
-    }
-}
-
-@Preview(name = "Tablet 1280x800 Centered 4:3 Pillarbox", widthDp = 1280, heightDp = 800)
-@Composable
-private fun PreviewDisplayTabletPillarboxPreview() {
-    PreviewDisplaySample(
-        aspectRatio = AspectRatio.THREE_FOUR,
-        contentAlignment = Alignment.Center,
-        useLandscapeAspectRatio = true
-    )
-}
-
-@Preview(name = "Phone 412x915 Top-Aligned 3:4", widthDp = 412, heightDp = 915)
-@Composable
-private fun PreviewDisplayPhoneTopAlignedPreview() {
-    PreviewDisplaySample(
-        aspectRatio = AspectRatio.THREE_FOUR,
-        contentAlignment = Alignment.TopCenter,
-        useLandscapeAspectRatio = false
-    )
-}
-
-@Preview(name = "PreviewDisplay RTL", locale = "ar", widthDp = 412, heightDp = 915)
-@Composable
-private fun PreviewDisplayRtlPreview() {
-    PreviewDisplaySample(
-        aspectRatio = AspectRatio.THREE_FOUR,
-        contentAlignment = Alignment.TopCenter,
-        useLandscapeAspectRatio = false
-    )
 }
 
 /**

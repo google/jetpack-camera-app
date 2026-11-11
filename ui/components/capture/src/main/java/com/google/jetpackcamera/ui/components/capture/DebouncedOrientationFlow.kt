@@ -16,6 +16,8 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.content.Context
+import android.hardware.display.DisplayManager
+import android.view.Display
 import android.view.OrientationEventListener
 import android.view.OrientationEventListener.ORIENTATION_UNKNOWN
 import com.google.jetpackcamera.model.DeviceRotation
@@ -34,14 +36,12 @@ private const val ORIENTATION_HYSTERESIS = 5
 /**
  * A flow that emits the device's orientation, debounced to avoid rapid changes.
  *
- * @param context the application context
- * @param initialRotation the initial [DeviceRotation] emitted before the first valid sensor reading
- *   (and retained while the device is flat at [ORIENTATION_UNKNOWN]).
+ * Seeded with the current display rotation from [context] so that starting or restarting
+ * collection immediately reports the active rotation before the sensor delivers a new reading.
+ *
+ * @param context the application or display context
  */
-fun debouncedOrientationFlow(
-    context: Context,
-    initialRotation: DeviceRotation = DeviceRotation.Natural
-) = callbackFlow {
+fun debouncedOrientationFlow(context: Context) = callbackFlow {
     val orientationListener = object : OrientationEventListener(context) {
         override fun onOrientationChanged(orientation: Int) {
             trySend(orientation)
@@ -54,17 +54,22 @@ fun debouncedOrientationFlow(
         orientationListener.disable()
     }
 }.buffer(capacity = CONFLATED)
-    .runningFold(initial = initialRotation) { prevSnap, newDegrees ->
-        if (newDegrees == ORIENTATION_UNKNOWN) {
-            prevSnap
+    .runningFold(initial = currentDeviceRotation(context)) { prevSnap, newDegrees ->
+        if (
+            newDegrees != ORIENTATION_UNKNOWN &&
+            abs(prevSnap.toClockwiseRotationDegrees() - newDegrees).let { min(it, 360 - it) } >=
+            45 + ORIENTATION_HYSTERESIS
+        ) {
+            DeviceRotation.snapFrom(newDegrees)
         } else {
-            val candidate = DeviceRotation.snapFrom(newDegrees)
-            val distToCandidateCenter =
-                abs(candidate.toClockwiseRotationDegrees() - newDegrees).let { min(it, 360 - it) }
-            if (candidate != prevSnap && distToCandidateCenter <= 45 - ORIENTATION_HYSTERESIS) {
-                candidate
-            } else {
-                prevSnap
-            }
+            prevSnap
         }
     }.distinctUntilChanged()
+
+private fun currentDeviceRotation(context: Context): DeviceRotation {
+    val surfaceRotation = context.getSystemService(DisplayManager::class.java)
+        ?.getDisplay(Display.DEFAULT_DISPLAY)
+        ?.rotation
+        ?: return DeviceRotation.Natural
+    return DeviceRotation.fromUiSurfaceRotation(surfaceRotation)
+}

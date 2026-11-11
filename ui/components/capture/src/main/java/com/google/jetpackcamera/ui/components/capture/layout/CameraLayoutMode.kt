@@ -42,6 +42,8 @@ private object CameraLayoutModeTokens {
     val SlimDimensionBreakpoint = 360.dp
     val ShortDimensionBreakpoint = 480.dp
     val MediumWidthBreakpoint = 600.dp
+    val FoldableMaxSpanBreakpoint = 960.dp
+    const val FOLDABLE_MAX_ASPECT_RATIO = 1.45f
     val HysteresisHalfBand = 7.dp
 
     val EnterSlimThreshold = SlimDimensionBreakpoint - HysteresisHalfBand
@@ -53,6 +55,9 @@ private object CameraLayoutModeTokens {
     val EnterWide600Threshold = MediumWidthBreakpoint + HysteresisHalfBand
     val ExitWide600Threshold = MediumWidthBreakpoint - HysteresisHalfBand
 
+    val EnterFoldableSpanThreshold = FoldableMaxSpanBreakpoint - HysteresisHalfBand
+    val ExitFoldableSpanThreshold = FoldableMaxSpanBreakpoint + HysteresisHalfBand
+
     val MinFullScreenCompactLongEdge = 480.dp
 
     const val MIN_VALID_SMALLEST_SCREEN_WIDTH_DP = 1
@@ -61,66 +66,79 @@ private object CameraLayoutModeTokens {
 }
 
 /**
- * Adaptive layout classification for the camera capture screen based on available window width,
- * height, and multi-window posture.
+ * Adaptive 7-mode structural layout classification for the camera capture screen based on
+ * available window width, height, aspect ratio, and multi-window posture.
  */
 enum class CameraLayoutMode {
     /**
-     * Upright single-column bottom control stack used on full-screen portrait compact phones and
-     * portrait-shaped multi-window panes (`widthDp < 600.dp`, `heightDp >= 480.dp`, and
-     * `minOf(widthDp, heightDp) >= 360.dp`).
+     * Standard compact posture used on full-screen compact phones (in both portrait and landscape
+     * orientations) and compact multi-window panes where `maxOf(widthDp, heightDp) >= 480.dp`,
+     * `minOf(widthDp, heightDp) >= 360.dp`, and not `widthDp >= 600.dp && heightDp >= 480.dp`.
+     * Hosted by `CompactPortraitLayout`.
      */
-    COMPACT_PORTRAIT,
-
-    /**
-     * Horizontally oriented (`90°`-rotated) compact layout used when a window is short vertically
-     * (`heightDp < 480.dp`) with sufficient horizontal span (`widthDp >= 480.dp` and
-     * `minOf(widthDp, heightDp) >= 360.dp`), or when a full-screen compact phone window is wider
-     * than tall.
-     */
-    COMPACT_HORIZONTAL,
+    COMPACT,
 
     /**
      * Narrow/slim compact posture (`minOf(widthDp, heightDp) < 360.dp` and
-     * `maxOf(widthDp, heightDp) >= 480.dp`, e.g., slim outer foldable displays or 1/3 split-screen
-     * panes). Currently delegates to `CompactPortraitLayout` while providing a dedicated mode for
-     * future component hiding/compaction.
+     * `maxOf(widthDp, heightDp) >= 480.dp`, such as slim outer foldable displays or 1/3
+     * split-screen panes). Hosted by `CompactPortraitLayout`.
      */
     COMPACT_SLIM,
 
     /**
      * Compact, short-on-both-axes posture (`widthDp < 480.dp` and `heightDp < 480.dp` with
-     * `minOf(widthDp, heightDp) >= 360.dp`, e.g., 50/50 phone split-screen panes or clamshell cover
-     * screens).
+     * `minOf(widthDp, heightDp) >= 360.dp`, such as 50/50 phone split-screen panes or clamshell
+     * cover screens). Hosted by `CompactShortLayout`.
      */
     COMPACT_SHORT,
 
     /**
      * Ultra-compact slim and short posture (`widthDp < 480.dp`, `heightDp < 480.dp`, and
-     * `minOf(widthDp, heightDp) < 360.dp`, e.g., small cover screens or compact freeform windows).
+     * `minOf(widthDp, heightDp) < 360.dp`, such as small cover screens or compact freeform
+     * windows). Hosted by `CompactShortLayout`.
      */
     COMPACT_SHORT_SLIM,
 
     /**
-     * Dual start and end vertical control rails over a full-bleed viewfinder used on unfolded
-     * foldables and tablets (`widthDp >= 600.dp` and `heightDp >= 480.dp`).
+     * Unfolded book-style foldable inner display (`widthDp >= 600.dp`, `heightDp >= 480.dp`,
+     * `maxOf(widthDp, heightDp) < 960.dp`, and `maxOf(widthDp, heightDp) < minOf(widthDp, heightDp)
+     * * 1.45f`, such as `~673x841dp` to `~852x883dp`). Hosted by `FoldableLayout`.
      */
-    TWO_SIDE_RAIL
+    FOLDABLE,
+
+    /**
+     * Portrait tablet posture (`widthDp >= 600.dp`, `heightDp >= 480.dp`, outside [FOLDABLE], and
+     * `heightDp > widthDp`, such as `~800x1280dp`). Hosted by `TabletPortraitLayout` with its lower
+     * ergonomic thumb zone (`0.70f`).
+     */
+    TABLET_PORTRAIT,
+
+    /**
+     * Landscape tablet posture (`widthDp >= 600.dp`, `heightDp >= 480.dp`, outside [FOLDABLE], and
+     * `widthDp >= heightDp`, such as `~1280x800dp`). Hosted by `TabletLandscapeLayout`.
+     */
+    TABLET_LANDSCAPE
 }
 
 /**
- * CompositionLocal providing the active [CameraLayoutMode] resolved by `PreviewLayout`.
+ * CompositionLocal providing the active [CameraLayoutMode] resolved by `CaptureScaffoldLayout`.
  *
- * Defaults to [CameraLayoutMode.COMPACT_PORTRAIT] when read outside an adaptive orchestrator.
+ * Defaults to [CameraLayoutMode.COMPACT] when read outside an adaptive orchestrator.
  */
 val LocalCameraLayoutMode: ProvidableCompositionLocal<CameraLayoutMode> =
-    compositionLocalOf { CameraLayoutMode.COMPACT_PORTRAIT }
+    compositionLocalOf { CameraLayoutMode.COMPACT }
+
+private val CameraLayoutMode.isSideRailLargeScreen: Boolean
+    get() = this == CameraLayoutMode.FOLDABLE ||
+        this == CameraLayoutMode.TABLET_PORTRAIT ||
+        this == CameraLayoutMode.TABLET_LANDSCAPE
 
 /**
- * Classifies the capture window geometry into a [CameraLayoutMode], applying a `14.dp` (`±7.dp`)
- * hysteresis deadband around the `360.dp` slim (`[353.dp, 367.dp]`), `480.dp` short
- * (`[473.dp, 487.dp]`), and `600.dp` wide (`[593.dp, 607.dp]`) breakpoints to prevent layout
- * thrashing during live split-screen divider drags or desktop freeform window resizing.
+ * Classifies the capture window geometry into one of the 7 [CameraLayoutMode] values, applying a
+ * `14.dp` (`±7.dp`) hysteresis deadband around the `360.dp` slim (`[353.dp, 367.dp]`), `480.dp`
+ * short (`[473.dp, 487.dp]`), `600.dp` wide (`[593.dp, 607.dp]`), `960.dp` / `1.45f` foldable vs.
+ * tablet, and square tablet orientation boundaries to prevent layout thrashing during live
+ * split-screen divider drags or desktop freeform window resizing.
  *
  * @param widthDp Available capture container width in `dp`.
  * @param heightDp Available capture container height in `dp`.
@@ -137,82 +155,117 @@ fun classifyCameraLayoutMode(
     previousMode: CameraLayoutMode? = null
 ): CameraLayoutMode {
     val minDim = minOf(widthDp, heightDp)
+    val maxDim = maxOf(widthDp, heightDp)
+
     val isSlim = when (previousMode) {
         null -> minDim < CameraLayoutModeTokens.SlimDimensionBreakpoint
         CameraLayoutMode.COMPACT_SLIM,
         CameraLayoutMode.COMPACT_SHORT_SLIM ->
             minDim < CameraLayoutModeTokens.ExitSlimThreshold
-        CameraLayoutMode.COMPACT_PORTRAIT,
-        CameraLayoutMode.COMPACT_HORIZONTAL,
+        CameraLayoutMode.COMPACT,
         CameraLayoutMode.COMPACT_SHORT,
-        CameraLayoutMode.TWO_SIDE_RAIL ->
+        CameraLayoutMode.FOLDABLE,
+        CameraLayoutMode.TABLET_PORTRAIT,
+        CameraLayoutMode.TABLET_LANDSCAPE ->
             minDim < CameraLayoutModeTokens.EnterSlimThreshold
     }
 
     if (isFullScreenCompactPhone) {
-        return when {
-            isSlim -> CameraLayoutMode.COMPACT_SLIM
-            widthDp > heightDp -> CameraLayoutMode.COMPACT_HORIZONTAL
-            else -> CameraLayoutMode.COMPACT_PORTRAIT
-        }
+        return if (isSlim) CameraLayoutMode.COMPACT_SLIM else CameraLayoutMode.COMPACT
     }
 
-    val isWide600 = when (previousMode) {
-        null -> widthDp >= CameraLayoutModeTokens.MediumWidthBreakpoint
-        CameraLayoutMode.TWO_SIDE_RAIL -> widthDp >= CameraLayoutModeTokens.ExitWide600Threshold
-        CameraLayoutMode.COMPACT_PORTRAIT,
-        CameraLayoutMode.COMPACT_HORIZONTAL,
+    val isWide600 = when {
+        previousMode == null -> widthDp >= CameraLayoutModeTokens.MediumWidthBreakpoint
+        previousMode.isSideRailLargeScreen ->
+            widthDp >= CameraLayoutModeTokens.ExitWide600Threshold
+        else -> widthDp >= CameraLayoutModeTokens.EnterWide600Threshold
+    }
+
+    val isMaxAtLeast480 = when (previousMode) {
+        null -> maxDim >= CameraLayoutModeTokens.ShortDimensionBreakpoint
+        CameraLayoutMode.COMPACT_SHORT,
+        CameraLayoutMode.COMPACT_SHORT_SLIM ->
+            maxDim >= CameraLayoutModeTokens.EnterAtLeast480Threshold
+        CameraLayoutMode.COMPACT,
         CameraLayoutMode.COMPACT_SLIM,
-        CameraLayoutMode.COMPACT_SHORT,
-        CameraLayoutMode.COMPACT_SHORT_SLIM ->
-            widthDp >= CameraLayoutModeTokens.EnterWide600Threshold
+        CameraLayoutMode.FOLDABLE,
+        CameraLayoutMode.TABLET_PORTRAIT,
+        CameraLayoutMode.TABLET_LANDSCAPE ->
+            maxDim >= CameraLayoutModeTokens.ExitAtLeast480Threshold
     }
 
-    val isWidthAtLeast480 = when (previousMode) {
-        null -> widthDp >= CameraLayoutModeTokens.ShortDimensionBreakpoint
-        CameraLayoutMode.COMPACT_HORIZONTAL,
-        CameraLayoutMode.TWO_SIDE_RAIL ->
-            widthDp >= CameraLayoutModeTokens.ExitAtLeast480Threshold
-        CameraLayoutMode.COMPACT_SHORT,
-        CameraLayoutMode.COMPACT_SHORT_SLIM,
-        CameraLayoutMode.COMPACT_PORTRAIT ->
-            widthDp >= CameraLayoutModeTokens.EnterAtLeast480Threshold
-        CameraLayoutMode.COMPACT_SLIM ->
-            if (widthDp >= heightDp) {
-                widthDp >= CameraLayoutModeTokens.ExitAtLeast480Threshold
-            } else {
-                widthDp >= CameraLayoutModeTokens.EnterAtLeast480Threshold
-            }
-    }
-
-    val isHeightAtLeast480 = when (previousMode) {
-        null -> heightDp >= CameraLayoutModeTokens.ShortDimensionBreakpoint
-        CameraLayoutMode.COMPACT_PORTRAIT,
-        CameraLayoutMode.TWO_SIDE_RAIL ->
+    val isHeightAtLeast480 = when {
+        previousMode == null -> heightDp >= CameraLayoutModeTokens.ShortDimensionBreakpoint
+        previousMode.isSideRailLargeScreen ->
             heightDp >= CameraLayoutModeTokens.ExitAtLeast480Threshold
-        CameraLayoutMode.COMPACT_HORIZONTAL,
-        CameraLayoutMode.COMPACT_SHORT,
-        CameraLayoutMode.COMPACT_SHORT_SLIM ->
+        previousMode == CameraLayoutMode.COMPACT_SHORT ||
+            previousMode == CameraLayoutMode.COMPACT_SHORT_SLIM ->
             heightDp >= CameraLayoutModeTokens.EnterAtLeast480Threshold
-        CameraLayoutMode.COMPACT_SLIM ->
+        previousMode == CameraLayoutMode.COMPACT ||
+            previousMode == CameraLayoutMode.COMPACT_SLIM ->
             if (heightDp >= widthDp) {
                 heightDp >= CameraLayoutModeTokens.ExitAtLeast480Threshold
             } else {
                 heightDp >= CameraLayoutModeTokens.EnterAtLeast480Threshold
             }
+        else -> heightDp >= CameraLayoutModeTokens.ShortDimensionBreakpoint
+    }
+
+    if (isWide600 && isHeightAtLeast480) {
+        val isUnderFoldableSpan = when (previousMode) {
+            CameraLayoutMode.FOLDABLE ->
+                maxDim < CameraLayoutModeTokens.ExitFoldableSpanThreshold
+            CameraLayoutMode.TABLET_PORTRAIT,
+            CameraLayoutMode.TABLET_LANDSCAPE ->
+                maxDim < CameraLayoutModeTokens.EnterFoldableSpanThreshold
+            else -> maxDim < CameraLayoutModeTokens.FoldableMaxSpanBreakpoint
+        }
+
+        val aspectLimit = minDim * CameraLayoutModeTokens.FOLDABLE_MAX_ASPECT_RATIO
+        val isSquarerFoldableAspect = when (previousMode) {
+            CameraLayoutMode.FOLDABLE ->
+                maxDim < aspectLimit + CameraLayoutModeTokens.HysteresisHalfBand
+            CameraLayoutMode.TABLET_PORTRAIT,
+            CameraLayoutMode.TABLET_LANDSCAPE ->
+                maxDim < aspectLimit - CameraLayoutModeTokens.HysteresisHalfBand
+            else -> maxDim < aspectLimit
+        }
+
+        if (isUnderFoldableSpan && isSquarerFoldableAspect) {
+            return CameraLayoutMode.FOLDABLE
+        }
+
+        return when (previousMode) {
+            CameraLayoutMode.TABLET_PORTRAIT ->
+                if (widthDp - heightDp >= CameraLayoutModeTokens.HysteresisHalfBand) {
+                    CameraLayoutMode.TABLET_LANDSCAPE
+                } else {
+                    CameraLayoutMode.TABLET_PORTRAIT
+                }
+            CameraLayoutMode.TABLET_LANDSCAPE ->
+                if (heightDp - widthDp >= CameraLayoutModeTokens.HysteresisHalfBand) {
+                    CameraLayoutMode.TABLET_PORTRAIT
+                } else {
+                    CameraLayoutMode.TABLET_LANDSCAPE
+                }
+            else ->
+                if (heightDp > widthDp) {
+                    CameraLayoutMode.TABLET_PORTRAIT
+                } else {
+                    CameraLayoutMode.TABLET_LANDSCAPE
+                }
+        }
     }
 
     return when {
-        isWide600 && isHeightAtLeast480 -> CameraLayoutMode.TWO_SIDE_RAIL
-        !isWidthAtLeast480 && !isHeightAtLeast480 ->
+        !isMaxAtLeast480 ->
             if (isSlim) {
                 CameraLayoutMode.COMPACT_SHORT_SLIM
             } else {
                 CameraLayoutMode.COMPACT_SHORT
             }
         isSlim -> CameraLayoutMode.COMPACT_SLIM
-        !isHeightAtLeast480 -> CameraLayoutMode.COMPACT_HORIZONTAL
-        else -> CameraLayoutMode.COMPACT_PORTRAIT
+        else -> CameraLayoutMode.COMPACT
     }
 }
 
@@ -288,7 +341,7 @@ internal fun rememberIsFullScreenCompactPhone(widthDp: Dp, heightDp: Dp): Boolea
 /**
  * Remembers the active [CameraLayoutMode] for [widthDp] and [heightDp], persisting the last
  * committed mode across recompositions via [SideEffect] so the `14.dp` (`±7.dp`) hysteresis
- * deadband prevents rapid oscillation near the `360.dp`, `480.dp`, and `600.dp` breakpoints.
+ * deadbands prevent rapid oscillation near window-size and aspect-ratio boundaries.
  *
  * @param widthDp Available capture container width in `dp`.
  * @param heightDp Available capture container height in `dp`.
