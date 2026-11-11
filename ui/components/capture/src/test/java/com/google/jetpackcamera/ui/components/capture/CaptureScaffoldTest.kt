@@ -20,24 +20,33 @@ import android.net.Uri
 import android.util.Range
 import android.view.Surface
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -47,9 +56,13 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DeviceRotation
+import com.google.jetpackcamera.model.DynamicRange
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.MediaDescriptor
@@ -658,6 +671,189 @@ class CaptureScaffoldTest {
 
         composeTestRule.onNodeWithTag(ICON_BUTTON_TAG).assertIsDisplayed().performClick()
         assertThat(clicked).isTrue()
+    }
+
+    @Test
+    fun captureScaffoldLayout_initialHiddenAndOpen_doesNotSpuriouslyInvokeDismissCallback() {
+        var dismissCount = 0
+        lateinit var scaffoldState: CaptureScaffoldState
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                scaffoldState = rememberCaptureScaffoldState(isInitiallyExpanded = false)
+                CaptureScaffoldLayout(
+                    state = scaffoldState,
+                    onDismissQuickSettings = { dismissCount++ },
+                    viewfinder = { Box(Modifier.fillMaxSize()) },
+                    quickSettingsOverlay = { modifier ->
+                        Box(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                        )
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+        assertThat(dismissCount).isEqualTo(0)
+
+        composeTestRule.runOnIdle {
+            scaffoldState.showQuickSettings()
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isTrue()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        assertThat(dismissCount).isEqualTo(0)
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).performClick()
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
+        assertThat(dismissCount).isEqualTo(1)
+    }
+
+    @Test
+    fun captureScaffoldLayout_partialDownwardDrag_settlesBackToExpandedWithoutOrphanedScrim() {
+        var dismissCount = 0
+        lateinit var scaffoldState: CaptureScaffoldState
+        val populatedQuickSettings = QuickSettingsUiState.Available(
+            aspectRatioUiState = AspectRatioUiState.Available(
+                selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
+                availableAspectRatios = listOf(
+                    SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
+                    SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
+                    SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
+                )
+            ),
+            captureModeUiState = CaptureModeUiState.Available(
+                selectedCaptureMode = CaptureMode.STANDARD,
+                availableCaptureModes = listOf(
+                    SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
+                    SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
+                    SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
+                )
+            ),
+            flashModeUiState = FlashModeUiState.Available(
+                selectedFlashMode = FlashMode.OFF,
+                availableFlashModes = listOf(
+                    SingleSelectableUiState.SelectableUi(FlashMode.OFF),
+                    SingleSelectableUiState.SelectableUi(FlashMode.ON),
+                    SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
+                ),
+                isLowLightBoostActive = false
+            ),
+            flipLensUiState = FlipLensUiState.Available(
+                selectedLensFacing = LensFacing.BACK,
+                availableLensFacings = listOf(
+                    SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                    SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                )
+            ),
+            hdrUiState = HdrUiState.Available(
+                selectedImageFormat = ImageOutputFormat.JPEG,
+                selectedDynamicRange = DynamicRange.SDR,
+                isSupported = true
+            )
+        )
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                scaffoldState = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+                CaptureScaffoldLayout(
+                    state = scaffoldState,
+                    onDismissQuickSettings = { dismissCount++ },
+                    viewfinder = { Box(Modifier.fillMaxSize()) },
+                    quickSettingsOverlay = { modifier ->
+                        CaptureScaffoldDefaults.QuickSettings(
+                            uiState = populatedQuickSettings,
+                            controller = FakeQuickSettingsController(),
+                            onNavigateToSettings = {},
+                            modifier = modifier
+                        )
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val initialSheetTop = composeTestRule
+            .onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+            .getUnclippedBoundsInRoot()
+            .top
+        val rootBottom = composeTestRule.onRoot().getUnclippedBoundsInRoot().bottom
+        assertThat(initialSheetTop).isLessThan(rootBottom - 100.dp)
+
+        // Drag downward slightly (well below positional/velocity threshold) and release.
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
+            .performTouchInput {
+                down(center)
+                moveBy(Offset(0f, 16f))
+                up()
+            }
+        composeTestRule.waitForIdle()
+
+        val settledSheetTop = composeTestRule
+            .onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+            .getUnclippedBoundsInRoot()
+            .top
+        assertThat(settledSheetTop).isEqualTo(initialSheetTop)
+        assertThat(scaffoldState.isQuickSettingsOpen).isTrue()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertIsDisplayed()
+        assertThat(dismissCount).isEqualTo(0)
+    }
+
+    @Test
+    fun captureScaffoldLayout_swipeDownToHidden_dismissesQuickSettingsAndInvokesCallbackOnce() {
+        var dismissCount = 0
+        lateinit var scaffoldState: CaptureScaffoldState
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                scaffoldState = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+                CaptureScaffoldLayout(
+                    state = scaffoldState,
+                    onDismissQuickSettings = { dismissCount++ },
+                    viewfinder = { Box(Modifier.fillMaxSize()) },
+                    quickSettingsOverlay = { modifier ->
+                        Box(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                        )
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isTrue()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertIsDisplayed()
+
+        val rootHeightPx = with(composeTestRule.density) {
+            composeTestRule.onRoot().getUnclippedBoundsInRoot().bottom.toPx()
+        }
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
+            .performTouchInput {
+                swipeDown(
+                    startY = centerY,
+                    endY = centerY + rootHeightPx,
+                    durationMillis = 150L
+                )
+            }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
+        assertThat(dismissCount).isEqualTo(1)
     }
 
     private companion object {

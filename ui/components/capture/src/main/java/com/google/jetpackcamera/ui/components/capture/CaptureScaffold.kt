@@ -60,7 +60,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScaffoldContent
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
@@ -610,7 +610,8 @@ object CaptureScaffoldDefaults {
     }
 
     /**
-     * Default Quick Settings content.
+     * Default Quick Settings content without container-specific bottom-sheet insets so it can be
+     * hosted inside both `BottomSheetScaffold` and `QuickSettingsOverlayCard`.
      */
     @Composable
     fun QuickSettings(
@@ -620,8 +621,8 @@ object CaptureScaffoldDefaults {
         modifier: Modifier = Modifier,
         showMoreSettingsButton: Boolean = true
     ) {
-        if (controller != null) {
-            QuickSettingsScaffoldContent(
+        if (controller != null && uiState is QuickSettingsUiState.Available) {
+            QuickSettingsContent(
                 quickSettingsUiState = uiState,
                 onNavigateToSettings = onNavigateToSettings,
                 quickSettingsController = controller,
@@ -1314,7 +1315,8 @@ fun CaptureScaffold(
                     { cameraController?.dismissCameraError() }
                 )
             }
-        }
+        },
+        isErrorDialogShowing = blocksPreview && errorDialog != null
     )
 }
 
