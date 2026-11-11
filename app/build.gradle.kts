@@ -146,6 +146,7 @@ dependencies {
     androidTestImplementation(project(":ui:uistate"))
     androidTestImplementation(project(":ui:components:capture"))
     androidTestImplementation(project(":ui:debug"))
+    androidTestImplementation(project(":core:camera:concurrent"))
     androidTestImplementation(project(":core:camera:night"))
     androidTestUtil(libs.androidx.orchestrator)
 
@@ -199,6 +200,9 @@ dependencies {
     implementation(project(":core:camera:postprocess:postprocess-di"))
     implementation(project(":core:camera:low-light-playservices"))
     implementation(project(":core:camera:effects:single-stream"))
+
+    // Concurrent camera sub-mode implementation
+    implementation(project(":core:camera:concurrent:concurrent-di"))
 
     // Night mode sub-mode implementation
     implementation(project(":core:camera:night:night-di"))

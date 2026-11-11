@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:kotlin.OptIn(InternalCameraApi::class)
+
 package com.google.jetpackcamera.core.camera
 
 import android.hardware.camera2.CameraMetadata
@@ -48,8 +50,9 @@ private const val SCENE_CHANGE_POST_LOCK_DELAY_MILLIS = 3000L
 private const val REQUIRED_CONSECUTIVE_SCENE_CHANGE_FRAMES = 3
 internal const val FOCUS_LOCK_FALLBACK_TIMEOUT_MILLIS = 15000L
 
+@InternalCameraApi
 @OptIn(ExperimentalCoroutinesApi::class)
-internal suspend fun CameraSessionContext.processFocusMeteringEvents(
+suspend fun CameraSessionContext.processFocusMeteringEvents(
     cameraInfo: CameraInfo,
     cameraControl: CameraControl,
     captureResults: StateFlow<TotalCaptureResult?>? = null
