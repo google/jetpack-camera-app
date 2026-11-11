@@ -320,24 +320,26 @@ class TooltipTest {
         val windowSize = IntSize(width = 1080, height = 2400)
         val popupContentSize = IntSize(width = 400, height = 150)
 
-        provider.calculatePosition(
+        val firstPosition = provider.calculatePosition(
             anchorBounds = anchorBounds,
             windowSize = windowSize,
             layoutDirection = LayoutDirection.Ltr,
             popupContentSize = popupContentSize
         )
 
+        assertThat(firstPosition.x).isEqualTo(16)
         assertThat(calculatedLocalCaretX).isEqualTo(24f)
 
         // When bodyHeight (28 - 8 = 20) shrinks actualRadius to bodyHeight / 2 = 10,
         // minCaretX tightens to 10 + 8 = 18 consistently with JcaTooltipBubbleShape.
-        provider.calculatePosition(
+        val compactPosition = provider.calculatePosition(
             anchorBounds = IntRect(left = 16, top = 20, right = 40, bottom = 44),
             windowSize = windowSize,
             layoutDirection = LayoutDirection.Ltr,
             popupContentSize = IntSize(width = 400, height = 28)
         )
 
+        assertThat(compactPosition.x).isEqualTo(16)
         assertThat(calculatedLocalCaretX).isEqualTo(18f)
     }
 
