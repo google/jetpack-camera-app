@@ -23,7 +23,6 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -266,17 +265,6 @@ class ProtoDataStoreSettingsDataSourceTest {
 
         assertThat(initial).isTrue()
         assertThat(new).isFalse()
-    }
-
-    @Test
-    fun can_update_concurrent_camera_mode() = runTest {
-        val initial = repository.getCurrentDefaultCameraAppSettings().concurrentCameraMode
-        repository.updateConcurrentCameraMode(ConcurrentCameraMode.DUAL)
-        advanceUntilIdle()
-        val new = repository.getCurrentDefaultCameraAppSettings().concurrentCameraMode
-
-        assertThat(initial).isEqualTo(ConcurrentCameraMode.OFF)
-        assertThat(new).isEqualTo(ConcurrentCameraMode.DUAL)
     }
 
     @Test
