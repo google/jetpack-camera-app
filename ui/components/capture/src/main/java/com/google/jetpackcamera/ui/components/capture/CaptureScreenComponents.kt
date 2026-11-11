@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.icu.text.MessageFormat
@@ -45,13 +44,16 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -120,6 +122,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -1191,18 +1194,100 @@ private object IndicatorPillTokens {
 }
 
 /**
- * A cutout-aware pill container that groups active top-bar status indicators into connected
- * rounded pills, splitting into separate pills on either side of any intersecting display cutout.
+ * A cutout-aware pill container that groups active camera status indicators into connected rounded
+ * pills and splits cleanly around any intersecting display cutout.
+ *
+ * Delegates to [VerticalIndicatorPill] when [isVertical] is `true` (side-rail layout) and to
+ * [HorizontalIndicatorPill] when [isVertical] is `false` (top-bar layout). Draws no pill segments
+ * when no indicators are active.
+ *
+ * @param modifier the [Modifier] to be applied to this pill container.
+ * @param isVertical whether the indicators stack vertically (`true`) or horizontally (`false`).
+ * @param content the status indicator children.
  */
-@SuppressLint("AvoidNullableCollections", "NullableCollection")
 @Composable
 fun IndicatorPill(
+    modifier: Modifier = Modifier,
+    isVertical: Boolean = false,
+    content: @Composable () -> Unit
+) {
+    IndicatorPill(
+        cutoutRectsOverride = null,
+        modifier = modifier,
+        isVertical = isVertical,
+        onPillSegmentsPlaced = null,
+        content = content
+    )
+}
+
+/**
+ * Internal overload of [IndicatorPill] exposing [cutoutRectsOverride] and [onPillSegmentsPlaced]
+ * hooks for deterministic cutout testing and previews.
+ *
+ * @param cutoutRectsOverride optional list of cutout bounding rectangles in the container's local
+ *   pixel coordinate space, used for deterministic testing and previews.
+ * @param modifier the [Modifier] to be applied to this pill container.
+ * @param isVertical whether the indicators stack vertically (`true`) or horizontally (`false`).
+ * @param onPillSegmentsPlaced optional callback invoked with the physical local [IntRect] bounds
+ *   of each active pill segment after layout, used for testing.
+ * @param content the status indicator children.
+ */
+@Composable
+internal fun IndicatorPill(
+    cutoutRectsOverride: List<IntRect>?,
+    modifier: Modifier = Modifier,
+    isVertical: Boolean = false,
+    onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
+    content: @Composable () -> Unit
+) {
+    if (isVertical) {
+        VerticalIndicatorPill(
+            cutoutRectsOverride = cutoutRectsOverride,
+            modifier = modifier,
+            onPillSegmentsPlaced = onPillSegmentsPlaced
+        ) {
+            content()
+        }
+    } else {
+        HorizontalIndicatorPill(
+            modifier = modifier,
+            cutoutRectsOverride = cutoutRectsOverride,
+            onPillSegmentsPlaced = onPillSegmentsPlaced
+        ) {
+            content()
+        }
+    }
+}
+
+/**
+ * A cutout-aware horizontal pill container that groups active top-bar status indicators into
+ * connected rounded pills, splitting into separate pills on either side of any intersecting
+ * display cutout.
+ *
+ * Renders `40.dp`-tall pill segments (`6.dp` horizontal segment end-cap padding) with
+ * `CameraControlBackgroundStyle.BLACK_60` background and `Color.White` content color. Provides
+ * [LocalIndicatorPillOrientation] set to [Orientation.Horizontal] so child [IndicatorPillIcon]s
+ * animate horizontally with `6x8.dp` item padding, and inherits `isTraversalGroup = true` from
+ * [CutoutAwareRow]. Draws no pill segments when no indicators are active.
+ *
+ * @param modifier the [Modifier] to be applied to this horizontal pill container.
+ * @param cutoutRectsOverride optional list of cutout bounding rectangles in the row's local
+ *   coordinate space, used for deterministic testing.
+ * @param onPillSegmentsPlaced optional callback invoked with the physical local [IntRect] bounds
+ *   of each active pill segment after layout, used for testing.
+ * @param content the status indicator children, scoped to [RowScope].
+ */
+@Composable
+internal fun HorizontalIndicatorPill(
     modifier: Modifier = Modifier,
     cutoutRectsOverride: List<IntRect>? = null,
     onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
     content: @Composable RowScope.() -> Unit
 ) {
-    CompositionLocalProvider(LocalContentColor provides Color.White) {
+    CompositionLocalProvider(
+        LocalContentColor provides Color.White,
+        LocalIndicatorPillOrientation provides Orientation.Horizontal
+    ) {
         CutoutAwareRow(
             modifier = modifier,
             horizontalSpacing = 0.dp,
@@ -1218,8 +1303,19 @@ fun IndicatorPill(
 }
 
 /**
- * Wraps an individual top-bar status indicator icon with horizontal expand/shrink and fade
+ * Wraps an individual status indicator icon with orientation-aware expand/shrink and fade
  * animations and standard indicator pill item padding.
+ *
+ * Reads [LocalIndicatorPillOrientation] to animate horizontally with `6x8.dp` padding inside
+ * [HorizontalIndicatorPill] (`36x40.dp` around a `24.dp` icon) and vertically with `8x6.dp`
+ * padding inside [VerticalIndicatorPill] (`40x36.dp` around a `24.dp` icon). Snaps immediately
+ * without animation when [LocalDisableAnimations] is enabled, and clears descendant semantics
+ * immediately when [visible] becomes `false` so exiting icons do not expose stale descriptions or
+ * low-opacity contrast frames during shrink/fade-out transitions.
+ *
+ * @param visible whether the status indicator is currently active and visible.
+ * @param modifier the [Modifier] applied to the indicator wrapper.
+ * @param content the indicator icon composable to display.
  */
 @Composable
 internal fun IndicatorPillIcon(
@@ -1228,28 +1324,49 @@ internal fun IndicatorPillIcon(
     content: @Composable () -> Unit
 ) {
     val disableAnimations = LocalDisableAnimations.current
+    val isVertical = LocalIndicatorPillOrientation.current == Orientation.Vertical
+    val horizontalPadding = if (isVertical) {
+        VerticalIndicatorPillTokens.IconHorizontalPadding
+    } else {
+        IndicatorPillTokens.IconHorizontalPadding
+    }
+    val verticalPadding = if (isVertical) {
+        VerticalIndicatorPillTokens.IconVerticalPadding
+    } else {
+        IndicatorPillTokens.IconVerticalPadding
+    }
+    val currentVisible by rememberUpdatedState(visible)
     AnimatedVisibility(
         visible = visible,
-        enter = if (disableAnimations) {
-            EnterTransition.None
-        } else {
-            expandHorizontally() + fadeIn()
+        enter = when {
+            disableAnimations -> EnterTransition.None
+            isVertical -> expandVertically() + fadeIn()
+            else -> expandHorizontally() + fadeIn()
         },
-        exit = if (disableAnimations) {
-            ExitTransition.None
-        } else {
-            shrinkHorizontally() + fadeOut()
+        exit = when {
+            disableAnimations -> ExitTransition.None
+            isVertical -> shrinkVertically() + fadeOut()
+            else -> shrinkHorizontally() + fadeOut()
         }
     ) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
             Box(
                 modifier = modifier.padding(
-                    horizontal = IndicatorPillTokens.IconHorizontalPadding,
-                    vertical = IndicatorPillTokens.IconVerticalPadding
+                    horizontal = horizontalPadding,
+                    vertical = verticalPadding
                 ),
                 contentAlignment = Alignment.Center
             ) {
-                content()
+                Box(
+                    modifier = if (!currentVisible) {
+                        Modifier.clearAndSetSemantics {}
+                    } else {
+                        Modifier
+                    },
+                    contentAlignment = Alignment.Center
+                ) {
+                    content()
+                }
             }
         }
     }
