@@ -311,21 +311,25 @@ fun CaptureScaffoldLayout(
                 modifier = Modifier.fillMaxSize(),
                 scaffoldState = scaffoldState,
                 sheetPeekHeight = 0.dp,
-                sheetDragHandle = {
-                    BottomSheetDefaults.DragHandle(
-                        modifier = Modifier
-                            .testTag(QUICK_SETTINGS_DRAG_HANDLE)
-                            .minimumInteractiveComponentSize()
-                            .clickable(
-                                role = Role.Button,
-                                onClickLabel = dismissQuickSettingsLabel,
-                                onClick = handleDismissQuickSettings
-                            )
-                    )
-                },
+                sheetDragHandle = null,
                 sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
                 sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                 sheetContent = {
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        BottomSheetDefaults.DragHandle(
+                            modifier = Modifier
+                                .testTag(QUICK_SETTINGS_DRAG_HANDLE)
+                                .minimumInteractiveComponentSize()
+                                .clickable(
+                                    role = Role.Button,
+                                    onClickLabel = dismissQuickSettingsLabel,
+                                    onClick = handleDismissQuickSettings
+                                )
+                        )
+                    }
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
