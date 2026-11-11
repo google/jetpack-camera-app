@@ -42,8 +42,6 @@ import com.google.jetpackcamera.model.VideoQuality
  *
  * @property availableLenses A list of [com.google.jetpackcamera.model.LensFacing] values indicating which camera lenses
  *                           (e.g., front, back) are available on the device.
- * @property concurrentCamerasSupported A boolean indicating whether the device supports
- *                                      operating multiple cameras concurrently.
  * @property perLensConstraints A map where each key is a [com.google.jetpackcamera.model.LensFacing] value and the
  *                              corresponding value is a [CameraConstraints] object
  *                              detailing the specific capabilities and limitations of that lens.
@@ -54,7 +52,6 @@ import com.google.jetpackcamera.model.VideoQuality
  */
 data class CameraSystemConstraints(
     val availableLenses: List<LensFacing> = emptyList(),
-    val concurrentCamerasSupported: Boolean = false,
     val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap(),
     val captureSubModeDescriptors: Map<CaptureSubModeId, CaptureSubModeDescriptor> = emptyMap(),
     val captureSubModePolicies: Map<CaptureSubModeId, CameraFeaturePolicy> = emptyMap()
@@ -189,7 +186,6 @@ data class CameraConstraints(
 val TYPICAL_SYSTEM_CONSTRAINTS =
     CameraSystemConstraints(
         availableLenses = listOf(LensFacing.FRONT, LensFacing.BACK),
-        concurrentCamerasSupported = false,
         perLensConstraints = buildMap {
             for (lensFacing in listOf(LensFacing.FRONT, LensFacing.BACK)) {
                 put(

@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-syntax = "proto3";
+package com.google.jetpackcamera.core.camera.night
 
-package com.google.jetpackcamera.model.proto;
+import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
+import com.google.jetpackcamera.model.CaptureSubModeId
 
-option java_package = "com.google.jetpackcamera.model.proto";
-option java_multiple_files = true;
+/** Identifier for the Night Mode CameraX extension capture sub-mode. */
+val NIGHT_SUB_MODE_ID: CaptureSubModeId = CaptureSubModeId("night")
 
-enum ConcurrentCameraMode {
-  CONCURRENT_CAMERA_MODE_UNSPECIFIED = 0;
-  CONCURRENT_CAMERA_MODE_OFF = 1;
-  CONCURRENT_CAMERA_MODE_DUAL = 2;
+/**
+ * [CaptureSubModeFeatureKey] identifying the Night Mode CameraX extension capture sub-mode in
+ * Dagger multibindings.
+ */
+object NightCaptureSubModeKey : CaptureSubModeFeatureKey {
+    override val id: CaptureSubModeId = NIGHT_SUB_MODE_ID
 }
