@@ -335,7 +335,6 @@ class PreviewDisplayTest {
         assertThat(targetBoundsState.value).isEqualTo(Rect(0f, 40f, 1280f, 760f))
     }
 
-    @SuppressLint("RestrictedApi")
     @Test
     fun previewDisplay_ltrAndRtl_produceIdenticalTapToFocusCoordinatesAndIndicatorBounds() {
         val surfaceRequest = createFakeSurfaceRequest(width = 600, height = 800)
@@ -424,7 +423,6 @@ class PreviewDisplayTest {
         assertThat(flipCount).isEqualTo(1)
     }
 
-    @SuppressLint("RestrictedApi")
     @Test
     fun previewDisplay_updatedCallbacksAndPinchZoom_dispatchLatestHandlers() {
         val surfaceRequest = createFakeSurfaceRequest(width = 600, height = 800)
@@ -502,12 +500,11 @@ class PreviewDisplayTest {
             .assertRangeInfoEquals(ProgressBarRangeInfo.Indeterminate)
     }
 
-    @SuppressLint("RestrictedApi")
     @Test
     fun previewDisplay_viewfinder_exposesCenterFocusSemanticsAndKeyboardActivation() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val viewfinderDescription =
-            context.getString(R.string.preview_viewfinder_content_description)
+            context.getString(R.string.camera_viewfinder_content_description)
         val focusActionLabel = context.getString(R.string.preview_tap_to_focus_action_label)
         assertThat(viewfinderDescription).isEqualTo("Camera viewfinder")
         assertThat(focusActionLabel).isEqualTo("Focus center")
@@ -585,7 +582,6 @@ class PreviewDisplayTest {
         assertThat(recordedTaps).isEmpty()
     }
 
-    @SuppressLint("RestrictedApi")
     @Test
     fun previewDisplay_viewfinderBelowMinimumTouchTarget_disablesFocusAndClickSemantics() {
         val surfaceRequest = createFakeSurfaceRequest(width = 32, height = 32)
@@ -613,7 +609,6 @@ class PreviewDisplayTest {
             .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
     }
 
-    @SuppressLint("RestrictedApi")
     @Test
     fun previewDisplay_captureBlink_skipsZeroAlphaStrobeWhenAnimationsDisabled() {
         val surfaceRequest = createFakeSurfaceRequest(width = 300, height = 400)
@@ -659,7 +654,6 @@ class PreviewDisplayTest {
         }
     }
 
-    @SuppressLint("RestrictedApi")
     @Test
     fun previewDisplay_captureBlink_animatesToZeroAndRecoversWhenAnimationsEnabled() {
         val surfaceRequest = createFakeSurfaceRequest(width = 300, height = 400)

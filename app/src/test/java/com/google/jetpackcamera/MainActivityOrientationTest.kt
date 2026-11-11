@@ -18,10 +18,13 @@ package com.google.jetpackcamera
 import android.content.pm.ActivityInfo
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
 /**
  * Unit tests for [resolveRequestedOrientation].
  */
+@RunWith(JUnit4::class)
 class MainActivityOrientationTest {
 
     @Test

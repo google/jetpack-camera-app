@@ -1040,7 +1040,7 @@ fun PreviewDisplay(
                     val hasInteractiveBounds = viewfinderSize.width >= minTouchTargetPx &&
                         viewfinderSize.height >= minTouchTargetPx
                     val viewfinderDescription =
-                        stringResource(R.string.preview_viewfinder_content_description)
+                        stringResource(R.string.camera_viewfinder_content_description)
                     val focusActionLabel =
                         stringResource(R.string.preview_tap_to_focus_action_label)
                     val focusAtViewfinderOffset: (Offset) -> Unit = { offset ->
