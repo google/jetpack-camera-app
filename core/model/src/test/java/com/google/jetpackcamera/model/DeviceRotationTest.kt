@@ -22,20 +22,20 @@ import org.junit.Test
 class DeviceRotationTest {
 
     @Test
-    fun fromSurfaceRotation_mapsAllSurfaceRotationsAndIsInverseOfToUiSurfaceRotation() {
-        assertThat(DeviceRotation.fromSurfaceRotation(Surface.ROTATION_0))
+    fun fromUiSurfaceRotation_mapsAllSurfaceRotationsAndIsInverseOfToUiSurfaceRotation() {
+        assertThat(DeviceRotation.fromUiSurfaceRotation(Surface.ROTATION_0))
             .isEqualTo(DeviceRotation.Natural)
-        assertThat(DeviceRotation.fromSurfaceRotation(Surface.ROTATION_90))
+        assertThat(DeviceRotation.fromUiSurfaceRotation(Surface.ROTATION_90))
             .isEqualTo(DeviceRotation.Rotated270)
-        assertThat(DeviceRotation.fromSurfaceRotation(Surface.ROTATION_180))
+        assertThat(DeviceRotation.fromUiSurfaceRotation(Surface.ROTATION_180))
             .isEqualTo(DeviceRotation.Rotated180)
-        assertThat(DeviceRotation.fromSurfaceRotation(Surface.ROTATION_270))
+        assertThat(DeviceRotation.fromUiSurfaceRotation(Surface.ROTATION_270))
             .isEqualTo(DeviceRotation.Rotated90)
-        assertThat(DeviceRotation.fromSurfaceRotation(-1))
+        assertThat(DeviceRotation.fromUiSurfaceRotation(-1))
             .isEqualTo(DeviceRotation.Natural)
 
         for (rotation in DeviceRotation.entries) {
-            assertThat(DeviceRotation.fromSurfaceRotation(rotation.toUiSurfaceRotation()))
+            assertThat(DeviceRotation.fromUiSurfaceRotation(rotation.toUiSurfaceRotation()))
                 .isEqualTo(rotation)
         }
     }
@@ -88,5 +88,18 @@ class DeviceRotationTest {
                 windowRotation = DeviceRotation.Rotated270
             )
         ).isEqualTo(0)
+    }
+
+    @Test
+    fun toWindowCounterRotationDegrees_andIsLandscape_matchAllQuadrants() {
+        assertThat(DeviceRotation.Natural.toWindowCounterRotationDegrees()).isEqualTo(0f)
+        assertThat(DeviceRotation.Rotated90.toWindowCounterRotationDegrees()).isEqualTo(90f)
+        assertThat(DeviceRotation.Rotated180.toWindowCounterRotationDegrees()).isEqualTo(180f)
+        assertThat(DeviceRotation.Rotated270.toWindowCounterRotationDegrees()).isEqualTo(-90f)
+
+        assertThat(DeviceRotation.Natural.isLandscape).isFalse()
+        assertThat(DeviceRotation.Rotated180.isLandscape).isFalse()
+        assertThat(DeviceRotation.Rotated90.isLandscape).isTrue()
+        assertThat(DeviceRotation.Rotated270.isLandscape).isTrue()
     }
 }
