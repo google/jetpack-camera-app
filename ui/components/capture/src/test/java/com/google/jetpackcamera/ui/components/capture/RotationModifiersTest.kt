@@ -182,7 +182,7 @@ class RotationModifiersTest {
         assertThat(composeTestRule.onNodeWithTag(topStripTag).fetchSemanticsNode().boundsInRoot)
             .isEqualTo(Rect(692f, 0f, 740f, 360f))
 
-        // Rotated270: swaps constraints to 360x740 and counter-rotates -90° CCW -> top strip on left
+        // Rotated270: swaps constraints to 360x740 and counter-rotates -90° CCW -> top on left.
         windowRotation = DeviceRotation.Rotated270
         composeTestRule.waitForIdle()
         assertThat(outerSize).isEqualTo(IntSize(740, 360))

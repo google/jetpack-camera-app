@@ -438,12 +438,11 @@ class CaptureScreenComponentsTest {
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 
-    @SuppressLint("RestrictedApi")
     @Test
     fun previewDisplay_withSurfaceRequest_passesAccessibilityChecksAndFocusesCenter() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val viewfinderDescription =
-            context.getString(R.string.preview_viewfinder_content_description)
+            context.getString(R.string.camera_viewfinder_content_description)
         val density = context.resources.displayMetrics.density
         val widthPx = (300 * density).roundToInt()
         val heightPx = (400 * density).roundToInt()

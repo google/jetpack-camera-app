@@ -34,8 +34,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Robolectric Compose unit tests for [DebugLayoutReadout], [DebugFormFactor], [DebugTextBar]
- * modifier scoping, and [DebugOverlay] integration.
+ * Robolectric Compose unit tests for [DebugLayoutReadout], 7-mode [DebugFormFactor],
+ * [DebugWindowOrientation], active layout composable reporting, [DebugTextBar] modifier scoping,
+ * and [DebugOverlay] integration.
  */
 @RunWith(RobolectricTestRunner::class)
 class DebugLayoutReadoutTest {
@@ -44,14 +45,16 @@ class DebugLayoutReadoutTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun debugLayoutReadout_whenExplicitFormFactorProvided_displaysEachTaggedBlock() {
+    fun debugLayoutReadout_whenExplicitStateProvided_displaysAllTaggedRowsAndActiveLayout() {
         composeTestRule.setContent {
             MaterialTheme {
                 DebugLayoutReadout(
                     state = DebugLayoutReadoutState(
                         widthDp = 673,
                         heightDp = 841,
-                        formFactor = DebugFormFactor.TWO_SIDE_RAIL,
+                        formFactor = DebugFormFactor.FOLDABLE,
+                        cameraLayoutMode = "FOLDABLE",
+                        activeLayoutName = "FoldableLayout",
                         deviceRotation = DeviceRotation.Rotated270,
                         windowRotation = DeviceRotation.Natural
                     )
@@ -60,21 +63,32 @@ class DebugLayoutReadoutTest {
         }
 
         composeTestRule.onNodeWithText("Layout: ").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Window Orientation: ").assertIsDisplayed()
         composeTestRule.onNodeWithText("Form Factor: ").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Layout Mode: ").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Active Layout: ").assertIsDisplayed()
         composeTestRule.onNodeWithText("Device Rotation: ").assertIsDisplayed()
         composeTestRule.onNodeWithText("Window Rotation: ").assertIsDisplayed()
         composeTestRule.onNodeWithText("Expected Layout Rotation: ").assertIsDisplayed()
         composeTestRule.onNodeWithText("Icon Rotation: ").assertIsDisplayed()
+
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_WINDOW_SIZE_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DEBUG_WINDOW_ORIENTATION_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_FORM_FACTOR_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DEBUG_LAYOUT_MODE_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DEBUG_ACTIVE_LAYOUT_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_DEVICE_ROTATION_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_WINDOW_ROTATION_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_INDICATOR_TAG).assertIsDisplayed()
+
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("673x841dp")
-        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("TWO_SIDE_RAIL")
+        assertThat(readNodeText(DEBUG_WINDOW_ORIENTATION_TAG)).isEqualTo("PORTRAIT")
+        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("FOLDABLE")
+        assertThat(readNodeText(DEBUG_LAYOUT_MODE_TAG)).isEqualTo("FOLDABLE")
+        assertThat(readNodeText(DEBUG_ACTIVE_LAYOUT_TAG)).isEqualTo("FoldableLayout")
         assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("270°")
         assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG)).isEqualTo("0°")
@@ -83,7 +97,7 @@ class DebugLayoutReadoutTest {
     }
 
     @Test
-    fun debugLayoutReadout_whenDefaultFormFactorUsed_derivesFormFactorAndDefaultRotations() {
+    fun debugLayoutReadout_whenDefaultsUsed_derivesOrientationFormFactorAndActiveLayout() {
         composeTestRule.setContent {
             MaterialTheme {
                 DebugLayoutReadout(
@@ -95,10 +109,10 @@ class DebugLayoutReadoutTest {
             }
         }
 
-        composeTestRule.onNodeWithText("Layout: ").assertIsDisplayed()
-        composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("412x915dp")
-        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT_PORTRAIT")
+        assertThat(readNodeText(DEBUG_WINDOW_ORIENTATION_TAG)).isEqualTo("PORTRAIT")
+        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT")
+        assertThat(readNodeText(DEBUG_ACTIVE_LAYOUT_TAG)).isEqualTo("CompactPortraitLayout")
         assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG)).isEqualTo("0°")
@@ -147,15 +161,14 @@ class DebugLayoutReadoutTest {
 
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("360x800dp")
-        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT_PORTRAIT")
-        assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("0°")
-        assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
+        assertThat(readNodeText(DEBUG_WINDOW_ORIENTATION_TAG)).isEqualTo("PORTRAIT")
+        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("COMPACT")
+        assertThat(readNodeText(DEBUG_ACTIVE_LAYOUT_TAG)).isEqualTo("CompactPortraitLayout")
         assertThat(readNodeText(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG)).isEqualTo("0°")
-        assertThat(readNodeText(DEBUG_ICON_ROTATION_TAG)).isEqualTo("0°")
     }
 
     @Test
-    fun debugOverlay_whenExplicitLayoutReadoutStateProvided_displaysExplicitState() {
+    fun debugOverlay_whenExplicitTabletPortraitStateProvided_displaysTabletPortraitReadout() {
         composeTestRule.setContent {
             MaterialTheme {
                 DebugOverlay(
@@ -179,7 +192,9 @@ class DebugLayoutReadoutTest {
 
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertIsDisplayed()
         assertThat(readNodeText(DEBUG_WINDOW_SIZE_TAG)).isEqualTo("800x1280dp")
-        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("TWO_SIDE_RAIL")
+        assertThat(readNodeText(DEBUG_WINDOW_ORIENTATION_TAG)).isEqualTo("PORTRAIT")
+        assertThat(readNodeText(DEBUG_FORM_FACTOR_TAG)).isEqualTo("TABLET_PORTRAIT")
+        assertThat(readNodeText(DEBUG_ACTIVE_LAYOUT_TAG)).isEqualTo("TabletPortraitLayout")
         assertThat(readNodeText(DEBUG_DEVICE_ROTATION_TAG)).isEqualTo("90°")
         assertThat(readNodeText(DEBUG_WINDOW_ROTATION_TAG)).isEqualTo("0°")
         assertThat(readNodeText(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG)).isEqualTo("0°")
@@ -208,17 +223,14 @@ class DebugLayoutReadoutTest {
         composeTestRule.onNodeWithTag(BTN_DEBUG_HIDE_COMPONENTS_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(DEBUG_LAYOUT_READOUT_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(DEBUG_WINDOW_SIZE_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DEBUG_WINDOW_ORIENTATION_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(DEBUG_FORM_FACTOR_TAG).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(DEBUG_DEVICE_ROTATION_TAG).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(DEBUG_WINDOW_ROTATION_TAG).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(DEBUG_EXPECTED_LAYOUT_ROTATION_TAG).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_TAG).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(DEBUG_ICON_ROTATION_INDICATOR_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(DEBUG_ACTIVE_LAYOUT_TAG).assertDoesNotExist()
     }
 
     @Test
-    fun debugLayoutReadoutState_expectedLayoutRotationDegrees_handlesFormFactorsAndAspectRatios() {
-        // Tall compact phone (heightDp >= widthDp) -> 0°
+    fun debugLayoutReadoutState_expectedLayoutRotationDegrees_handlesAllSevenModesAnd550x500() {
+        // Portrait compact phone (heightDp >= widthDp) -> 0°
         assertThat(
             DebugLayoutReadoutState(
                 widthDp = 412,
@@ -228,15 +240,17 @@ class DebugLayoutReadoutTest {
             ).expectedLayoutRotationDegrees
         ).isEqualTo(0)
 
-        // Upside-down compact phone -> 0° (both icon and layout clamp 180° to 0°)
-        val upsideDownPhone = DebugLayoutReadoutState(
-            widthDp = 412,
-            heightDp = 915,
-            deviceRotation = DeviceRotation.Rotated180,
+        // Horizontal compact pane at 550x500dp (W > H even though H >= 480dp!) -> counter-rotates!
+        val horizontalCompact550x500 = DebugLayoutReadoutState(
+            widthDp = 550,
+            heightDp = 500,
+            deviceRotation = DeviceRotation.Natural,
             windowRotation = DeviceRotation.Natural
         )
-        assertThat(upsideDownPhone.iconRotationDegrees).isEqualTo(0)
-        assertThat(upsideDownPhone.expectedLayoutRotationDegrees).isEqualTo(0)
+        assertThat(horizontalCompact550x500.formFactor).isEqualTo(DebugFormFactor.COMPACT)
+        assertThat(horizontalCompact550x500.windowOrientation)
+            .isEqualTo(DebugWindowOrientation.HORIZONTAL)
+        assertThat(horizontalCompact550x500.expectedLayoutRotationDegrees).isEqualTo(270)
 
         // Wide compact window with OS-rotated landscape window (Win 270°, Dev 270°) -> 270°
         assertThat(
@@ -245,16 +259,6 @@ class DebugLayoutReadoutTest {
                 heightDp = 412,
                 deviceRotation = DeviceRotation.Rotated270,
                 windowRotation = DeviceRotation.Rotated270
-            ).expectedLayoutRotationDegrees
-        ).isEqualTo(270)
-
-        // Wide compact split-screen (50/50 top/bottom on landscape tablet: Win 0°, Dev 0°) -> 270°
-        assertThat(
-            DebugLayoutReadoutState(
-                widthDp = 1280,
-                heightDp = 390,
-                deviceRotation = DeviceRotation.Natural,
-                windowRotation = DeviceRotation.Natural
             ).expectedLayoutRotationDegrees
         ).isEqualTo(270)
 
@@ -276,41 +280,29 @@ class DebugLayoutReadoutTest {
             ).expectedLayoutRotationDegrees
         ).isEqualTo(0)
 
-        // Compact short & compact short slim stay upright (0°) in WideShortLayout
+        // Compact short & compact short slim stay upright (0°) in CompactShortLayout
         assertThat(
-            DebugLayoutReadoutState(
-                widthDp = 412,
-                heightDp = 412,
-                deviceRotation = DeviceRotation.Natural,
-                windowRotation = DeviceRotation.Natural
-            ).expectedLayoutRotationDegrees
+            DebugLayoutReadoutState(widthDp = 412, heightDp = 412).expectedLayoutRotationDegrees
         ).isEqualTo(0)
         assertThat(
-            DebugLayoutReadoutState(
-                widthDp = 433,
-                heightDp = 346,
-                deviceRotation = DeviceRotation.Natural,
-                windowRotation = DeviceRotation.Natural
-            ).expectedLayoutRotationDegrees
+            DebugLayoutReadoutState(widthDp = 433, heightDp = 346).expectedLayoutRotationDegrees
         ).isEqualTo(0)
 
-        // Wide compact window held at 90° CW with Win 0° -> follows gravity (90°)
-        assertThat(
-            DebugLayoutReadoutState(
-                widthDp = 840,
-                heightDp = 360,
-                deviceRotation = DeviceRotation.Rotated270,
-                windowRotation = DeviceRotation.Natural
-            ).expectedLayoutRotationDegrees
-        ).isEqualTo(90)
-
-        // TWO_SIDE_RAIL always remains upright (0°) regardless of widthDp vs heightDp
+        // Foldable, TabletPortrait, and TabletLandscape always remain upright (0°)
         assertThat(
             DebugLayoutReadoutState(
                 widthDp = 841,
                 heightDp = 673,
                 deviceRotation = DeviceRotation.Rotated270,
                 windowRotation = DeviceRotation.Rotated270
+            ).expectedLayoutRotationDegrees
+        ).isEqualTo(0)
+        assertThat(
+            DebugLayoutReadoutState(
+                widthDp = 800,
+                heightDp = 1280,
+                deviceRotation = DeviceRotation.Rotated270,
+                windowRotation = DeviceRotation.Natural
             ).expectedLayoutRotationDegrees
         ).isEqualTo(0)
         assertThat(
@@ -324,64 +316,48 @@ class DebugLayoutReadoutTest {
     }
 
     @Test
-    fun debugFormFactor_fromWindowDp_classifiesAllCameraLayoutModeBuckets() {
-        // COMPACT_PORTRAIT (W < 600, H >= 480, min >= 360)
-        assertThat(DebugFormFactor.fromWindowDp(412, 915))
-            .isEqualTo(DebugFormFactor.COMPACT_PORTRAIT)
-        assertThat(DebugFormFactor.fromWindowDp(480, 760))
-            .isEqualTo(DebugFormFactor.COMPACT_PORTRAIT)
-        assertThat(DebugFormFactor.fromWindowDp(585, 602))
-            .isEqualTo(DebugFormFactor.COMPACT_PORTRAIT)
-
-        // COMPACT_HORIZONTAL (W >= 480, H < 480, min >= 360, or full-screen compact phone W > H)
-        assertThat(DebugFormFactor.fromWindowDp(840, 360))
-            .isEqualTo(DebugFormFactor.COMPACT_HORIZONTAL)
-        assertThat(DebugFormFactor.fromWindowDp(500, 360))
-            .isEqualTo(DebugFormFactor.COMPACT_HORIZONTAL)
-        assertThat(DebugFormFactor.fromWindowDp(800, 400))
-            .isEqualTo(DebugFormFactor.COMPACT_HORIZONTAL)
+    fun debugFormFactor_fromWindowDp_classifiesAllSevenBucketsAndHysteresis() {
+        // COMPACT (portrait & horizontal)
+        assertThat(DebugFormFactor.fromWindowDp(412, 915)).isEqualTo(DebugFormFactor.COMPACT)
+        assertThat(DebugFormFactor.fromWindowDp(840, 360)).isEqualTo(DebugFormFactor.COMPACT)
+        assertThat(DebugFormFactor.fromWindowDp(550, 500)).isEqualTo(DebugFormFactor.COMPACT)
         assertThat(DebugFormFactor.fromWindowDp(900, 500, isFullScreenCompactPhone = true))
-            .isEqualTo(DebugFormFactor.COMPACT_HORIZONTAL)
+            .isEqualTo(DebugFormFactor.COMPACT)
 
-        // COMPACT_SLIM (min < 360, max >= 480)
-        assertThat(DebugFormFactor.fromWindowDp(276, 883))
-            .isEqualTo(DebugFormFactor.COMPACT_SLIM)
-        assertThat(DebugFormFactor.fromWindowDp(883, 276))
-            .isEqualTo(DebugFormFactor.COMPACT_SLIM)
-        assertThat(DebugFormFactor.fromWindowDp(250, 602))
-            .isEqualTo(DebugFormFactor.COMPACT_SLIM)
-        assertThat(DebugFormFactor.fromWindowDp(320, 800, isFullScreenCompactPhone = true))
-            .isEqualTo(DebugFormFactor.COMPACT_SLIM)
+        // COMPACT_SLIM
+        assertThat(DebugFormFactor.fromWindowDp(276, 883)).isEqualTo(DebugFormFactor.COMPACT_SLIM)
+        assertThat(DebugFormFactor.fromWindowDp(883, 276)).isEqualTo(DebugFormFactor.COMPACT_SLIM)
 
-        // COMPACT_SHORT (W < 480, H < 480, min >= 360)
-        assertThat(DebugFormFactor.fromWindowDp(412, 412))
-            .isEqualTo(DebugFormFactor.COMPACT_SHORT)
-        assertThat(DebugFormFactor.fromWindowDp(360, 360))
-            .isEqualTo(DebugFormFactor.COMPACT_SHORT)
-
-        // COMPACT_SHORT_SLIM (W < 480, H < 480, min < 360)
-        assertThat(DebugFormFactor.fromWindowDp(433, 346))
-            .isEqualTo(DebugFormFactor.COMPACT_SHORT_SLIM)
-        assertThat(DebugFormFactor.fromWindowDp(346, 433))
-            .isEqualTo(DebugFormFactor.COMPACT_SHORT_SLIM)
+        // COMPACT_SHORT & COMPACT_SHORT_SLIM
+        assertThat(DebugFormFactor.fromWindowDp(360, 360)).isEqualTo(DebugFormFactor.COMPACT_SHORT)
         assertThat(DebugFormFactor.fromWindowDp(320, 340))
             .isEqualTo(DebugFormFactor.COMPACT_SHORT_SLIM)
 
-        // TWO_SIDE_RAIL (W >= 600, H >= 480, when not full-screen compact phone)
-        assertThat(DebugFormFactor.fromWindowDp(673, 841))
-            .isEqualTo(DebugFormFactor.TWO_SIDE_RAIL)
-        assertThat(DebugFormFactor.fromWindowDp(841, 673))
-            .isEqualTo(DebugFormFactor.TWO_SIDE_RAIL)
+        // FOLDABLE vs TABLET_PORTRAIT vs TABLET_LANDSCAPE
+        assertThat(DebugFormFactor.fromWindowDp(673, 841)).isEqualTo(DebugFormFactor.FOLDABLE)
+        assertThat(DebugFormFactor.fromWindowDp(852, 883)).isEqualTo(DebugFormFactor.FOLDABLE)
         assertThat(DebugFormFactor.fromWindowDp(800, 1280))
-            .isEqualTo(DebugFormFactor.TWO_SIDE_RAIL)
+            .isEqualTo(DebugFormFactor.TABLET_PORTRAIT)
         assertThat(DebugFormFactor.fromWindowDp(1280, 800))
-            .isEqualTo(DebugFormFactor.TWO_SIDE_RAIL)
+            .isEqualTo(DebugFormFactor.TABLET_LANDSCAPE)
 
-        // UNKNOWN (W <= 0 || H <= 0)
-        assertThat(DebugFormFactor.fromWindowDp(0, 800))
-            .isEqualTo(DebugFormFactor.UNKNOWN)
-        assertThat(DebugFormFactor.fromWindowDp(412, -1))
-            .isEqualTo(DebugFormFactor.UNKNOWN)
+        // ±7dp hysteresis parity around 600dp width
+        val at604FromCompact = DebugFormFactor.fromWindowDp(
+            widthDp = 604,
+            heightDp = 800,
+            previousFormFactor = DebugFormFactor.COMPACT
+        )
+        val at595FromFoldable = DebugFormFactor.fromWindowDp(
+            widthDp = 595,
+            heightDp = 800,
+            previousFormFactor = DebugFormFactor.FOLDABLE
+        )
+        assertThat(at604FromCompact).isEqualTo(DebugFormFactor.COMPACT)
+        assertThat(at595FromFoldable).isEqualTo(DebugFormFactor.FOLDABLE)
+
+        // UNKNOWN
+        assertThat(DebugFormFactor.fromWindowDp(0, 800)).isEqualTo(DebugFormFactor.UNKNOWN)
+        assertThat(DebugFormFactor.fromWindowDp(412, -1)).isEqualTo(DebugFormFactor.UNKNOWN)
     }
 
     @Test
@@ -391,13 +367,13 @@ class DebugLayoutReadoutTest {
                 state = DebugLayoutReadoutState(
                     widthDp = 800,
                     heightDp = 400,
-                    cameraLayoutMode = "COMPACT_HORIZONTAL"
+                    cameraLayoutMode = "COMPACT"
                 )
             )
         }
         composeTestRule.waitForIdle()
 
-        assertThat(readNodeText(DEBUG_LAYOUT_MODE_TAG)).isEqualTo("COMPACT_HORIZONTAL")
+        assertThat(readNodeText(DEBUG_LAYOUT_MODE_TAG)).isEqualTo("COMPACT")
     }
 
     private fun readNodeText(tag: String): String = composeTestRule

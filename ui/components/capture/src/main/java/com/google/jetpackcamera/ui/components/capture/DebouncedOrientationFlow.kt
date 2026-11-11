@@ -16,6 +16,8 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.content.Context
+import android.hardware.display.DisplayManager
+import android.view.Display
 import android.view.OrientationEventListener
 import android.view.OrientationEventListener.ORIENTATION_UNKNOWN
 import com.google.jetpackcamera.model.DeviceRotation
@@ -34,13 +36,16 @@ private const val ORIENTATION_HYSTERESIS = 5
 /**
  * A flow that emits the device's orientation, debounced to avoid rapid changes.
  *
- * @param context the application context
+ * Seeded by default with the current display rotation from [context] so that starting or restarting
+ * collection immediately reports the active rotation before the sensor delivers a new reading.
+ *
+ * @param context the application or display context
  * @param initialRotation the initial [DeviceRotation] emitted before the first valid sensor reading
  *   (and retained while the device is flat at [ORIENTATION_UNKNOWN]).
  */
 fun debouncedOrientationFlow(
     context: Context,
-    initialRotation: DeviceRotation = DeviceRotation.Natural
+    initialRotation: DeviceRotation = currentDeviceRotation(context)
 ) = callbackFlow {
     val orientationListener = object : OrientationEventListener(context) {
         override fun onOrientationChanged(orientation: Int) {
@@ -68,3 +73,11 @@ fun debouncedOrientationFlow(
             }
         }
     }.distinctUntilChanged()
+
+internal fun currentDeviceRotation(context: Context): DeviceRotation {
+    val surfaceRotation = context.getSystemService(DisplayManager::class.java)
+        ?.getDisplay(Display.DEFAULT_DISPLAY)
+        ?.rotation
+        ?: return DeviceRotation.Natural
+    return DeviceRotation.fromUiSurfaceRotation(surfaceRotation)
+}

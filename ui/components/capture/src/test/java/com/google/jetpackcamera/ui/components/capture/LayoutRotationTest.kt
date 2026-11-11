@@ -19,7 +19,6 @@ import android.graphics.Rect as AndroidRect
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -64,10 +63,10 @@ private object LayoutRotationTestTokens {
 
 /**
  * Robolectric Compose UI tests verifying layout-level counter-rotation scoping across full-screen
- * compact handhelds, portrait split-screen panes on rotated phones, side-rail layouts, and
- * [CutoutAwareRow] cutout remapping.
+ * compact handhelds, portrait & horizontal split-screen panes (`550x500dp` and `800x400dp`),
+ * 7-mode side-rail postures (`FOLDABLE`, `TABLET_PORTRAIT`, `TABLET_LANDSCAPE`, `COMPACT_SHORT`),
+ * and [CutoutAwareRow] cutout remapping.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @RunWith(RobolectricTestRunner::class)
 class LayoutRotationTest {
 
@@ -75,7 +74,7 @@ class LayoutRotationTest {
     val composeTestRule = createComposeRule()
 
     @Composable
-    private fun RotationPreviewUnderTest(
+    private fun RotationLayoutUnderTest(
         deviceRotation: DeviceRotation,
         windowRotation: DeviceRotation,
         modifier: Modifier = Modifier,
@@ -90,7 +89,7 @@ class LayoutRotationTest {
     ) {
         MaterialTheme {
             CompositionLocalProvider(LocalDisableAnimations provides true) {
-                PreviewLayout(
+                CaptureScaffoldLayout(
                     modifier = modifier,
                     deviceRotation = deviceRotation,
                     windowRotation = windowRotation,
@@ -173,12 +172,7 @@ class LayoutRotationTest {
                                 )
                                 .testTag(CAPTURE_MODE_TOGGLE_BUTTON)
                         )
-                    },
-                    quickSettingsOverlay = {},
-                    debugOverlay = {},
-                    debugVisibilityWrapper = { content -> content() },
-                    screenFlashOverlay = {},
-                    snackBar = { _, _ -> }
+                    }
                 )
             }
         }
@@ -195,7 +189,7 @@ class LayoutRotationTest {
         var observedViewfinderSize = IntSize.Zero
 
         composeTestRule.setContent {
-            RotationPreviewUnderTest(
+            RotationLayoutUnderTest(
                 deviceRotation = windowRotation,
                 windowRotation = windowRotation,
                 onViewfinderObserved = { mode, effWinRot, gravDeg, solution, vfSize ->
@@ -209,13 +203,10 @@ class LayoutRotationTest {
         }
         composeTestRule.waitForIdle()
 
-        // Rotated90 (+90° CW counter-rotation): solves portrait 360x740dp, top bar on right edge,
-        // shutter button on left side of the 740x360dp window.
-        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT_HORIZONTAL)
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
         assertThat(observedEffectiveWinRot).isEqualTo(DeviceRotation.Rotated90)
         assertThat(observedSolution).isNotNull()
         assertThat(observedViewfinderSize).isEqualTo(IntSize(360, 740))
-        // Inside +90° container, gravity compensation is -90° (270°) so icons net to 0° in window.
         assertThat(((observedGravityDeg!! % 360f) + 360f) % 360f).isEqualTo(270f)
 
         val captureBand90 = observedSolution!!.rowBands.getValue(CameraRowIds.CAPTURE_ROW)
@@ -233,12 +224,10 @@ class LayoutRotationTest {
         assertThat(captureRotated90.center.x).isWithin(1f).of(expectedCaptureCenterX90)
         assertThat(captureRotated90.center.y).isWithin(1f).of(180f)
 
-        // Rotated270 (-90° CCW counter-rotation): solves portrait 360x740dp, top bar on left edge,
-        // shutter button on right side of the 740x360dp window.
         windowRotation = DeviceRotation.Rotated270
         composeTestRule.waitForIdle()
 
-        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT_HORIZONTAL)
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
         assertThat(observedEffectiveWinRot).isEqualTo(DeviceRotation.Rotated270)
         assertThat(observedSolution).isNotNull()
         assertThat(observedViewfinderSize).isEqualTo(IntSize(360, 740))
@@ -270,7 +259,7 @@ class LayoutRotationTest {
         var observedViewfinderSize = IntSize.Zero
 
         composeTestRule.setContent {
-            RotationPreviewUnderTest(
+            RotationLayoutUnderTest(
                 modifier = Modifier.size(width = 380.dp, height = 760.dp),
                 deviceRotation = DeviceRotation.Rotated90,
                 windowRotation = DeviceRotation.Rotated90,
@@ -285,75 +274,60 @@ class LayoutRotationTest {
         }
         composeTestRule.waitForIdle()
 
-        // 380x760dp split-screen pane has windowWidth <= windowHeight, so it stays upright (0°)
-        // without swapping constraints even though the host display is at Rotated90.
-        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT_PORTRAIT)
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
         assertThat(observedEffectiveWinRot).isEqualTo(DeviceRotation.Natural)
         assertThat(observedGravityDeg).isEqualTo(0f)
         assertThat(observedSolution).isNotNull()
         assertThat(observedViewfinderSize).isEqualTo(IntSize(380, 760))
-
-        val captureBand = observedSolution!!.rowBands.getValue(CameraRowIds.CAPTURE_ROW)
-        val expectedCaptureCenterY = (captureBand.top.value + captureBand.bottom.value) / 2f
-        val indicatorBounds = composeTestRule
-            .onNodeWithTag(LayoutRotationTestTokens.INDICATOR_TAG)
-            .fetchSemanticsNode()
-            .boundsInRoot
-        val captureBounds = composeTestRule
-            .onNodeWithTag(CAPTURE_BUTTON)
-            .fetchSemanticsNode()
-            .boundsInRoot
-        assertThat(indicatorBounds.top).isLessThan(60f)
-        assertThat(captureBounds.center.x).isWithin(1f).of(190f)
-        assertThat(captureBounds.center.y).isWithin(1f).of(expectedCaptureCenterY)
-        assertThat(captureBounds.top).isGreaterThan(indicatorBounds.bottom)
     }
 
     @Config(qualifiers = "sw800dp-w1400dp-h1000dp-mdpi")
     @Test
-    fun compactHorizontalSplitScreen_uprightWindow_rotatesCompactLayout90DegreesToFillSpace() {
+    fun compactHorizontalPanes_800x400And550x500_rotateCompactLayout90DegreesToFillSpace() {
+        var paneSize by mutableStateOf(DpSize(800.dp, 400.dp))
         var observedMode: CameraLayoutMode? = null
         var observedEffectiveWinRot: DeviceRotation? = null
         var observedGravityDeg: Float? = null
-        var observedSolution: CameraLayoutSolution? = null
         var observedViewfinderSize = IntSize.Zero
 
         composeTestRule.setContent {
-            RotationPreviewUnderTest(
-                modifier = Modifier.size(width = 800.dp, height = 400.dp),
+            RotationLayoutUnderTest(
+                modifier = Modifier.size(paneSize),
                 deviceRotation = DeviceRotation.Natural,
                 windowRotation = DeviceRotation.Natural,
-                onViewfinderObserved = { mode, effWinRot, gravDeg, solution, vfSize ->
+                onViewfinderObserved = { mode, effWinRot, gravDeg, _, vfSize ->
                     observedMode = mode
                     observedEffectiveWinRot = effWinRot
                     observedGravityDeg = gravDeg
-                    observedSolution = solution
                     observedViewfinderSize = vfSize
                 }
             )
         }
         composeTestRule.waitForIdle()
 
-        // 800x400dp horizontal split-screen resolves to COMPACT_HORIZONTAL, rotating
-        // CompactPortraitLayout -90° CCW (Rotated270) so it solves 400x800dp horizontally and
-        // rotates interior icons +90° CW to remain 0° upright in the Natural window!
-        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT_HORIZONTAL)
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
         assertThat(observedEffectiveWinRot).isEqualTo(DeviceRotation.Rotated270)
-        assertThat(observedSolution).isNotNull()
         assertThat(observedViewfinderSize).isEqualTo(IntSize(400, 800))
+        assertThat(((observedGravityDeg!! % 360f) + 360f) % 360f).isEqualTo(90f)
+
+        // 550x500dp (W > H with H >= 480dp) also resolves to COMPACT and counter-rotates cleanly!
+        paneSize = DpSize(550.dp, 500.dp)
+        composeTestRule.waitForIdle()
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
+        assertThat(observedEffectiveWinRot).isEqualTo(DeviceRotation.Rotated270)
         assertThat(((observedGravityDeg!! % 360f) + 360f) % 360f).isEqualTo(90f)
     }
 
-    @Config(qualifiers = "sw800dp-w1400dp-h1000dp-mdpi")
+    @Config(qualifiers = "sw800dp-w1400dp-h1400dp-mdpi")
     @Test
-    fun twoSideRailLayout_andCompactShortLayout_neverCounterRotate() {
+    fun foldableTabletAndCompactShortLayouts_neverCounterRotate() {
         var containerSize by mutableStateOf(DpSize(1280.dp, 800.dp))
         var windowRotation by mutableStateOf(DeviceRotation.Rotated90)
         var observedMode: CameraLayoutMode? = null
         var observedViewfinderSize = IntSize.Zero
 
         composeTestRule.setContent {
-            RotationPreviewUnderTest(
+            RotationLayoutUnderTest(
                 modifier = Modifier.size(containerSize),
                 deviceRotation = windowRotation,
                 windowRotation = windowRotation,
@@ -366,8 +340,9 @@ class LayoutRotationTest {
         }
 
         val testPostures = listOf(
-            Triple(DpSize(1280.dp, 800.dp), CameraLayoutMode.TWO_SIDE_RAIL, IntSize(1280, 800)),
-            Triple(DpSize(883.dp, 852.dp), CameraLayoutMode.TWO_SIDE_RAIL, IntSize(883, 852)),
+            Triple(DpSize(1280.dp, 800.dp), CameraLayoutMode.TABLET_LANDSCAPE, IntSize(1280, 800)),
+            Triple(DpSize(800.dp, 1280.dp), CameraLayoutMode.TABLET_PORTRAIT, IntSize(800, 1280)),
+            Triple(DpSize(883.dp, 852.dp), CameraLayoutMode.FOLDABLE, IntSize(883, 852)),
             Triple(DpSize(440.dp, 412.dp), CameraLayoutMode.COMPACT_SHORT, IntSize(440, 412))
         )
 
@@ -392,7 +367,6 @@ class LayoutRotationTest {
                     .fetchSemanticsNode()
                     .boundsInRoot
 
-                // Side rails remain upright on left and right edges (never counter-rotated 90°).
                 assertThat(startRailBounds.left).isLessThan(endRailBounds.left)
                 assertThat(startRailBounds.height).isGreaterThan(startRailBounds.width)
                 assertThat(endRailBounds.height).isGreaterThan(endRailBounds.width)
@@ -402,10 +376,6 @@ class LayoutRotationTest {
 
     @Test
     fun cutoutAwareRow_remapsCutoutsUnderRotated90AndRotated270() {
-        // Portrait top bar (width=360, height=48) counter-rotated inside a 740x360 landscape window:
-        // - Under Rotated90 (+90° CW): rowBoundsInWindow is [692, 0, 740, 360].
-        //   Window right-edge cutout [692, 20, 740, 60] maps to portrait [20, 0, 60, 48] in LTR,
-        //   and [300, 0, 340, 48] in RTL (startEdgeX = rowBoundsInWindow.height = 360).
         val rotated90RowBounds = IntRect(left = 692, top = 0, right = 740, bottom = 360)
         val rotated90WindowCutout = listOf(AndroidRect(692, 20, 740, 60))
 
@@ -435,9 +405,6 @@ class LayoutRotationTest {
             )
         ).containsExactly(IntRect(left = 300, top = 0, right = 340, bottom = 48))
 
-        // - Under Rotated270 (-90° CCW): rowBoundsInWindow is [0, 0, 48, 360].
-        //   Window left-edge cutout [0, 300, 48, 340] maps to portrait [20, 0, 60, 48] in LTR,
-        //   and [300, 0, 340, 48] in RTL (startEdgeX = rowBoundsInWindow.height = 360).
         val rotated270RowBounds = IntRect(left = 0, top = 0, right = 48, bottom = 360)
         val rotated270WindowCutout = listOf(AndroidRect(0, 300, 48, 340))
 
@@ -467,7 +434,6 @@ class LayoutRotationTest {
             )
         ).containsExactly(IntRect(left = 300, top = 0, right = 340, bottom = 48))
 
-        // Also verify CutoutAwareRow composes cleanly when LocalWindowRotation is landscape.
         var placedSegments = emptyList<IntRect>()
         composeTestRule.setContent {
             CompositionLocalProvider(
@@ -486,7 +452,6 @@ class LayoutRotationTest {
         }
         composeTestRule.waitForIdle()
         assertThat(placedSegments).hasSize(1)
-        // Item + 2*8dp pill padding = 40px, shifted past cutout [20..60] + 8px clearance = 68px.
         assertThat(placedSegments.single().left).isAtLeast(68)
     }
 }

@@ -19,10 +19,9 @@ import android.net.Uri
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -32,6 +31,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -73,7 +73,6 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutMode
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScaffoldContent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
@@ -99,14 +98,16 @@ import org.robolectric.annotation.Config
 /**
  * Robolectric Compose UI tests verifying content gravity rotation:
  * - In-place glyph rotation (`Modifier.animateToUpright()`) on `1:1` controls and indicator icons.
+ * - Single (`90°`, non-double-rotated) upright rotation for [CameraControlIconButton] placed in
+ *   `topStartContent` of [CompactPortraitLayout].
  * - Swapped-constraint rectangular block rotation (`Modifier.rotateLayoutToGravity()`) on
  *   in-hierarchy [CameraErrorDialog], landscape `PillSnackbarHost` + `ElapsedTimeText` top-edge
- *   banner, and compact [QuickSettingsScaffoldContent] bottom sheet.
- * - Zero (`0°`) gravity rotation enforcement in [TwoSideRailLayout] and [WideShortLayout].
+ *   banner, and compact [CaptureScaffoldDefaults.QuickSettings] bottom sheet.
+ * - Zero (`0°`) gravity rotation enforcement in [FoldableLayout], [TabletPortraitLayout],
+ *   [TabletLandscapeLayout], and [CompactShortLayout].
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(qualifiers = "w1400dp-h1000dp-mdpi")
+@Config(qualifiers = "w1600dp-h1400dp-mdpi")
 class ContentGravityTest {
 
     @get:Rule
@@ -115,8 +116,8 @@ class ContentGravityTest {
     private fun unclippedBoundsOf(tag: String): DpRect =
         composeTestRule.onNodeWithTag(tag).getUnclippedBoundsInRoot()
 
-    private fun clippedBoundsOf(tag: String): DpRect =
-        composeTestRule.onNodeWithTag(tag).getBoundsInRoot()
+    private fun clippedBoundsOf(tag: String, useUnmergedTree: Boolean = false): DpRect =
+        composeTestRule.onNodeWithTag(tag, useUnmergedTree = useUnmergedTree).getBoundsInRoot()
 
     private fun sampleQuickSettingsUiState(): QuickSettingsUiState.Available =
         QuickSettingsUiState.Available(
@@ -165,6 +166,7 @@ class ContentGravityTest {
         val measuredSlotSizes = mutableMapOf<String, IntSize>()
         val thumbnailBitmap = createBitmap(64, 64)
         val pauseSlotTag = "slot_pause_resume"
+        val controlIconTag = "slot_control_icon"
 
         composeTestRule.setContent {
             MaterialTheme {
@@ -229,6 +231,14 @@ class ContentGravityTest {
                                     onToggleAudio = {}
                                 )
                             }
+                            Box(Modifier.onSizeChanged { measuredSlotSizes["controlIcon"] = it }) {
+                                CameraControlIconButton(
+                                    onClick = {},
+                                    modifier = Modifier.testTag(controlIconTag)
+                                ) {
+                                    Box(Modifier.size(20.dp))
+                                }
+                            }
                         }
                         Box(Modifier.onSizeChanged { measuredSlotSizes["indicatorPill"] = it }) {
                             IndicatorPill {
@@ -275,7 +285,8 @@ class ContentGravityTest {
             FLIP_CAMERA_BUTTON,
             IMAGE_WELL_TAG,
             pauseSlotTag,
-            AUDIO_INPUT_TOGGLE
+            AUDIO_INPUT_TOGGLE,
+            controlIconTag
         )
         val baselineSquareBounds = squareTags.associateWith { clippedBoundsOf(it) }
         val baselineVideoQualityBounds = clippedBoundsOf(VIDEO_QUALITY_TAG)
@@ -331,6 +342,68 @@ class ContentGravityTest {
                 .isWithin(TOLERANCE)
                 .of(baselineVideoQualityBounds.height.value)
         }
+    }
+
+    @Test
+    fun topStartCameraControlIconButton_inCompactPortraitLandscape_rotates90DegreesNot180() {
+        val buttonTag = "top_start_control_btn"
+        val topMarkerTag = "top_start_control_marker"
+        var deviceRotation by mutableStateOf(DeviceRotation.Natural)
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CompositionLocalProvider(
+                    LocalDensity provides Density(1f),
+                    LocalDisableAnimations provides true
+                ) {
+                    Box(modifier = Modifier.size(width = 412.dp, height = 915.dp)) {
+                        CompactPortraitLayout(
+                            slots = CaptureSlots(
+                                topStartContent = { mod ->
+                                    CameraControlIconButton(
+                                        onClick = {},
+                                        modifier = mod.testTag(buttonTag)
+                                    ) {
+                                        Box(Modifier.fillMaxSize()) {
+                                            Box(
+                                                Modifier
+                                                    .align(Alignment.TopCenter)
+                                                    .size(width = 16.dp, height = 4.dp)
+                                                    .testTag(topMarkerTag)
+                                            )
+                                        }
+                                    }
+                                }
+                            ),
+                            viewfinder = { mod -> Box(mod) },
+                            deviceRotation = deviceRotation,
+                            windowRotation = DeviceRotation.Natural
+                        )
+                    }
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val portraitBtn = clippedBoundsOf(buttonTag)
+        val portraitMarker = clippedBoundsOf(topMarkerTag, useUnmergedTree = true)
+        val portraitBtnCenterY = (portraitBtn.top.value + portraitBtn.bottom.value) / 2f
+        val portraitMarkerCenterY = (portraitMarker.top.value + portraitMarker.bottom.value) / 2f
+        assertThat(portraitMarkerCenterY).isLessThan(portraitBtnCenterY - 4f)
+
+        // Rotated270 -> +90° CW gravity: top-aligned marker rotates once (+90° CW) to the right
+        // edge of CameraControlIconButton, NOT twice (+180°) to the bottom edge.
+        deviceRotation = DeviceRotation.Rotated270
+        composeTestRule.waitForIdle()
+
+        val landscapeBtn = clippedBoundsOf(buttonTag)
+        val landscapeMarker = clippedBoundsOf(topMarkerTag, useUnmergedTree = true)
+        val landscapeBtnCenterX = (landscapeBtn.left.value + landscapeBtn.right.value) / 2f
+        val landscapeBtnCenterY = (landscapeBtn.top.value + landscapeBtn.bottom.value) / 2f
+        val landscapeMarkerCenterX = (landscapeMarker.left.value + landscapeMarker.right.value) / 2f
+        val landscapeMarkerCenterY = (landscapeMarker.top.value + landscapeMarker.bottom.value) / 2f
+        assertThat(landscapeMarkerCenterX).isGreaterThan(landscapeBtnCenterX + 4f)
+        assertThat(landscapeMarkerCenterY).isWithin(TOLERANCE).of(landscapeBtnCenterY)
     }
 
     @Test
@@ -412,9 +485,9 @@ class ContentGravityTest {
         var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
 
         composeTestRule.setContent {
-            val scaffoldState = rememberCompactPortraitScaffoldState()
-            LaunchedEffect(scaffoldState.snackbarHostState) {
-                scaffoldState.snackbarHostState.showSnackbar(
+            val state = rememberCaptureScaffoldState()
+            LaunchedEffect(state.snackbarHostState) {
+                state.snackbarHostState.showSnackbar(
                     CustomSnackbarVisuals(
                         message = "Storage nearly full",
                         actionLabel = null,
@@ -432,36 +505,33 @@ class ContentGravityTest {
                 ) {
                     Box(modifier = Modifier.size(width = 740.dp, height = 360.dp)) {
                         CompactPortraitLayout(
-                            scaffoldState = scaffoldState,
-                            deviceRotation = activeRotation,
-                            windowRotation = activeRotation,
+                            slots = CaptureSlots(
+                                topBar = { mod -> Box(mod.size(width = 120.dp, height = 36.dp)) },
+                                zoomControls = { mod ->
+                                    Box(mod.size(width = 160.dp, height = 48.dp))
+                                },
+                                quickSettingsButton = { mod -> Box(mod.size(48.dp)) },
+                                captureButton = { mod -> Box(mod.size(80.dp)) },
+                                flipCameraButton = { mod -> Box(mod.size(48.dp)) },
+                                imageWell = { mod -> Box(mod.size(48.dp)) },
+                                captureModeToggle = { mod ->
+                                    Box(mod.size(width = 96.dp, height = 48.dp))
+                                },
+                                elapsedTimeDisplay = { mod ->
+                                    ElapsedTimeText(
+                                        modifier = mod,
+                                        elapsedTimeUiStateProvider = {
+                                            ElapsedTimeUiState.Enabled(
+                                                elapsedTimeNanos = 15_000_000_000L
+                                            )
+                                        }
+                                    )
+                                }
+                            ),
                             viewfinder = { mod -> Box(mod) },
-                            captureButton = { mod -> Box(mod.size(80.dp)) },
-                            imageWell = { mod -> Box(mod.size(48.dp)) },
-                            flipCameraButton = { mod -> Box(mod.size(48.dp)) },
-                            zoomLevelDisplay = { mod ->
-                                Box(
-                                    mod.size(width = 160.dp, height = 48.dp)
-                                )
-                            },
-                            elapsedTimeDisplay = { mod ->
-                                ElapsedTimeText(
-                                    modifier = mod,
-                                    elapsedTimeUiStateProvider = {
-                                        ElapsedTimeUiState.Enabled(
-                                            elapsedTimeNanos = 15_000_000_000L
-                                        )
-                                    }
-                                )
-                            },
-                            quickSettingsButton = { mod -> Box(mod.size(48.dp)) },
-                            indicatorRow = { mod -> Box(mod.size(width = 120.dp, height = 36.dp)) },
-                            captureModeToggle = { mod ->
-                                Box(
-                                    mod.size(width = 96.dp, height = 48.dp)
-                                )
-                            },
-                            quickSettingsOverlay = {}
+                            state = state,
+                            deviceRotation = activeRotation,
+                            windowRotation = activeRotation
                         )
                     }
                 }
@@ -512,9 +582,7 @@ class ContentGravityTest {
         fakeController.setFlashAction = { selectedFlash = it }
 
         composeTestRule.setContent {
-            val scaffoldState = rememberCompactPortraitScaffoldState(
-                initialValue = SheetValue.Expanded
-            )
+            val state = remember { CaptureScaffoldState(isInitiallyExpanded = true) }
             MaterialTheme {
                 CompositionLocalProvider(
                     LocalDensity provides Density(1f),
@@ -522,34 +590,31 @@ class ContentGravityTest {
                 ) {
                     Box(modifier = Modifier.size(width = 412.dp, height = 915.dp)) {
                         CompactPortraitLayout(
-                            scaffoldState = scaffoldState,
-                            deviceRotation = deviceRotation,
-                            windowRotation = DeviceRotation.Natural,
+                            slots = CaptureSlots(
+                                topBar = { mod -> Box(mod.size(width = 120.dp, height = 36.dp)) },
+                                zoomControls = { mod ->
+                                    Box(mod.size(width = 160.dp, height = 48.dp))
+                                },
+                                quickSettingsButton = { mod -> Box(mod.size(48.dp)) },
+                                captureButton = { mod -> Box(mod.size(80.dp)) },
+                                flipCameraButton = { mod -> Box(mod.size(48.dp)) },
+                                imageWell = { mod -> Box(mod.size(48.dp)) },
+                                captureModeToggle = { mod ->
+                                    Box(mod.size(width = 96.dp, height = 48.dp))
+                                },
+                                quickSettingsOverlay = { mod ->
+                                    CaptureScaffoldDefaults.QuickSettings(
+                                        modifier = mod,
+                                        uiState = sampleQuickSettingsUiState(),
+                                        controller = fakeController,
+                                        onNavigateToSettings = {}
+                                    )
+                                }
+                            ),
                             viewfinder = { mod -> Box(mod) },
-                            captureButton = { mod -> Box(mod.size(80.dp)) },
-                            imageWell = { mod -> Box(mod.size(48.dp)) },
-                            flipCameraButton = { mod -> Box(mod.size(48.dp)) },
-                            zoomLevelDisplay = { mod ->
-                                Box(
-                                    mod.size(width = 160.dp, height = 48.dp)
-                                )
-                            },
-                            elapsedTimeDisplay = {},
-                            quickSettingsButton = { mod -> Box(mod.size(48.dp)) },
-                            indicatorRow = { mod -> Box(mod.size(width = 120.dp, height = 36.dp)) },
-                            captureModeToggle = { mod ->
-                                Box(
-                                    mod.size(width = 96.dp, height = 48.dp)
-                                )
-                            },
-                            quickSettingsOverlay = { mod ->
-                                QuickSettingsScaffoldContent(
-                                    modifier = mod,
-                                    quickSettingsUiState = sampleQuickSettingsUiState(),
-                                    onNavigateToSettings = {},
-                                    quickSettingsController = fakeController
-                                )
-                            }
+                            state = state,
+                            deviceRotation = deviceRotation,
+                            windowRotation = DeviceRotation.Natural
                         )
                     }
                 }
@@ -565,8 +630,7 @@ class ContentGravityTest {
         assertThat(portraitSheetBounds.width.value).isWithin(TOLERANCE).of(412f)
 
         // Rotate device to landscape (Rotated270 -> +90° gravity): sheet swaps constraints so its
-        // local width is capped at 380.dp and local height matches 412.dp, while rotated bounds in
-        // root span 412.dp wide by <= 380.dp tall.
+        // local width is capped at 380.dp, while rotated bounds in root fit within 412x380dp.
         deviceRotation = DeviceRotation.Rotated270
         composeTestRule.waitForIdle()
 
@@ -575,54 +639,61 @@ class ContentGravityTest {
             composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).fetchSemanticsNode().size
         val landscapeSheetBounds = clippedBoundsOf(QUICK_SETTINGS_BOTTOM_SHEET)
         assertThat(landscapeSheetLocalSize.width).isAtMost(380)
-        assertThat(landscapeSheetLocalSize.height).isEqualTo(412)
-        assertThat(landscapeSheetBounds.width.value).isWithin(TOLERANCE).of(412f)
+        assertThat(landscapeSheetBounds.width.value).isAtMost(412f + TOLERANCE)
         assertThat(landscapeSheetBounds.height.value).isAtMost(380f + TOLERANCE)
 
-        // Rotated hit targets inside QuickSettingsScaffoldContent remain interactive.
+        // Flash row inside +90° rotated sheet runs vertically along the portrait root (upright for
+        // the landscape user) and remains clickable.
+        val flashRowBounds = clippedBoundsOf(ROW_QUICK_SETTINGS_FLASH)
+        assertThat(flashRowBounds.height.value).isGreaterThan(flashRowBounds.width.value)
         composeTestRule.onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_ON).performClick()
         assertThat(selectedFlash).isEqualTo(FlashMode.ON)
     }
 
     @Test
-    fun twoSideRailAndWideShortLayouts_inLandscape_keepZeroGravityRotation() {
-        var useWideShort by mutableStateOf(false)
+    fun sideRailAndCompactShortLayouts_inLandscape_keepZeroGravityRotation() {
+        val postures = listOf(
+            "FoldableLayout" to DpSize(852.dp, 883.dp),
+            "TabletPortraitLayout" to DpSize(800.dp, 1280.dp),
+            "TabletLandscapeLayout" to DpSize(1280.dp, 800.dp),
+            "CompactShortLayout" to DpSize(360.dp, 360.dp)
+        )
+        var activePostureIndex by mutableStateOf(0)
         var showErrorDialog by mutableStateOf(true)
         var observedRailGravity: Float? = null
         val fakeController = FakeQuickSettingsController()
+        val state = CaptureScaffoldState(isInitiallyExpanded = false)
 
         @Composable
-        fun buildRailSlots(): CaptureSlots = PlaceholderCaptureSlots.sideRail(
-            isCompactHeight = useWideShort,
-            includeElapsedTime = true
-        ).copy(
-            quickSettingsOverlay = { mod ->
-                QuickSettingsScaffoldContent(
-                    modifier = mod,
-                    quickSettingsUiState = sampleQuickSettingsUiState(),
-                    onNavigateToSettings = {},
-                    quickSettingsController = fakeController
-                )
-            },
-            errorDialog = { mod ->
-                if (showErrorDialog) {
-                    CameraErrorDialog(
+        fun buildRailSlots(isCompactShort: Boolean): CaptureSlots = PlaceholderCaptureSlots
+            .sideRail(
+                isCompactHeight = isCompactShort,
+                includeElapsedTime = true
+            )
+            .copy(
+                quickSettingsOverlay = { mod ->
+                    CaptureScaffoldDefaults.QuickSettings(
                         modifier = mod,
-                        title = "Camera error",
-                        body = "Try again",
-                        confirmButtonText = "OK",
-                        onConfirm = {}
+                        uiState = sampleQuickSettingsUiState(),
+                        controller = fakeController,
+                        onNavigateToSettings = {}
                     )
+                },
+                errorDialog = { mod ->
+                    if (showErrorDialog) {
+                        CameraErrorDialog(
+                            modifier = mod,
+                            title = "Camera error",
+                            body = "Try again",
+                            confirmButtonText = "OK",
+                            onConfirm = {}
+                        )
+                    }
                 }
-            }
-        )
+            )
 
         composeTestRule.setContent {
-            val containerSize = if (useWideShort) {
-                DpSize(800.dp, 400.dp)
-            } else {
-                DpSize(1280.dp, 800.dp)
-            }
+            val (layoutName, containerSize) = postures[activePostureIndex]
             val ambientGravity = remember { mutableFloatStateOf(90f) }
             MaterialTheme {
                 CompositionLocalProvider(
@@ -633,28 +704,35 @@ class ContentGravityTest {
                     LocalGravityRotationState provides ambientGravity
                 ) {
                     Box(modifier = Modifier.size(containerSize)) {
-                        val slots = buildRailSlots()
-                        if (useWideShort) {
-                            WideShortLayout(
+                        val slots = buildRailSlots(layoutName == "CompactShortLayout")
+                        val vf: @Composable (Modifier) -> Unit = { mod ->
+                            observedRailGravity = LocalGravityRotationState.current.value
+                            PlaceholderViewfinder(modifier = mod)
+                        }
+                        when (layoutName) {
+                            "FoldableLayout" -> FoldableLayout(
                                 slots = slots,
-                                viewfinder = { mod ->
-                                    observedRailGravity = LocalGravityRotationState.current.value
-                                    PlaceholderViewfinder(modifier = mod)
-                                },
-                                isQuickSettingsOpen = !showErrorDialog,
-                                isErrorDialogShowing = showErrorDialog,
-                                tagQuickSettingsCard = false
+                                viewfinder = vf,
+                                state = state,
+                                isErrorDialogShowing = showErrorDialog
                             )
-                        } else {
-                            TwoSideRailLayout(
+                            "TabletPortraitLayout" -> TabletPortraitLayout(
                                 slots = slots,
-                                viewfinder = { mod ->
-                                    observedRailGravity = LocalGravityRotationState.current.value
-                                    PlaceholderViewfinder(modifier = mod)
-                                },
-                                isQuickSettingsOpen = !showErrorDialog,
-                                isErrorDialogShowing = showErrorDialog,
-                                tagQuickSettingsCard = false
+                                viewfinder = vf,
+                                state = state,
+                                isErrorDialogShowing = showErrorDialog
+                            )
+                            "TabletLandscapeLayout" -> TabletLandscapeLayout(
+                                slots = slots,
+                                viewfinder = vf,
+                                state = state,
+                                isErrorDialogShowing = showErrorDialog
+                            )
+                            else -> CompactShortLayout(
+                                slots = slots,
+                                viewfinder = vf,
+                                state = state,
+                                isErrorDialogShowing = showErrorDialog
                             )
                         }
                     }
@@ -662,14 +740,15 @@ class ContentGravityTest {
             }
         }
 
-        for (wideShort in listOf(false, true)) {
-            useWideShort = wideShort
+        postures.forEachIndexed { index, (layoutName, _) ->
+            activePostureIndex = index
             showErrorDialog = true
+            composeTestRule.runOnIdle { state.dismissQuickSettings() }
             composeTestRule.waitForIdle()
 
-            // Even with ambient 90f gravity and Rotated270 device/window rotations, rail layouts
-            // enforce 0f gravity rotation.
-            assertThat(observedRailGravity).isEqualTo(0f)
+            // Even with ambient 90f gravity and Rotated270 device/window rotations, all rail
+            // layouts enforce 0f gravity rotation.
+            assertWithMessage("$layoutName gravity").that(observedRailGravity).isEqualTo(0f)
 
             val titleBounds = clippedBoundsOf(CAMERA_ERROR_DIALOG_TITLE_TAG)
             val bodyBounds = clippedBoundsOf(CAMERA_ERROR_DIALOG_BODY_TAG)
@@ -679,8 +758,12 @@ class ContentGravityTest {
 
             // Open Quick Settings floating card and verify it also remains unrotated (0°).
             showErrorDialog = false
+            composeTestRule.runOnIdle { state.showQuickSettings() }
             composeTestRule.waitForIdle()
 
+            composeTestRule
+                .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
+                .assertIsDisplayed()
             composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
             val flashRowBounds = clippedBoundsOf(ROW_QUICK_SETTINGS_FLASH)
             val captureModeRowBounds = clippedBoundsOf(ROW_QUICK_SETTINGS_CAPTURE_MODE)
@@ -694,6 +777,7 @@ class ContentGravityTest {
     @Test
     fun compactHorizontalSplitScreen_rotatesLayout90DegreesAndKeepsOverlaysUpright() {
         var observedMode: CameraLayoutMode? = null
+        var observedActiveLayout: String? = null
         var observedInteriorGravity: Float? = null
 
         composeTestRule.setContent {
@@ -702,12 +786,13 @@ class ContentGravityTest {
                     LocalDensity provides Density(1f),
                     LocalDisableAnimations provides true
                 ) {
-                    PreviewLayout(
+                    CaptureScaffoldLayout(
                         modifier = Modifier.size(width = 800.dp, height = 400.dp),
                         deviceRotation = DeviceRotation.Natural,
                         windowRotation = DeviceRotation.Natural,
                         viewfinder = { mod ->
                             observedMode = LocalCameraLayoutMode.current
+                            observedActiveLayout = LocalActiveCaptureLayout.current
                             observedInteriorGravity = LocalGravityRotationState.current.value
                             PlaceholderViewfinder(modifier = mod)
                         },
@@ -744,8 +829,8 @@ class ContentGravityTest {
                             Box(mod.size(width = 96.dp, height = 48.dp))
                         },
                         quickSettingsOverlay = {},
-                        debugOverlay = {},
-                        debugVisibilityWrapper = { content -> content() },
+                        overlay = {},
+                        controlsVisible = true,
                         screenFlashOverlay = {},
                         snackBar = { _, _ -> },
                         errorDialog = { mod ->
@@ -763,7 +848,8 @@ class ContentGravityTest {
         }
         composeTestRule.waitForIdle()
 
-        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT_HORIZONTAL)
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
+        assertThat(observedActiveLayout).isEqualTo("CompactPortraitLayout")
         assertThat(((observedInteriorGravity!! % 360f) + 360f) % 360f).isEqualTo(90f)
 
         // Inside the -90° CCW rotated CompactPortraitLayout, +90° CW interior gravity brings

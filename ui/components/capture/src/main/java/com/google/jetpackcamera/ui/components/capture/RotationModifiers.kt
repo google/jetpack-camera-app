@@ -54,7 +54,10 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.model.DeviceRotation
 import kotlin.math.roundToInt
 
@@ -138,7 +141,26 @@ private fun readCurrentDisplayRotation(view: View, context: Context): DeviceRota
     val surfaceRotation = runCatching {
         (view.display ?: ContextCompat.getDisplayOrDefault(context)).rotation
     }.getOrDefault(Surface.ROTATION_0)
-    return DeviceRotation.fromSurfaceRotation(surfaceRotation)
+    return DeviceRotation.fromUiSurfaceRotation(surfaceRotation)
+}
+
+/**
+ * Collects [debouncedOrientationFlow] while the current [LocalLifecycleOwner] is at least
+ * [Lifecycle.State.STARTED], returning the latest physical [DeviceRotation] relative to gravity.
+ */
+@Composable
+fun rememberDeviceRotation(): DeviceRotation {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    var deviceRotation by remember { mutableStateOf(currentDeviceRotation(context)) }
+    LaunchedEffect(context, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            debouncedOrientationFlow(context).collect { rotation ->
+                deviceRotation = rotation
+            }
+        }
+    }
+    return deviceRotation
 }
 
 /**
