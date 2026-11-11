@@ -18,6 +18,10 @@ package com.google.jetpackcamera.settings
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.TARGET_FPS_30
+import com.google.jetpackcamera.model.TARGET_FPS_60
+import com.google.jetpackcamera.model.TARGET_FPS_AUTO
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.OptionVisibility
@@ -170,5 +174,29 @@ class LocalSettingsRepositoryTest {
         val current = repository.defaultCameraAppSettings.first()
         // THREE_FOUR is not in {1:1, 9:16}, so falls back to developer default (1:1)
         assertThat(current.aspectRatio).isEqualTo(AspectRatio.ONE_ONE)
+    }
+
+    @Test
+    fun stabilizationModeAndTargetFrameRate_enforcedByPolicy() = runTest {
+        val storedSettings = CameraAppSettings(
+            stabilizationMode = StabilizationMode.ON,
+            targetFrameRate = TARGET_FPS_60
+        )
+        val dataSource = FakeSettingsDataSource(initialSettings = storedSettings)
+        val policy = CameraFeaturePolicy(
+            stabilizationMode = SettingConfig(
+                defaultValue = StabilizationMode.OFF,
+                visibility = OptionVisibility.Hidden
+            ),
+            targetFrameRate = SettingConfig(
+                defaultValue = TARGET_FPS_AUTO,
+                visibility = OptionVisibility.Only(setOf(TARGET_FPS_AUTO, TARGET_FPS_30))
+            )
+        )
+        val repository = LocalSettingsRepository(dataSource, policy)
+
+        val current = repository.defaultCameraAppSettings.first()
+        assertThat(current.stabilizationMode).isEqualTo(StabilizationMode.OFF)
+        assertThat(current.targetFrameRate).isEqualTo(TARGET_FPS_AUTO)
     }
 }

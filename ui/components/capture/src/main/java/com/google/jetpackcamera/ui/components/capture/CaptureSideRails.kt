@@ -19,6 +19,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,9 +32,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.math.roundToInt
+
+/**
+ * Minimum intrinsic rail width shared by [StartSideRail] and [EndSideRail] before adding outer
+ * posture horizontal padding.
+ */
+internal val MinSideRailWidth = 72.dp
 
 private object Tokens {
-    val MinRailWidth = 72.dp
     val HorizontalPadding = 8.dp
     val StandardVerticalPadding = 16.dp
     val CompactVerticalPadding = 8.dp
@@ -43,6 +51,7 @@ private object Tokens {
     val CompactShutterClusterGap = 20.dp
 
     val PreviewStandardRailHeight = 800.dp
+    val PreviewTabletPortraitRailHeight = 1280.dp
     val PreviewCompactRailHeight = 360.dp
     val PreviewBackgroundColor = Color(0xFF121212)
 }
@@ -56,64 +65,72 @@ private enum class RailSectionId {
 private enum class ShutterClusterSlotId {
     FlipCamera,
     Capture,
-    ImageWell,
-    PauseToggle
+    ImageWell
 }
 
 /**
- * Start-aligned vertical control rail for landscape, tabletop, and large-screen capture layouts.
+ * Start-aligned vertical control rail for landscape, foldable, and tablet capture layouts.
  *
- * Tagged with [START_SIDE_RAIL_TAG] and provides a vertical [CaptureSlotScope] to its children.
- * Stacks [CaptureSlots.indicatorColumn] at the top, [CaptureSlots.zoomControls] in the center, and
- * [CaptureSlots.quickSettingsButton] at the bottom in strict top-to-bottom order across both LTR
- * and RTL locales while preserving the caller's `LocalLayoutDirection` inside each child slot.
+ * Tagged with [START_SIDE_RAIL_TAG] and provides a vertical [PreviewOverlaySlotScope] (propagating
+ * [Orientation.Vertical] and [isCompactHeight] to [CaptureSlotScope]) to its children. Stacks
+ * [CaptureSlots.topBar] at the top, [CaptureSlots.zoomControls] in the center (at
+ * [centerVerticalFraction]), and [CaptureSlots.quickSettingsButton] at the bottom in strict
+ * top-to-bottom order across both LTR and RTL locales while preserving the caller's
+ * `LocalLayoutDirection` inside each child slot.
  *
  * @param slots [CaptureSlots] supplying the indicator, zoom, and Quick Settings controls.
  * @param modifier [Modifier] applied to the rail container.
  * @param isCompactHeight Whether compact vertical padding, section gaps, and slot sizing hints are
  *   enabled for short windows.
- * @param isRecording Whether an active video recording session is in progress.
- * @param onDismissQuickSettings Callback propagated to [CaptureSlotScope.dismissQuickSettings].
+ * @param topPadding Top inset inside the rail before the top indicator section.
+ * @param bottomPadding Bottom inset inside the rail below the Quick Settings button.
+ * @param horizontalPadding Horizontal padding applied on both sides of the rail content.
+ * @param minSectionGap Minimum collision-free vertical gap enforced between adjacent sections.
+ * @param centerVerticalFraction Target vertical midpoint fraction (`0f..1f`) for the center zoom
+ *   section (`0.5f` for vertically centered rails; `0.70f` for tall portrait tablet thumb zones),
+ *   clamped within the remaining collision-free range between top and bottom sections.
  */
 @Composable
-fun StartSideRail(
+internal fun StartSideRail(
     slots: CaptureSlots,
     modifier: Modifier = Modifier,
     isCompactHeight: Boolean = false,
-    isRecording: Boolean = false,
-    onDismissQuickSettings: () -> Unit = {}
-) {
-    val verticalPadding = if (isCompactHeight) {
+    topPadding: Dp = if (isCompactHeight) {
         Tokens.CompactVerticalPadding
     } else {
         Tokens.StandardVerticalPadding
-    }
-    val minSectionGap = if (isCompactHeight) {
+    },
+    bottomPadding: Dp = if (isCompactHeight) {
+        Tokens.CompactVerticalPadding
+    } else {
+        Tokens.StandardVerticalPadding
+    },
+    horizontalPadding: Dp = Tokens.HorizontalPadding,
+    minSectionGap: Dp = if (isCompactHeight) {
         Tokens.CompactMinSectionGap
     } else {
         Tokens.StandardMinSectionGap
-    }
-
+    },
+    centerVerticalFraction: Float = 0.5f
+) {
     VerticalRailLayout(
         modifier = modifier.testTag(START_SIDE_RAIL_TAG),
-        verticalPadding = verticalPadding,
-        horizontalPadding = Tokens.HorizontalPadding,
+        topPadding = topPadding,
+        bottomPadding = bottomPadding,
+        horizontalPadding = horizontalPadding,
         minSectionGap = minSectionGap,
+        centerVerticalFraction = centerVerticalFraction,
         topContent = {
             OverlapAwareCaptureSlot(
                 orientation = Orientation.Vertical,
                 isCompact = isCompactHeight,
-                isRecording = isRecording,
-                onDismissQuickSettings = onDismissQuickSettings,
-                content = slots.indicatorColumn
+                content = slots.topBar
             )
         },
         centerContent = {
             OverlapAwareCaptureSlot(
                 orientation = Orientation.Vertical,
                 isCompact = isCompactHeight,
-                isRecording = isRecording,
-                onDismissQuickSettings = onDismissQuickSettings,
                 content = slots.zoomControls
             )
         },
@@ -121,8 +138,6 @@ fun StartSideRail(
             OverlapAwareCaptureSlot(
                 orientation = Orientation.Vertical,
                 isCompact = isCompactHeight,
-                isRecording = isRecording,
-                onDismissQuickSettings = onDismissQuickSettings,
                 content = slots.quickSettingsButton
             )
         }
@@ -130,86 +145,79 @@ fun StartSideRail(
 }
 
 /**
- * End-aligned vertical shutter and mode-selection rail for landscape, tabletop, and large-screen
- * capture layouts.
+ * End-aligned vertical shutter and mode-selection rail for landscape, foldable, and tablet capture
+ * layouts.
  *
- * Tagged with [END_SIDE_RAIL_TAG] and provides a vertical [CaptureSlotScope] to its children.
- * Places [CaptureSlots.elapsedTimeDisplay] at the top when [showElapsedTimeInRail] is `true`,
- * renders either [CaptureSlots.shutterStack] or a collision-free vertical cluster of
- * `flipCameraButton -> captureButton -> imageWell -> pauseToggleButton` in the center, and anchors
- * [CaptureSlots.captureModeToggle] at the bottom in strict top-to-bottom order across both LTR and
- * RTL locales.
+ * Tagged with [END_SIDE_RAIL_TAG] and provides a vertical [PreviewOverlaySlotScope] (propagating
+ * [Orientation.Vertical] and [isCompactHeight] to [CaptureSlotScope]) to its children. Places
+ * [CaptureSlots.elapsedTimeDisplay] at the top when [showElapsedTimeInRail] is `true`, renders a
+ * collision-free vertical cluster of `flipCameraButton -> captureButton -> imageWell` around
+ * [centerVerticalFraction], and anchors [CaptureSlots.captureModeToggle] at the bottom in strict
+ * top-to-bottom order across both LTR and RTL locales.
  *
  * @param slots [CaptureSlots] supplying the shutter cluster, elapsed timer, and mode toggle.
  * @param modifier [Modifier] applied to the rail container.
  * @param isCompactHeight Whether compact vertical spacing and compact slot hints are active.
- * @param isRecording Whether an active video recording session is in progress.
  * @param showElapsedTimeInRail Whether [CaptureSlots.elapsedTimeDisplay] is hosted in the top slot
  *   of this rail.
- * @param onDismissQuickSettings Callback propagated to [CaptureSlotScope.dismissQuickSettings].
+ * @param topPadding Top inset inside the rail before the optional top timer section.
+ * @param bottomPadding Bottom inset inside the rail below the capture mode toggle.
+ * @param horizontalPadding Horizontal padding applied on both sides of the rail content.
+ * @param minSectionGap Minimum collision-free vertical gap enforced between adjacent sections.
+ * @param centerVerticalFraction Target vertical midpoint fraction (`0f..1f`) for the shutter
+ *   cluster (`0.5f` for vertically centered rails; `0.70f` for tall portrait tablet thumb zones),
+ *   clamped within the remaining collision-free range between top and bottom sections.
  */
 @Composable
-fun EndSideRail(
+internal fun EndSideRail(
     slots: CaptureSlots,
     modifier: Modifier = Modifier,
     isCompactHeight: Boolean = false,
-    isRecording: Boolean = false,
     showElapsedTimeInRail: Boolean = false,
-    onDismissQuickSettings: () -> Unit = {}
-) {
-    val verticalPadding = if (isCompactHeight) {
+    topPadding: Dp = if (isCompactHeight) {
         Tokens.CompactVerticalPadding
     } else {
         Tokens.StandardVerticalPadding
-    }
-    val minSectionGap = if (isCompactHeight) {
+    },
+    bottomPadding: Dp = if (isCompactHeight) {
+        Tokens.CompactVerticalPadding
+    } else {
+        Tokens.StandardVerticalPadding
+    },
+    horizontalPadding: Dp = Tokens.HorizontalPadding,
+    minSectionGap: Dp = if (isCompactHeight) {
         Tokens.CompactMinSectionGap
     } else {
         Tokens.StandardMinSectionGap
-    }
-    val customShutterStack = slots.shutterStack
-
+    },
+    centerVerticalFraction: Float = 0.5f
+) {
     VerticalRailLayout(
         modifier = modifier.testTag(END_SIDE_RAIL_TAG),
-        verticalPadding = verticalPadding,
-        horizontalPadding = Tokens.HorizontalPadding,
+        topPadding = topPadding,
+        bottomPadding = bottomPadding,
+        horizontalPadding = horizontalPadding,
         minSectionGap = minSectionGap,
+        centerVerticalFraction = centerVerticalFraction,
         topContent = {
             if (showElapsedTimeInRail) {
                 OverlapAwareCaptureSlot(
                     orientation = Orientation.Vertical,
                     isCompact = isCompactHeight,
-                    isRecording = isRecording,
-                    onDismissQuickSettings = onDismissQuickSettings,
                     content = slots.elapsedTimeDisplay
                 )
             }
         },
         centerContent = {
-            if (customShutterStack != null) {
-                OverlapAwareCaptureSlot(
-                    orientation = Orientation.Vertical,
-                    isCompact = isCompactHeight,
-                    isRecording = isRecording,
-                    onDismissQuickSettings = onDismissQuickSettings
-                ) { slotModifier ->
-                    customShutterStack(slotModifier, isCompactHeight)
-                }
-            } else {
-                VerticalRailShutterCluster(
-                    slots = slots,
-                    isCompactHeight = isCompactHeight,
-                    isRecording = isRecording,
-                    onDismissQuickSettings = onDismissQuickSettings
-                )
-            }
+            VerticalRailShutterCluster(
+                slots = slots,
+                isCompactHeight = isCompactHeight
+            )
         },
         bottomContent = {
             OverlapAwareCaptureSlot(
                 orientation = Orientation.Vertical,
                 isCompact = isCompactHeight,
-                isRecording = isRecording,
-                onDismissQuickSettings = onDismissQuickSettings,
                 content = slots.captureModeToggle
             )
         }
@@ -220,16 +228,19 @@ fun EndSideRail(
  * Collision-free 3-band vertical rail layout (Top, Center, Bottom).
  *
  * Measures Top and Bottom first, constrains Center's `maxHeight` to the remaining vertical budget
- * minus [minSectionGap] buffers, and places all sections using explicit `place(x, y)` coordinates
- * so RTL layout direction never alters vertical ordering while child composables retain the
- * ambient `LocalLayoutDirection`.
+ * minus [minSectionGap] buffers, positions Center around [centerVerticalFraction] clamped to
+ * `[minCenterY, maxCenterY]`, and places all sections using explicit `place(x, y)` coordinates so
+ * RTL layout direction never alters vertical ordering while child composables retain the ambient
+ * `LocalLayoutDirection`.
  */
 @Composable
 private fun VerticalRailLayout(
     modifier: Modifier = Modifier,
-    verticalPadding: Dp,
+    topPadding: Dp,
+    bottomPadding: Dp,
     horizontalPadding: Dp,
     minSectionGap: Dp,
+    centerVerticalFraction: Float,
     topContent: @Composable () -> Unit,
     centerContent: @Composable () -> Unit,
     bottomContent: @Composable () -> Unit
@@ -248,9 +259,11 @@ private fun VerticalRailLayout(
             }
         }
     ) { measurables, constraints ->
-        val verticalPadPx = verticalPadding.roundToPx()
+        val topPadPx = topPadding.roundToPx()
+        val bottomPadPx = bottomPadding.roundToPx()
         val horizontalPadPx = horizontalPadding.roundToPx()
         val gapPx = minSectionGap.roundToPx()
+        val clampedFraction = centerVerticalFraction.coerceIn(0f, 1f)
 
         val innerMaxWidth = if (constraints.hasBoundedWidth) {
             (constraints.maxWidth - horizontalPadPx * 2).coerceAtLeast(0)
@@ -269,7 +282,7 @@ private fun VerticalRailLayout(
 
         if (constraints.hasBoundedHeight) {
             railHeight = constraints.maxHeight
-            val innerHeight = (railHeight - verticalPadPx * 2).coerceAtLeast(0)
+            val innerHeight = (railHeight - topPadPx - bottomPadPx).coerceAtLeast(0)
 
             topPlaceable = topMeasurable?.measure(
                 Constraints(
@@ -318,7 +331,8 @@ private fun VerticalRailLayout(
             val totalGapPx = (activeSections.size - 1).coerceAtLeast(0) * gapPx
             val intrinsicHeight = activeSections.sumOf { it.height } +
                 totalGapPx +
-                verticalPadPx * 2
+                topPadPx +
+                bottomPadPx
             railHeight = intrinsicHeight.coerceAtLeast(constraints.minHeight)
         }
 
@@ -328,22 +342,22 @@ private fun VerticalRailLayout(
             bottomPlaceable?.width ?: 0
         )
         val railWidth = maxOf(
-            Tokens.MinRailWidth.roundToPx(),
+            MinSideRailWidth.roundToPx(),
             maxContentWidth + horizontalPadPx * 2
         ).coerceIn(constraints.minWidth, constraints.maxWidth)
 
-        val topY = verticalPadPx
-        val minBottomY = topPlaceable?.let { topY + it.height + gapPx } ?: verticalPadPx
+        val topY = topPadPx
+        val minBottomY = topPlaceable?.let { topY + it.height + gapPx } ?: topPadPx
         val bottomY = bottomPlaceable?.let { bottom ->
-            (railHeight - verticalPadPx - bottom.height).coerceAtLeast(minBottomY)
-        } ?: (railHeight - verticalPadPx)
+            (railHeight - bottomPadPx - bottom.height).coerceAtLeast(minBottomY)
+        } ?: (railHeight - bottomPadPx)
 
-        val minCenterY = topPlaceable?.let { topY + it.height + gapPx } ?: verticalPadPx
+        val minCenterY = topPlaceable?.let { topY + it.height + gapPx } ?: topPadPx
         val maxCenterY = centerPlaceable?.let { center ->
             if (bottomPlaceable != null) {
                 bottomY - gapPx - center.height
             } else {
-                railHeight - verticalPadPx - center.height
+                railHeight - bottomPadPx - center.height
             }
         } ?: minCenterY
 
@@ -356,7 +370,8 @@ private fun VerticalRailLayout(
             }
 
             centerPlaceable?.let { placeable ->
-                val idealCenterY = (railHeight - placeable.height) / 2
+                val idealCenterY =
+                    (railHeight * clampedFraction - placeable.height / 2f).roundToInt()
                 val centerY = if (minCenterY <= maxCenterY) {
                     idealCenterY.coerceIn(minCenterY, maxCenterY)
                 } else {
@@ -379,8 +394,8 @@ private fun VerticalRailLayout(
 }
 
 /**
- * Default vertical shutter cluster for [EndSideRail], stacking
- * `flipCameraButton -> captureButton -> imageWell -> pauseToggleButton` strictly top-to-bottom.
+ * Vertical shutter cluster for [EndSideRail], stacking
+ * `flipCameraButton -> captureButton -> imageWell` strictly top-to-bottom.
  *
  * Collapses `0x0` omitted slots without adding extra gaps and compresses the inter-control gap
  * proportionally when constrained by short window heights.
@@ -389,8 +404,6 @@ private fun VerticalRailLayout(
 private fun VerticalRailShutterCluster(
     slots: CaptureSlots,
     isCompactHeight: Boolean,
-    isRecording: Boolean,
-    onDismissQuickSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Layout(
@@ -400,33 +413,19 @@ private fun VerticalRailShutterCluster(
                 modifier = Modifier.layoutId(ShutterClusterSlotId.FlipCamera),
                 orientation = Orientation.Vertical,
                 isCompact = isCompactHeight,
-                isRecording = isRecording,
-                onDismissQuickSettings = onDismissQuickSettings,
                 content = slots.flipCameraButton
             )
             OverlapAwareCaptureSlot(
                 modifier = Modifier.layoutId(ShutterClusterSlotId.Capture),
                 orientation = Orientation.Vertical,
                 isCompact = isCompactHeight,
-                isRecording = isRecording,
-                onDismissQuickSettings = onDismissQuickSettings,
                 content = slots.captureButton
             )
             OverlapAwareCaptureSlot(
                 modifier = Modifier.layoutId(ShutterClusterSlotId.ImageWell),
                 orientation = Orientation.Vertical,
                 isCompact = isCompactHeight,
-                isRecording = isRecording,
-                onDismissQuickSettings = onDismissQuickSettings,
                 content = slots.imageWell
-            )
-            OverlapAwareCaptureSlot(
-                modifier = Modifier.layoutId(ShutterClusterSlotId.PauseToggle),
-                orientation = Orientation.Vertical,
-                isCompact = isCompactHeight,
-                isRecording = isRecording,
-                onDismissQuickSettings = onDismissQuickSettings,
-                content = slots.pauseToggleButton
             )
         }
     ) { measurables, constraints ->
@@ -456,16 +455,14 @@ private fun VerticalRailShutterCluster(
             }
 
             // Measure primary shutter first so it retains priority in extreme micro-heights, then
-            // assemble in strict Flip -> Capture -> ImageWell -> Pause visual order.
+            // assemble in strict Flip -> Capture -> ImageWell visual order.
             val capturePlaceable = measureSlot(ShutterClusterSlotId.Capture)
             val flipPlaceable = measureSlot(ShutterClusterSlotId.FlipCamera)
             val imageWellPlaceable = measureSlot(ShutterClusterSlotId.ImageWell)
-            val pausePlaceable = measureSlot(ShutterClusterSlotId.PauseToggle)
             listOfNotNull(
                 flipPlaceable,
                 capturePlaceable,
-                imageWellPlaceable,
-                pausePlaceable
+                imageWellPlaceable
             )
         } else {
             val looseConstraints = Constraints(
@@ -520,105 +517,153 @@ private fun VerticalRailShutterCluster(
 @Preview(name = "StartSideRail - Standard (800dp) LTR", showBackground = true)
 @Composable
 private fun StartSideRailStandardLtrPreview() {
-    Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
-        StartSideRail(
-            slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
-            modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
-        )
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
+            StartSideRail(
+                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
+            )
+        }
     }
 }
 
 @Preview(name = "StartSideRail - Standard (800dp) RTL", locale = "ar", showBackground = true)
 @Composable
 private fun StartSideRailStandardRtlPreview() {
-    Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
-        StartSideRail(
-            slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
-            modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
-        )
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
+            StartSideRail(
+                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
+            )
+        }
+    }
+}
+
+@Preview(name = "StartSideRail - Tablet Portrait (1280dp, 0.70f)", showBackground = true)
+@Composable
+private fun StartSideRailTabletPortraitPreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
+            StartSideRail(
+                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                modifier = Modifier.height(Tokens.PreviewTabletPortraitRailHeight),
+                topPadding = 32.dp,
+                bottomPadding = 48.dp,
+                horizontalPadding = 24.dp,
+                minSectionGap = 16.dp,
+                centerVerticalFraction = 0.70f
+            )
+        }
     }
 }
 
 @Preview(name = "StartSideRail - Compact (360dp) LTR", showBackground = true)
 @Composable
 private fun StartSideRailCompactLtrPreview() {
-    Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
-        StartSideRail(
-            slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = true),
-            modifier = Modifier.height(Tokens.PreviewCompactRailHeight),
-            isCompactHeight = true
-        )
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
+            StartSideRail(
+                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = true),
+                modifier = Modifier.height(Tokens.PreviewCompactRailHeight),
+                isCompactHeight = true
+            )
+        }
     }
 }
 
 @Preview(name = "StartSideRail - Compact (360dp) RTL", locale = "ar", showBackground = true)
 @Composable
 private fun StartSideRailCompactRtlPreview() {
-    Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
-        StartSideRail(
-            slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = true),
-            modifier = Modifier.height(Tokens.PreviewCompactRailHeight),
-            isCompactHeight = true
-        )
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
+            StartSideRail(
+                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = true),
+                modifier = Modifier.height(Tokens.PreviewCompactRailHeight),
+                isCompactHeight = true
+            )
+        }
     }
 }
 
 @Preview(name = "EndSideRail - Standard (800dp) LTR", showBackground = true)
 @Composable
 private fun EndSideRailStandardLtrPreview() {
-    Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
-        EndSideRail(
-            slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
-            modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
-        )
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
+            EndSideRail(
+                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
+            )
+        }
     }
 }
 
 @Preview(name = "EndSideRail - Standard (800dp) RTL", locale = "ar", showBackground = true)
 @Composable
 private fun EndSideRailStandardRtlPreview() {
-    Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
-        EndSideRail(
-            slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
-            modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
-        )
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
+            EndSideRail(
+                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
+            )
+        }
+    }
+}
+
+@Preview(name = "EndSideRail - Tablet Portrait (1280dp, 0.70f)", showBackground = true)
+@Composable
+private fun EndSideRailTabletPortraitPreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
+            EndSideRail(
+                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                modifier = Modifier.height(Tokens.PreviewTabletPortraitRailHeight),
+                topPadding = 32.dp,
+                bottomPadding = 48.dp,
+                horizontalPadding = 24.dp,
+                minSectionGap = 16.dp,
+                centerVerticalFraction = 0.70f
+            )
+        }
     }
 }
 
 @Preview(name = "EndSideRail - Compact (360dp) Recording LTR", showBackground = true)
 @Composable
 private fun EndSideRailCompactLtrPreview() {
-    Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
-        EndSideRail(
-            slots = PlaceholderCaptureSlots.sideRail(
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
+            EndSideRail(
+                slots = PlaceholderCaptureSlots.sideRail(
+                    isCompactHeight = true,
+                    includeImageWell = true,
+                    includeElapsedTime = true
+                ),
+                modifier = Modifier.height(Tokens.PreviewCompactRailHeight),
                 isCompactHeight = true,
-                includeImageWell = true,
-                includePauseSlot = true,
-                includeElapsedTime = true
-            ),
-            modifier = Modifier.height(Tokens.PreviewCompactRailHeight),
-            isCompactHeight = true,
-            isRecording = true,
-            showElapsedTimeInRail = true
-        )
+                showElapsedTimeInRail = true
+            )
+        }
     }
 }
 
 @Preview(name = "EndSideRail - Compact (360dp) Recording RTL", locale = "ar", showBackground = true)
 @Composable
 private fun EndSideRailCompactRtlPreview() {
-    Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
-        EndSideRail(
-            slots = PlaceholderCaptureSlots.sideRail(
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
+            EndSideRail(
+                slots = PlaceholderCaptureSlots.sideRail(
+                    isCompactHeight = true,
+                    includeImageWell = true,
+                    includeElapsedTime = true
+                ),
+                modifier = Modifier.height(Tokens.PreviewCompactRailHeight),
                 isCompactHeight = true,
-                includeImageWell = true,
-                includePauseSlot = true,
-                includeElapsedTime = true
-            ),
-            modifier = Modifier.height(Tokens.PreviewCompactRailHeight),
-            isCompactHeight = true,
-            isRecording = true,
-            showElapsedTimeInRail = true
-        )
+                showElapsedTimeInRail = true
+            )
+        }
     }
 }
