@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -33,7 +32,6 @@ import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -48,10 +46,10 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * Unit tests for [StartSideRail], [EndSideRail], [CaptureSlots], and [CaptureSlotScope].
+ * Unit tests for [StartSideRail], [EndSideRail], [CaptureSlots], and [PreviewOverlaySlotScope].
  */
 @RunWith(RobolectricTestRunner::class)
-@Config(qualifiers = "w800dp-h800dp")
+@Config(qualifiers = "w800dp-h1280dp")
 class CaptureSideRailsTest {
 
     @get:Rule
@@ -69,9 +67,9 @@ class CaptureSideRailsTest {
 
         val baseSlots = PlaceholderCaptureSlots.sideRail()
         val instrumentedSlots = baseSlots.copy(
-            indicatorColumn = { mod ->
+            topBar = { mod ->
                 indicatorDirection = LocalLayoutDirection.current
-                baseSlots.indicatorColumn(this, mod)
+                baseSlots.topBar(this, mod)
             },
             zoomControls = { mod ->
                 zoomDirection = LocalLayoutDirection.current
@@ -136,7 +134,6 @@ class CaptureSideRailsTest {
 
         val baseSlots = PlaceholderCaptureSlots.sideRail(
             includeImageWell = true,
-            includePauseSlot = true,
             includeElapsedTime = true
         )
         val instrumentedSlots = baseSlots.copy(
@@ -151,7 +148,6 @@ class CaptureSideRailsTest {
                 EndSideRail(
                     slots = instrumentedSlots,
                     modifier = Modifier.height(800.dp),
-                    isRecording = true,
                     showElapsedTimeInRail = true
                 )
             }
@@ -164,7 +160,6 @@ class CaptureSideRailsTest {
             FLIP_CAMERA_BUTTON,
             CAPTURE_BUTTON,
             IMAGE_WELL_TAG,
-            AUDIO_INPUT_TOGGLE,
             CAPTURE_MODE_TOGGLE_BUTTON
         )
 
@@ -214,7 +209,6 @@ class CaptureSideRailsTest {
         val compactSlots = PlaceholderCaptureSlots.sideRail(
             isCompactHeight = true,
             includeImageWell = true,
-            includePauseSlot = true,
             includeElapsedTime = true
         )
 
@@ -223,14 +217,12 @@ class CaptureSideRailsTest {
                 StartSideRail(
                     slots = compactSlots,
                     modifier = Modifier.height(360.dp),
-                    isCompactHeight = true,
-                    isRecording = true
+                    isCompactHeight = true
                 )
                 EndSideRail(
                     slots = compactSlots,
                     modifier = Modifier.height(360.dp),
                     isCompactHeight = true,
-                    isRecording = true,
                     showElapsedTimeInRail = true
                 )
             }
@@ -247,7 +239,6 @@ class CaptureSideRailsTest {
             FLIP_CAMERA_BUTTON,
             CAPTURE_BUTTON,
             IMAGE_WELL_TAG,
-            AUDIO_INPUT_TOGGLE,
             CAPTURE_MODE_TOGGLE_BUTTON
         )
 
@@ -289,13 +280,12 @@ class CaptureSideRailsTest {
 
     @Test
     fun endSideRail_omittedOptionalSlots_collapsesSpacesCleanly() {
-        var includePause by mutableStateOf(true)
+        var includeImageWell by mutableStateOf(true)
 
         composeTestRule.setContent {
             val slots = PlaceholderCaptureSlots.sideRail(
                 isCompactHeight = false,
-                includeImageWell = false,
-                includePauseSlot = includePause,
+                includeImageWell = includeImageWell,
                 includeElapsedTime = false
             )
             EndSideRail(
@@ -307,26 +297,21 @@ class CaptureSideRailsTest {
         }
         composeTestRule.waitForIdle()
 
-        // Omitted middle slot (imageWell) must not exist and must not leave a double 96dp gap
-        // between captureButton and pauseToggleButton.
-        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
 
-        val flipBoundsWithPause = boundsOf(FLIP_CAMERA_BUTTON)
-        val captureBoundsWithPause = boundsOf(CAPTURE_BUTTON)
-        val pauseBounds = boundsOf(AUDIO_INPUT_TOGGLE)
+        val flipBoundsWithWell = boundsOf(FLIP_CAMERA_BUTTON)
+        val captureBoundsWithWell = boundsOf(CAPTURE_BUTTON)
+        val imageWellBounds = boundsOf(IMAGE_WELL_TAG)
 
-        val flipToCaptureGap = captureBoundsWithPause.top - flipBoundsWithPause.bottom
-        val captureToPauseGap = pauseBounds.top - captureBoundsWithPause.bottom
+        val flipToCaptureGap = captureBoundsWithWell.top - flipBoundsWithWell.bottom
+        val captureToWellGap = imageWellBounds.top - captureBoundsWithWell.bottom
         assertThat(flipToCaptureGap.value).isWithin(1f).of(48f)
-        assertThat(captureToPauseGap.value).isWithin(1f).of(48f)
+        assertThat(captureToWellGap.value).isWithin(1f).of(48f)
 
-        // Omitting trailing pause slot as well leaves only Flip + Capture separated by 48dp,
-        // centered cleanly in the 800dp rail with zero phantom trailing space.
-        includePause = false
+        includeImageWell = false
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithTag(AUDIO_INPUT_TOGGLE).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertDoesNotExist()
         val railBounds = boundsOf(END_SIDE_RAIL_TAG)
         val flipBounds = boundsOf(FLIP_CAMERA_BUTTON)
         val captureBounds = boundsOf(CAPTURE_BUTTON)
@@ -364,104 +349,94 @@ class CaptureSideRailsTest {
     }
 
     @Test
-    fun endSideRail_customShutterStackOverride_invokesOverrideWithCompactFlag() {
-        var isCompactHeight by mutableStateOf(false)
-        var observedCompactParam: Boolean? = null
-        var observedScopeCompact: Boolean? = null
-
-        val baseSlots = PlaceholderCaptureSlots.sideRail()
-        val overrideSlots = baseSlots.copy(
-            shutterStack = { mod, compactFlag ->
-                observedCompactParam = compactFlag
-                observedScopeCompact = isCompact
-                PlaceholderControlBox(
-                    label = "CustomShutter",
-                    width = 64.dp,
-                    height = 140.dp,
-                    modifier = mod,
-                    testTag = IMAGE_WELL_TAG
-                )
-            }
-        )
+    fun sideRails_tabletPortraitThumbZoneBias_shiftsCenterClusterDownWithoutCollision() {
+        val slots = PlaceholderCaptureSlots.sideRail()
 
         composeTestRule.setContent {
-            EndSideRail(
-                slots = overrideSlots,
-                modifier = Modifier.height(800.dp),
-                isCompactHeight = isCompactHeight
-            )
+            Row(modifier = Modifier.height(1280.dp)) {
+                StartSideRail(
+                    slots = slots,
+                    modifier = Modifier.height(1280.dp),
+                    topPadding = 32.dp,
+                    bottomPadding = 48.dp,
+                    horizontalPadding = 24.dp,
+                    minSectionGap = 16.dp,
+                    centerVerticalFraction = 0.70f
+                )
+                EndSideRail(
+                    slots = slots,
+                    modifier = Modifier.height(1280.dp),
+                    topPadding = 32.dp,
+                    bottomPadding = 48.dp,
+                    horizontalPadding = 24.dp,
+                    minSectionGap = 16.dp,
+                    centerVerticalFraction = 0.70f
+                )
+            }
         }
         composeTestRule.waitForIdle()
 
-        // Default VerticalRailShutterCluster must be bypassed when shutterStack is provided.
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertDoesNotExist()
-        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertIsDisplayed()
-        assertThat(observedCompactParam).isFalse()
-        assertThat(observedScopeCompact).isFalse()
+        val startRailBounds = boundsOf(START_SIDE_RAIL_TAG)
+        val indicatorBounds = boundsOf(VIDEO_QUALITY_TAG)
+        val zoomBounds = boundsOf(ZOOM_BUTTON_ROW_TAG)
+        val quickSettingsBounds = boundsOf(QUICK_SETTINGS_DROP_DOWN)
+        val flipBounds = boundsOf(FLIP_CAMERA_BUTTON)
+        val captureBounds = boundsOf(CAPTURE_BUTTON)
+        val imageWellBounds = boundsOf(IMAGE_WELL_TAG)
+        val modeToggleBounds = boundsOf(CAPTURE_MODE_TOGGLE_BUTTON)
 
-        isCompactHeight = true
-        composeTestRule.waitForIdle()
+        // Top indicator stays anchored near topPadding (32dp) while bottom buttons clear 48dp.
+        assertThat(indicatorBounds.top.value).isWithin(1f).of(32f)
+        assertThat(quickSettingsBounds.bottom.value).isWithin(1f).of(1280f - 48f)
+        assertThat(modeToggleBounds.bottom.value).isWithin(1f).of(1280f - 48f)
 
-        assertThat(observedCompactParam).isTrue()
-        assertThat(observedScopeCompact).isTrue()
+        // Zoom and shutter clusters shift into the lower thumb-reach zone (~70% of 1280dp = 896dp)
+        // while staying at least minSectionGap (16dp) above the bottom controls.
+        val zoomCenterY = (zoomBounds.top.value + zoomBounds.bottom.value) / 2f
+        val shutterClusterCenterY = (flipBounds.top.value + imageWellBounds.bottom.value) / 2f
+        assertThat(zoomCenterY).isWithin(2f).of(1280f * 0.70f)
+        assertThat(shutterClusterCenterY).isWithin(2f).of(1280f * 0.70f)
+        assertThat(captureBounds.top).isGreaterThan(640.dp)
+        assertThat(zoomBounds.bottom.value).isAtMost(quickSettingsBounds.top.value - 15.5f)
+        assertThat(imageWellBounds.bottom.value).isAtMost(modeToggleBounds.top.value - 15.5f)
+        assertThat(startRailBounds.width).isAtLeast(96.dp) // 48dp content + 24dp * 2 padding
     }
 
     @Test
-    fun sideRails_recordingScope_propagatesOrientationCompactIsRecordingAndDismissToSlots() {
+    fun sideRails_propagateVerticalOrientationAndCompactFlagDirectly() {
         var isCompactHeight by mutableStateOf(false)
-        var isRecording by mutableStateOf(false)
-        var dismissCallCount = 0
-
         var startOrientation: Orientation? = null
         var startCompact: Boolean? = null
-        var startRecording: Boolean? = null
-
         var endOrientation: Orientation? = null
         var endCompact: Boolean? = null
-        var endRecording: Boolean? = null
 
         val scopedSlots = CaptureSlots(
-            quickSettingsButton = { mod ->
+            topBar = { mod ->
                 startOrientation = orientation
                 startCompact = isCompact
-                startRecording = this.isRecording
-                Box(
-                    modifier = mod
-                        .size(48.dp)
-                        .testTag(QUICK_SETTINGS_DROP_DOWN)
-                        .clickable { dismissQuickSettings() }
-                )
+                Box(modifier = mod.size(width = 48.dp, height = 96.dp).testTag(VIDEO_QUALITY_TAG))
             },
             captureButton = { mod ->
                 endOrientation = orientation
                 endCompact = isCompact
-                endRecording = this.isRecording
-                Box(
-                    modifier = mod
-                        .size(72.dp)
-                        .testTag(CAPTURE_BUTTON)
-                        .clickable { dismissQuickSettings() }
-                )
+                Box(modifier = mod.size(72.dp).testTag(CAPTURE_BUTTON))
             }
         )
 
         composeTestRule.setContent {
-            Row(modifier = Modifier.height(800.dp)) {
-                StartSideRail(
-                    slots = scopedSlots,
-                    modifier = Modifier.height(800.dp),
-                    isCompactHeight = isCompactHeight,
-                    isRecording = isRecording,
-                    onDismissQuickSettings = { dismissCallCount++ }
-                )
-                EndSideRail(
-                    slots = scopedSlots,
-                    modifier = Modifier.height(800.dp),
-                    isCompactHeight = isCompactHeight,
-                    isRecording = isRecording,
-                    onDismissQuickSettings = { dismissCallCount++ }
-                )
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                Row(modifier = Modifier.size(800.dp)) {
+                    StartSideRail(
+                        slots = scopedSlots,
+                        modifier = Modifier.height(800.dp),
+                        isCompactHeight = isCompactHeight
+                    )
+                    EndSideRail(
+                        slots = scopedSlots,
+                        modifier = Modifier.height(800.dp),
+                        isCompactHeight = isCompactHeight
+                    )
+                }
             }
         }
         composeTestRule.waitForIdle()
@@ -470,24 +445,15 @@ class CaptureSideRailsTest {
         assertThat(endOrientation).isEqualTo(Orientation.Vertical)
         assertThat(startCompact).isFalse()
         assertThat(endCompact).isFalse()
-        assertThat(startRecording).isFalse()
-        assertThat(endRecording).isFalse()
+
+        val startRailBounds = boundsOf(START_SIDE_RAIL_TAG)
+        assertThat(startRailBounds.width).isLessThan(120.dp)
+        composeTestRule.onNodeWithTag(VIDEO_QUALITY_TAG).assertIsDisplayed()
 
         isCompactHeight = true
-        isRecording = true
         composeTestRule.waitForIdle()
 
         assertThat(startCompact).isTrue()
         assertThat(endCompact).isTrue()
-        assertThat(startRecording).isTrue()
-        assertThat(endRecording).isTrue()
-
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).performClick()
-        composeTestRule.waitForIdle()
-        assertThat(dismissCallCount).isEqualTo(1)
-
-        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).performClick()
-        composeTestRule.waitForIdle()
-        assertThat(dismissCallCount).isEqualTo(2)
     }
 }

@@ -18,6 +18,7 @@ package com.google.jetpackcamera
 import android.app.Activity
 import android.provider.MediaStore
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -31,7 +32,7 @@ import com.google.common.truth.Truth
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.TruthJUnit.assume
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.OptionVisibility
@@ -39,6 +40,7 @@ import com.google.jetpackcamera.settings.model.SettingConfig
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.CAPTURE_MODE_TOGGLE_BUTTON
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
+import com.google.jetpackcamera.ui.components.capture.carouselOptionTag
 import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.MOVIES_DIR_PATH
 import com.google.jetpackcamera.utils.PICTURES_DIR_PATH
@@ -52,8 +54,8 @@ import com.google.jetpackcamera.utils.isCaptureModeToggleEnabled
 import com.google.jetpackcamera.utils.runMainActivityMediaStoreAutoDeleteScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
 import com.google.jetpackcamera.utils.runMainActivityScenarioTestForResult
+import com.google.jetpackcamera.utils.selectConcurrentCameraSubMode
 import com.google.jetpackcamera.utils.setCaptureMode
-import com.google.jetpackcamera.utils.setConcurrentCameraModeInSettings
 import com.google.jetpackcamera.utils.setHdrEnabled
 import com.google.jetpackcamera.utils.tapStartLockedVideoRecording
 import com.google.jetpackcamera.utils.visitQuickSettings
@@ -154,28 +156,35 @@ internal class CaptureModeSettingsTest {
     }
 
     @Test
-    fun concurrent_only_supports_video_capture_mode() {
+    fun concurrent_switchingToImageOnly_exitsDualMode() {
         runMainActivityScenarioTest {
             composeTestRule.waitForCaptureButton()
 
-            // Enable concurrent camera in settings
-            composeTestRule.setConcurrentCameraModeInSettings(ConcurrentCameraMode.DUAL)
+            // Enable concurrent camera sub-mode in VIDEO_ONLY mode
+            composeTestRule.selectConcurrentCameraSubMode(enabled = true)
 
             composeTestRule.visitQuickSettings {
                 // capture mode should now be video only
                 assertThat(getCurrentCaptureMode()).isEqualTo(CaptureMode.VIDEO_ONLY)
-
-                // should not be able to switch between capture modes
-                onNodeWithTag(ROW_QUICK_SETTINGS_CAPTURE_MODE).assertDoesNotExist()
             }
-            // verify switch is removed when mode switching is not supported
-            composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertDoesNotExist()
+            // verify image/video toggle switch remains visible in concurrent video sub-mode
+            composeTestRule.waitForNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
+            assertThat(composeTestRule.getCaptureModeToggleState())
+                .isEqualTo(CaptureMode.VIDEO_ONLY)
 
-            // set concurrent camera mode back to off in settings
-            composeTestRule.setConcurrentCameraModeInSettings(ConcurrentCameraMode.OFF)
+            // Tapping the toggle switches to default IMAGE_ONLY capture mode
+            composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
+            composeTestRule.waitForCaptureModeToggleState(CaptureMode.IMAGE_ONLY)
+            composeTestRule.checkCaptureModeSettingState(CaptureMode.IMAGE_ONLY)
 
-            // capture mode is not switched back automatically; it remains video only
+            // Tapping the toggle again switches back to default VIDEO_ONLY capture mode
+            composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
+            composeTestRule.waitForCaptureModeToggleState(CaptureMode.VIDEO_ONLY)
             composeTestRule.checkCaptureModeSettingState(CaptureMode.VIDEO_ONLY)
+
+            // Dual camera ended when the capture mode changed, so the default option is selected
+            composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
+                .assertIsSelected()
         }
     }
 
