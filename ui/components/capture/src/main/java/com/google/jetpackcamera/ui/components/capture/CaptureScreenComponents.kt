@@ -1021,9 +1021,11 @@ fun PreviewDisplay(
                     }
             ) {
                 if (surfaceRequest != null) {
+                    val isCounterRotatedLandscape = LocalWindowRotation.current.isLandscape
                     val implementationMode = when {
-                        Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
-                        else -> ImplementationMode.EMBEDDED
+                        Build.VERSION.SDK_INT <= 24 || isCounterRotatedLandscape ->
+                            ImplementationMode.EMBEDDED
+                        else -> ImplementationMode.EXTERNAL
                     }
 
                     DetectWindowColorModeChanges(

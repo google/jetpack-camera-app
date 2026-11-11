@@ -60,7 +60,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.model.DeviceRotation
 
 private const val UI_ROTATION_DURATION_MS = 250
-private val DefaultGravityRotationState: State<Float> = mutableFloatStateOf(0f)
+internal val DefaultGravityRotationState: State<Float> = mutableFloatStateOf(0f)
 
 /**
  * Provides the current physical gravity [DeviceRotation] to descendant composables in the capture

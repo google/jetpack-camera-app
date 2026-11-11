@@ -38,6 +38,7 @@ import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.layout.rememberCameraLayoutMode
@@ -96,6 +97,8 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
  *   tallest viewfinder to clear a persistent navigation bar, and `false` otherwise or on dispose.
  * @param errorDialog the camera error alert dialog composable.
+ * @param deviceRotation physical gravity orientation of the device.
+ * @param windowRotation display/window rotation reported by Android.
  */
 @Composable
 fun CaptureScaffoldLayout(
@@ -121,11 +124,15 @@ fun CaptureScaffoldLayout(
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
-    errorDialog: @Composable (Modifier) -> Unit = {}
+    errorDialog: @Composable (Modifier) -> Unit = {},
+    deviceRotation: DeviceRotation = rememberDeviceRotation(),
+    windowRotation: DeviceRotation = rememberWindowRotation()
 ) {
     CaptureScaffoldLayout(
         modifier = modifier,
         state = state,
+        deviceRotation = deviceRotation,
+        windowRotation = windowRotation,
         onDismissQuickSettings = onDismissQuickSettings,
         viewfinder = viewfinder,
         captureButton = captureButton,
@@ -155,6 +162,8 @@ fun CaptureScaffoldLayout(
 internal fun CaptureScaffoldLayout(
     modifier: Modifier = Modifier,
     state: CaptureScaffoldState = rememberCaptureScaffoldState(),
+    deviceRotation: DeviceRotation = LocalDeviceRotation.current,
+    windowRotation: DeviceRotation = LocalWindowRotation.current,
     onDismissQuickSettings: () -> Unit = {},
     viewfinder: @Composable (Modifier) -> Unit,
     captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
@@ -224,6 +233,8 @@ internal fun CaptureScaffoldLayout(
                         slots = compactSlots,
                         viewfinder = movableViewfinder,
                         state = state,
+                        deviceRotation = deviceRotation,
+                        windowRotation = windowRotation,
                         controlsVisible = controlsVisible,
                         isErrorDialogShowing = isErrorDialogShowing,
                         includeStatusBarsInTopBar = !isFullScreenCompactPhone,

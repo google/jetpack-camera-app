@@ -44,7 +44,9 @@ import com.google.jetpackcamera.ui.components.capture.CaptureScaffold
 import com.google.jetpackcamera.ui.components.capture.CaptureScaffoldDefaults
 import com.google.jetpackcamera.ui.components.capture.CaptureScaffoldLayout
 import com.google.jetpackcamera.ui.components.capture.LOADING_CAPTURE_UI_STATE_SKELETON
+import com.google.jetpackcamera.ui.components.capture.LocalActiveCaptureLayout
 import com.google.jetpackcamera.ui.components.capture.PauseResumeToggleButton
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.rememberWindowRotation
 import com.google.jetpackcamera.ui.debug.DebugLayoutReadoutState
 import com.google.jetpackcamera.ui.debug.DebugOverlay
@@ -201,7 +203,8 @@ fun PreviewScreen(
                     widthDp = widthDp,
                     heightDp = heightDp,
                     formFactor = formFactor,
-                    activeLayoutName = "CaptureScaffoldLayout",
+                    cameraLayoutMode = LocalCameraLayoutMode.current.name,
+                    activeLayoutName = LocalActiveCaptureLayout.current,
                     deviceRotation = deviceRotation,
                     windowRotation = windowRotation
                 )

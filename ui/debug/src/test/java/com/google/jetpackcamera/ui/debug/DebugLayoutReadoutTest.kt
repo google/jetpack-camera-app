@@ -367,13 +367,13 @@ class DebugLayoutReadoutTest {
                 state = DebugLayoutReadoutState(
                     widthDp = 800,
                     heightDp = 400,
-                    cameraLayoutMode = "COMPACT_HORIZONTAL"
+                    cameraLayoutMode = "COMPACT"
                 )
             )
         }
         composeTestRule.waitForIdle()
 
-        assertThat(readNodeText(DEBUG_LAYOUT_MODE_TAG)).isEqualTo("COMPACT_HORIZONTAL")
+        assertThat(readNodeText(DEBUG_LAYOUT_MODE_TAG)).isEqualTo("COMPACT")
     }
 
     private fun readNodeText(tag: String): String = composeTestRule
