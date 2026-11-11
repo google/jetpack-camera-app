@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.model.proto
 
 import com.google.jetpackcamera.model.AspectRatio
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -27,7 +26,6 @@ import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
-import com.google.jetpackcamera.model.proto.ConcurrentCameraMode as ConcurrentCameraModeProto
 import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
 import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
@@ -283,27 +281,5 @@ fun VideoQuality.toProto(): VideoQualityProto {
         VideoQuality.FHD -> VideoQualityProto.VIDEO_QUALITY_FHD
         VideoQuality.UHD -> VideoQualityProto.VIDEO_QUALITY_UHD
         VideoQuality.UNSPECIFIED -> VideoQualityProto.VIDEO_QUALITY_UNSPECIFIED
-    }
-}
-
-/**
- * Maps a Proto model to a Domain model.
- */
-fun ConcurrentCameraModeProto.toModel(): ConcurrentCameraMode {
-    return when (this) {
-        ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL -> ConcurrentCameraMode.DUAL
-        ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF,
-        ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_UNSPECIFIED,
-        ConcurrentCameraModeProto.UNRECOGNIZED -> ConcurrentCameraMode.OFF
-    }
-}
-
-/**
- * Maps a Domain model to a Proto model.
- */
-fun ConcurrentCameraMode.toProto(): ConcurrentCameraModeProto {
-    return when (this) {
-        ConcurrentCameraMode.DUAL -> ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL
-        ConcurrentCameraMode.OFF -> ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF
     }
 }
