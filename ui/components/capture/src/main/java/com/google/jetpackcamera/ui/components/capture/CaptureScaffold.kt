@@ -25,6 +25,7 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
@@ -170,12 +171,25 @@ fun rememberCaptureScaffoldState(isInitiallyExpanded: Boolean = false): CaptureS
 /**
  * Receiver scope for [CaptureScaffold] slots.
  *
- * Extends [PreviewOverlaySlotScope] with capture session state, Quick Settings controls, and zoom
- * actions coordinated with the scaffold's [ZoomStateManager]. Properties are backed by
- * `derivedStateOf` so that slots only recompose when a property they actually read changes.
+ * Extends [PreviewOverlaySlotScope] with container axis orientation, compact-sizing hints, capture
+ * session state, Quick Settings controls, and zoom actions coordinated with the scaffold's
+ * [ZoomStateManager]. Properties are backed by `derivedStateOf` so that slots only recompose when a
+ * property they actually read changes.
  */
 @Stable
 sealed interface CaptureSlotScope : PreviewOverlaySlotScope {
+    /**
+     * Primary axis along which the hosting container arranges its controls (for example,
+     * [Orientation.Vertical] in a side rail or [Orientation.Horizontal] in a top or bottom bar).
+     */
+    override val orientation: Orientation
+
+    /**
+     * Whether the hosting container is height- or space-constrained and requests compact control
+     * dimensions.
+     */
+    override val isCompact: Boolean
+
     /**
      * Whether a video recording is currently active (recording or paused).
      */
@@ -219,6 +233,8 @@ sealed interface CaptureSlotScope : PreviewOverlaySlotScope {
  * Creates a [CaptureSlotScope] with static values for Compose `@Preview`s and unit tests.
  */
 fun CaptureSlotScope(
+    orientation: Orientation = Orientation.Horizontal,
+    isCompact: Boolean = false,
     isOverViewfinder: Boolean = true,
     isRecording: Boolean = false,
     isQuickSettingsOpen: Boolean = false,
@@ -228,6 +244,8 @@ fun CaptureSlotScope(
     onAnimateZoomTo: (Float, LensToZoom) -> Unit = { _, _ -> },
     onSetAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> }
 ): CaptureSlotScope = StaticCaptureSlotScope(
+    orientation = orientation,
+    isCompact = isCompact,
     isOverViewfinder = isOverViewfinder,
     isRecording = isRecording,
     isQuickSettingsOpen = isQuickSettingsOpen,
@@ -239,6 +257,8 @@ fun CaptureSlotScope(
 )
 
 private class StaticCaptureSlotScope(
+    override val orientation: Orientation,
+    override val isCompact: Boolean,
     override val isOverViewfinder: Boolean,
     override val isRecording: Boolean,
     override val isQuickSettingsOpen: Boolean,
@@ -282,6 +302,12 @@ private class CaptureSlotScopeImpl(
     private val onAnimateZoomTo: (Float, LensToZoom) -> Unit,
     private val onSetAbsoluteZoom: (Float, LensToZoom) -> Unit
 ) : CaptureSlotScope {
+    override val orientation: Orientation
+        get() = overlayScope.orientation
+
+    override val isCompact: Boolean
+        get() = overlayScope.isCompact
+
     override val isOverViewfinder: Boolean
         get() = overlayScope.isOverViewfinder
 
@@ -1095,22 +1121,16 @@ fun CaptureScaffold(
         onAnimateZoomTo,
         onSetAbsoluteZoom
     ) {
-        object : PreviewOverlaySlotScope {
-            override val isOverViewfinder: Boolean = false
-            override val cameraControlContainerColor: Color =
-                backgroundStyleFor(false).containerColor
-        }.let { overlayScope ->
-            CaptureSlotScopeImpl(
-                overlayScope = overlayScope,
-                isRecordingState = isVideoRecordingActive,
-                scaffoldState = state,
-                onToggleQuickSettings = onToggleQuickSettings,
-                onDismissQuickSettings = onDismissQuickSettings,
-                onIncrementZoom = onIncrementZoom,
-                onAnimateZoomTo = onAnimateZoomTo,
-                onSetAbsoluteZoom = onSetAbsoluteZoom
-            )
-        }
+        CaptureSlotScopeImpl(
+            overlayScope = PreviewOverlaySlotScope(isOverViewfinder = false),
+            isRecordingState = isVideoRecordingActive,
+            scaffoldState = state,
+            onToggleQuickSettings = onToggleQuickSettings,
+            onDismissQuickSettings = onDismissQuickSettings,
+            onIncrementZoom = onIncrementZoom,
+            onAnimateZoomTo = onAnimateZoomTo,
+            onSetAbsoluteZoom = onSetAbsoluteZoom
+        )
     }
 
     CaptureScaffoldLayout(
