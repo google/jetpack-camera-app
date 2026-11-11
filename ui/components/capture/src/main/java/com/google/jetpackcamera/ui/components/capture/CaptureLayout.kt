@@ -233,7 +233,7 @@ fun CaptureScaffoldLayout(
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {},
-    deviceRotation: DeviceRotation = DeviceRotation.Natural,
+    deviceRotation: DeviceRotation = rememberDeviceRotation(),
     windowRotation: DeviceRotation = rememberWindowRotation()
 ) {
     val bottomSheetState = rememberStandardBottomSheetState(

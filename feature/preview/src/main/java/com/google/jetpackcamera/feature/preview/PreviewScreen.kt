@@ -158,6 +158,8 @@ fun PreviewScreen(
         captureUiState = readyStateProvider,
         surfaceRequest = surfaceRequest,
         modifier = modifier,
+        deviceRotation = deviceRotation,
+        windowRotation = windowRotation,
         onNavigateToSettings = onNavigateToSettings,
         onRequestWindowColorMode = onRequestWindowColorMode,
         onRequiresImmersiveChange = onRequiresImmersiveChange,
@@ -199,6 +201,7 @@ fun PreviewScreen(
                     widthDp = widthDp,
                     heightDp = heightDp,
                     formFactor = formFactor,
+                    activeLayoutName = "CaptureScaffoldLayout",
                     deviceRotation = deviceRotation,
                     windowRotation = windowRotation
                 )

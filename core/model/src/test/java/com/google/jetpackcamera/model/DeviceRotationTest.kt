@@ -89,4 +89,17 @@ class DeviceRotationTest {
             )
         ).isEqualTo(0)
     }
+
+    @Test
+    fun toWindowCounterRotationDegrees_andIsLandscape_matchAllQuadrants() {
+        assertThat(DeviceRotation.Natural.toWindowCounterRotationDegrees()).isEqualTo(0f)
+        assertThat(DeviceRotation.Rotated90.toWindowCounterRotationDegrees()).isEqualTo(90f)
+        assertThat(DeviceRotation.Rotated180.toWindowCounterRotationDegrees()).isEqualTo(180f)
+        assertThat(DeviceRotation.Rotated270.toWindowCounterRotationDegrees()).isEqualTo(-90f)
+
+        assertThat(DeviceRotation.Natural.isLandscape).isFalse()
+        assertThat(DeviceRotation.Rotated180.isLandscape).isFalse()
+        assertThat(DeviceRotation.Rotated90.isLandscape).isTrue()
+        assertThat(DeviceRotation.Rotated270.isLandscape).isTrue()
+    }
 }

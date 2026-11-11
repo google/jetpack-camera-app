@@ -799,6 +799,7 @@ private fun DebugDialogOptionsMenuDialog(
     onMoveToComponent: (SelectedDialog) -> Unit,
     onClose: () -> Unit
 ) {
+    // Buttons
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -823,6 +824,7 @@ private fun DebugDialogOptionsMenuDialog(
             )
         }
 
+        // show camera properties json button
         Button(
             modifier = Modifier.testTag(
                 DEBUG_OVERLAY_SHOW_CAMERA_PROPERTIES_BUTTON
@@ -834,6 +836,7 @@ private fun DebugDialogOptionsMenuDialog(
             Text(text = "Show Camera Properties JSON")
         }
 
+        // set zoom ratio
         Button(
             modifier = Modifier.testTag(
                 DEBUG_OVERLAY_SET_ZOOM_RATIO_BUTTON
@@ -845,6 +848,7 @@ private fun DebugDialogOptionsMenuDialog(
             Text(text = "Set Zoom Ratio")
         }
 
+        // set test pattern
         Button(
             enabled = debugUiState.availableTestPatterns.size > 1,
             onClick = {
@@ -898,6 +902,7 @@ private fun SetZoomRatioDialog(onChangeZoomRatio: (Float) -> Unit, onClose: () -
                 ),
                 onClick = {
                     try {
+                        // no-op if confirmed with empty entry
                         if (zoomRatioText.value.isEmpty()) {
                             onClose()
                         } else {

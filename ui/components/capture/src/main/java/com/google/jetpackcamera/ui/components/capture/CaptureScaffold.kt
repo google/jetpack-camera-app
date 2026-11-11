@@ -57,6 +57,7 @@ import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
@@ -768,6 +769,8 @@ private fun rememberZoomStateManager(
  *   viewfinder.
  * @param topBarTrailingContent optional composable slot aligned to the end of the top bar.
  * @param overlay optional overlay composable slot drawn above the viewfinder and controls.
+ * @param deviceRotation physical gravity orientation of the device.
+ * @param windowRotation display/window rotation reported by Android.
  */
 @Composable
 fun CaptureScaffold(
@@ -775,6 +778,8 @@ fun CaptureScaffold(
     surfaceRequest: SurfaceRequest?,
     modifier: Modifier = Modifier,
     state: CaptureScaffoldState = rememberCaptureScaffoldState(),
+    deviceRotation: DeviceRotation = rememberDeviceRotation(),
+    windowRotation: DeviceRotation = rememberWindowRotation(),
     onNavigateToSettings: () -> Unit = {},
     onRequestWindowColorMode: (Int) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
@@ -1315,7 +1320,9 @@ fun CaptureScaffold(
                     { cameraController?.dismissCameraError() }
                 )
             }
-        }
+        },
+        deviceRotation = deviceRotation,
+        windowRotation = windowRotation
     )
 }
 
