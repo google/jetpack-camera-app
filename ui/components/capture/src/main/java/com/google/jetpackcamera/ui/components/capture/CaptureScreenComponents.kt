@@ -52,6 +52,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.rememberTransformableState
 import androidx.compose.foundation.gestures.transformable
@@ -116,6 +117,7 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -129,6 +131,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.sp
@@ -635,19 +638,31 @@ fun AmplitudeToggleButton(
  * determined by [LocalCameraControlBackgroundStyle], so that the toggle remains legible when drawn
  * over the viewfinder.
  *
+ * In [Orientation.Vertical], Photo sits at the top and Video sits at the bottom with a downward
+ * drag to switch to video, and this top-to-bottom order is not inverted in RTL.
+ *
  * @param uiState the [CaptureModeToggleUiState.Available] for this component.
  * @param onChangeCaptureMode the callback for changing the capture mode.
- * @param onToggleWhenDisabled the callback for when the toggle is disabled.
+ * @param onToggleWhenDisabled optional callback invoked with the [DisableRationale] when the user
+ *   activates the toggle while disabled; when `null` or when no rationale exists, the disabled
+ *   toggle is inert and non-focusable.
  * @param modifier the modifier for this component.
+ * @param orientation the primary axis of the toggle track and drag gesture.
+ * @param compact whether to render the compact track dimensions (`92x48.dp` or `48x92.dp`).
+ * @param iconRotationDegrees clockwise rotation in degrees applied around each icon's center.
  */
+// TODO: Confirm final vertical ordering with UX.
 @Composable
 fun CaptureModeToggleButton(
     uiState: CaptureModeToggleUiState.Available,
     onChangeCaptureMode: (CaptureMode) -> Unit,
-    onToggleWhenDisabled: (DisableRationale) -> Unit,
-    modifier: Modifier = Modifier
+    onToggleWhenDisabled: ((DisableRationale) -> Unit)? = null,
+    modifier: Modifier = Modifier,
+    orientation: Orientation = Orientation.Horizontal,
+    compact: Boolean = false,
+    iconRotationDegrees: Float = 0f
 ) {
-    // Captures image (left), else captures video (right).
+    // Captures image (start/top), else captures video (end/bottom).
     val toggleState = remember(uiState.selectedCaptureMode) {
         when (uiState.selectedCaptureMode) {
             CaptureMode.IMAGE_ONLY, CaptureMode.STANDARD -> false
@@ -661,6 +676,31 @@ fun CaptureModeToggleButton(
                 CaptureMode.IMAGE_ONLY
             ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
+    val currentOnToggleWhenDisabled by rememberUpdatedState(onToggleWhenDisabled)
+    val disabledReason: DisableRationale? = if (!enabled) {
+        (
+            uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
+                SingleSelectableUiState.Disabled<CaptureMode>
+            )?.disabledReason
+            ?: (
+                uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY) as?
+                    SingleSelectableUiState.Disabled<CaptureMode>
+                )?.disabledReason
+    } else {
+        null
+    }
+    val hasDisabledRationaleAction =
+        !enabled && disabledReason != null && onToggleWhenDisabled != null
+    val onClickLabel = when {
+        enabled && !toggleState ->
+            stringResource(id = R.string.capture_mode_action_switch_to_video)
+        enabled && toggleState ->
+            stringResource(id = R.string.capture_mode_action_switch_to_photo)
+        hasDisabledRationaleAction ->
+            stringResource(id = R.string.capture_mode_action_explain_unavailable)
+        else -> null
+    }
+
     ToggleSwitch(
         modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
         // The track keeps its color when disabled; ToggleSwitch dims the thumb and icons instead.
@@ -670,40 +710,37 @@ fun CaptureModeToggleButton(
             val newCaptureMode = if (isChecked) CaptureMode.VIDEO_ONLY else CaptureMode.IMAGE_ONLY
             onChangeCaptureMode(newCaptureMode)
         },
-        onToggleWhenDisabled = {
-            val disabledReason: DisableRationale? =
-                (
-                    uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
-                        SingleSelectableUiState.Disabled<CaptureMode>
-                    )?.disabledReason
-                    ?: (
-                        uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
-                            as? SingleSelectableUiState.Disabled<CaptureMode>
-                        )
-                        ?.disabledReason
-            disabledReason?.let(onToggleWhenDisabled)
+        onToggleWhenDisabled = if (hasDisabledRationaleAction) {
+            { currentOnToggleWhenDisabled?.invoke(disabledReason) }
+        } else {
+            null
         },
         enabled = enabled,
-        leftIcon = if (uiState.selectedCaptureMode ==
+        orientation = orientation,
+        compact = compact,
+        iconRotationDegrees = iconRotationDegrees,
+        startIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.IMAGE_ONLY
         ) {
             R.drawable.ic_camera_alt_filled
         } else {
             R.drawable.ic_camera_alt_outline
         },
-        rightIcon = if (uiState.selectedCaptureMode ==
+        endIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.VIDEO_ONLY
         ) {
             R.drawable.ic_videocam_filled
         } else {
             R.drawable.ic_videocam_outline
         },
-        leftIconDescription = if (enabled) {
+        contentDescription = stringResource(id = R.string.capture_mode_toggle_content_description),
+        onClickLabel = onClickLabel,
+        startIconDescription = if (enabled) {
             stringResource(id = R.string.capture_mode_image_capture_content_description)
         } else {
             stringResource(id = R.string.capture_mode_image_capture_content_description_disabled)
         },
-        rightIconDescription = if (enabled) {
+        endIconDescription = if (enabled) {
             stringResource(id = R.string.capture_mode_video_recording_content_description)
         } else {
             stringResource(id = R.string.capture_mode_video_recording_content_description_disabled)
@@ -1721,11 +1758,19 @@ private fun FlipCameraButtonPreview() {
  * @param selectedCaptureMode the selected mode; must be [CaptureMode.IMAGE_ONLY] or
  * [CaptureMode.VIDEO_ONLY].
  * @param enabled whether video capture is selectable. When `false`, the toggle is shown disabled.
+ * @param orientation the primary axis of the toggle track and drag gesture.
+ * @param compact whether to render the compact track dimensions.
+ * @param iconRotationDegrees clockwise rotation in degrees applied around each icon's center.
+ * @param darkTheme whether to wrap the preview in a dark Material 3 color scheme.
  */
 @Composable
 internal fun PreviewCaptureModeToggleButton(
     selectedCaptureMode: CaptureMode,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    orientation: Orientation = Orientation.Horizontal,
+    compact: Boolean = false,
+    iconRotationDegrees: Float = 0f,
+    darkTheme: Boolean = true
 ) {
     val disabledRationale = object : DisableRationale {
         override val reasonTextResId: Int =
@@ -1740,7 +1785,8 @@ internal fun PreviewCaptureModeToggleButton(
             SingleSelectableUiState.Disabled(CaptureMode.VIDEO_ONLY, disabledRationale)
         }
     )
-    MaterialTheme(colorScheme = darkColorScheme()) {
+    val colorScheme = if (darkTheme) darkColorScheme() else MaterialTheme.colorScheme
+    MaterialTheme(colorScheme = colorScheme) {
         Box(
             modifier = Modifier
                 .background(Brush.verticalGradient(colors = listOf(Color.Gray, Color.DarkGray)))
@@ -1749,7 +1795,10 @@ internal fun PreviewCaptureModeToggleButton(
             CaptureModeToggleButton(
                 uiState = uiState,
                 onChangeCaptureMode = {},
-                onToggleWhenDisabled = {}
+                onToggleWhenDisabled = {},
+                orientation = orientation,
+                compact = compact,
+                iconRotationDegrees = iconRotationDegrees
             )
         }
     }
@@ -1758,7 +1807,7 @@ internal fun PreviewCaptureModeToggleButton(
 /**
  * Preview of the [CaptureModeToggleButton] with image capture selected.
  */
-@Preview
+@Preview(name = "Horizontal LTR - Image Selected (Dark)")
 @Composable
 internal fun CaptureModeToggleImageSelectedPreview() {
     PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY)
@@ -1767,7 +1816,7 @@ internal fun CaptureModeToggleImageSelectedPreview() {
 /**
  * Preview of the [CaptureModeToggleButton] with video capture selected.
  */
-@Preview
+@Preview(name = "Horizontal LTR - Video Selected (Dark)")
 @Composable
 internal fun CaptureModeToggleVideoSelectedPreview() {
     PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.VIDEO_ONLY)
@@ -1777,8 +1826,53 @@ internal fun CaptureModeToggleVideoSelectedPreview() {
  * Preview of the [CaptureModeToggleButton] when video capture is unavailable. The track keeps its
  * container color while the thumb and icons are dimmed.
  */
-@Preview
+@Preview(name = "Horizontal LTR - Disabled")
 @Composable
 internal fun CaptureModeToggleDisabledPreview() {
     PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY, enabled = false)
+}
+
+@Preview(name = "Horizontal LTR - Image Selected (Light)")
+@Composable
+private fun CaptureModeToggleLightPreview() {
+    PreviewCaptureModeToggleButton(
+        selectedCaptureMode = CaptureMode.IMAGE_ONLY,
+        darkTheme = false
+    )
+}
+
+@Preview(name = "Horizontal RTL - Image Selected", locale = "ar")
+@Composable
+private fun CaptureModeToggleRtlPreview() {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        PreviewCaptureModeToggleButton(selectedCaptureMode = CaptureMode.IMAGE_ONLY)
+    }
+}
+
+@Preview(name = "Vertical Standard (64x116)")
+@Composable
+private fun CaptureModeToggleVerticalStandardPreview() {
+    PreviewCaptureModeToggleButton(
+        selectedCaptureMode = CaptureMode.IMAGE_ONLY,
+        orientation = Orientation.Vertical
+    )
+}
+
+@Preview(name = "Vertical Compact (48x92)")
+@Composable
+private fun CaptureModeToggleVerticalCompactPreview() {
+    PreviewCaptureModeToggleButton(
+        selectedCaptureMode = CaptureMode.VIDEO_ONLY,
+        orientation = Orientation.Vertical,
+        compact = true
+    )
+}
+
+@Preview(name = "Rotated Icons (90 deg)")
+@Composable
+private fun CaptureModeToggleIconRotation90Preview() {
+    PreviewCaptureModeToggleButton(
+        selectedCaptureMode = CaptureMode.IMAGE_ONLY,
+        iconRotationDegrees = 90f
+    )
 }
