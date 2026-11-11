@@ -17,7 +17,10 @@ package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.LayoutDirection
 import com.android.tools.screenshot.PreviewTest
 
 /** Horizontal zoom bar with the first stop selected. */
@@ -74,4 +77,22 @@ internal fun ZoomBarVerticalLastStopScreenshotPreview() {
 @Composable
 internal fun ZoomBarSingleStopScreenshotPreview() {
     ZoomBarPreview(zoomRatio = 1.0f, zoomLevels = listOf(1.0f), colors = ZoomBarDefaults.colors())
+}
+
+/** Horizontal right-to-left zoom bar in Arabic locale with the first stop selected. */
+@PreviewTest
+@Preview(locale = "ar")
+@Composable
+internal fun ZoomBarHorizontalRtlFirstStopScreenshotPreview() {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        ZoomBarPreview(zoomRatio = 0.5f)
+    }
+}
+
+/** Horizontal zoom bar with 90-degree rotated labels and an in-between pinched zoom ratio. */
+@PreviewTest
+@Preview
+@Composable
+internal fun ZoomBarHorizontalRotatedPinchedScreenshotPreview() {
+    ZoomBarPreview(zoomRatio = 1.4f, labelRotationDegrees = 90f)
 }
