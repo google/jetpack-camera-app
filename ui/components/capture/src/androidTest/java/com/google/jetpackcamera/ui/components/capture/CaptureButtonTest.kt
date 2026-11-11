@@ -16,10 +16,14 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -37,6 +41,7 @@ import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
@@ -46,7 +51,9 @@ import com.google.android.apps.common.testing.accessibility.framework.Accessibil
 import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -66,12 +73,27 @@ class CaptureButtonTest {
         )
     }
 
+    /**
+     * Centers standalone controls away from window edges so Accessibility Test Framework enforces
+     * the full 48x48dp touch target minimum rather than the 32dp screen-edge threshold.
+     */
+    private fun setCenteredContent(content: @Composable () -> Unit) {
+        composeTestRule.setContent {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                content()
+            }
+        }
+    }
+
     @Test
     fun captureButton_standard_exists() {
         var imageCaptured = false
         var recordingStarted = false
         var recordingLocked = false
-        composeTestRule.setContent {
+        setCenteredContent {
             CaptureButton(
                 modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = { imageCaptured = true },
@@ -106,7 +128,7 @@ class CaptureButtonTest {
     @Test
     fun captureButton_imageOnly_exists() {
         var imageCaptured = false
-        composeTestRule.setContent {
+        setCenteredContent {
             CaptureButton(
                 modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = { imageCaptured = true },
@@ -134,7 +156,7 @@ class CaptureButtonTest {
     fun captureButton_videoOnly_exists() {
         var recordingStarted = false
         var recordingLocked = false
-        composeTestRule.setContent {
+        setCenteredContent {
             CaptureButton(
                 modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = {},
@@ -162,7 +184,7 @@ class CaptureButtonTest {
     @Test
     fun captureButton_lockedRecording_exists() {
         var recordingStopped = false
-        composeTestRule.setContent {
+        setCenteredContent {
             CaptureButton(
                 modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = {},
@@ -188,16 +210,19 @@ class CaptureButtonTest {
 
     @Test
     fun captureButton_pressedRecording_exists() {
-        composeTestRule.setContent {
-            CaptureButton(
-                modifier = Modifier.testTag(CAPTURE_BUTTON),
-                onImageCapture = {},
-                onStartRecording = {},
-                onStopRecording = {},
-                onLockVideoRecording = {},
-                onIncrementZoom = {},
-                captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording
-            )
+        var lockToggled = false
+        setCenteredContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                CaptureButton(
+                    modifier = Modifier.testTag(CAPTURE_BUTTON),
+                    onImageCapture = {},
+                    onStartRecording = {},
+                    onStopRecording = {},
+                    onLockVideoRecording = { lockToggled = it },
+                    onIncrementZoom = {},
+                    captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording
+                )
+            }
         }
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
@@ -211,7 +236,7 @@ class CaptureButtonTest {
 
     @Test
     fun captureButton_disabled_exists() {
-        composeTestRule.setContent {
+        setCenteredContent {
             CaptureButton(
                 modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = {},
@@ -234,7 +259,7 @@ class CaptureButtonTest {
 
     @Test
     fun captureButton_unavailable_exists() {
-        composeTestRule.setContent {
+        setCenteredContent {
             CaptureButton(
                 modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = {},
@@ -249,6 +274,49 @@ class CaptureButtonTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(isNotEnabled())
+    }
+
+    @Test
+    fun captureModeToggleButton_meetsAccessibilityAndTouchTargetChecks() {
+        var selectedMode by mutableStateOf(CaptureMode.IMAGE_ONLY)
+        setCenteredContent {
+            CaptureModeToggleButton(
+                uiState = CaptureModeToggleUiState.Available(
+                    selectedCaptureMode = selectedMode,
+                    imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+                    videoOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+                ),
+                onChangeCaptureMode = { selectedMode = it },
+                onToggleWhenDisabled = {}
+            )
+        }
+
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
+        assertThat(selectedMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun toggleSwitch_compactDimensions_expandsTouchTargetToMinimum48dp() {
+        var checked by mutableStateOf(false)
+        setCenteredContent {
+            ToggleSwitch(
+                modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
+                checked = checked,
+                onCheckedChange = { checked = it },
+                leftIconDescription = "Photo mode",
+                rightIconDescription = "Video mode",
+                switchWidth = 36.dp,
+                switchHeight = 24.dp,
+                thumbDiameter = 18.dp,
+                iconSize = 14.dp
+            )
+        }
+
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
+        assertThat(checked).isTrue()
     }
 
     @Test

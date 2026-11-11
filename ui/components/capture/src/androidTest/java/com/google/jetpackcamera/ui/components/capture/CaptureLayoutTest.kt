@@ -29,6 +29,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
@@ -36,7 +37,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
+import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.common.truth.Truth.assertThat
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,6 +50,15 @@ class CaptureLayoutTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
+
+    @Before
+    fun setUp() {
+        composeTestRule.enableAccessibilityChecks(
+            AccessibilityValidator()
+                .setRunChecksFromRootView(true)
+                .setThrowExceptionFor(AccessibilityCheckResultType.ERROR)
+        )
+    }
 
     private fun getResString(@StringRes resId: Int): String =
         ApplicationProvider.getApplicationContext<Context>().getString(resId)
