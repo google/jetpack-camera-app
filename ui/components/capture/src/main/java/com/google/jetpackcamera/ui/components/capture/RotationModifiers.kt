@@ -40,6 +40,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -172,10 +173,39 @@ fun rememberDeviceRotation(): DeviceRotation {
 }
 
 /**
+ * Remembers the target clockwise gravity compensation angle in degrees (`0`, `90`, or `270`),
+ * holding the previous non-inverted gravity angle whenever the relative delta between
+ * [windowRotation] and [deviceRotation] is `180°` so symbols and overlays never flip upside-down or
+ * snap back to `0°` while held at `180°`.
+ */
+@Composable
+internal fun rememberStickyGravityTargetDegrees(
+    deviceRotation: DeviceRotation = LocalDeviceRotation.current,
+    windowRotation: DeviceRotation = LocalWindowRotation.current
+): Int {
+    var lastNon180Degrees by remember { mutableIntStateOf(0) }
+    var previousWindowRotation by remember { mutableStateOf(windowRotation) }
+    if (previousWindowRotation != windowRotation) {
+        previousWindowRotation = windowRotation
+        lastNon180Degrees = 0
+    }
+    val resolved = deviceRotation.toGravityRotationDegrees(
+        windowRotation = windowRotation,
+        fallbackOn180Degrees = lastNon180Degrees
+    )
+    if (resolved != lastNon180Degrees) {
+        lastNon180Degrees = resolved
+    }
+    return resolved
+}
+
+/**
  * Remembers a single continuous clockwise rotation [State] in degrees that keeps UI elements
  * oriented upright against gravity inside the current window:
- * - Uses shortest-path angle interpolation (`±90°`) so transitions across `0° <-> 270°` never spin
- *   `270°` the long way around.
+ * - Holds the previous non-`180°` gravity target while the device is at `180°` relative to the
+ *   window so icons never flip upside-down or snap back to `0°`.
+ * - Uses shortest-path angle interpolation (`±90°`) and routes `180°` landscape-to-landscape
+ *   transitions (`90° <-> 270°`) through `0°` upright rather than `180°` upside-down.
  * - Snaps immediately when [windowRotation] changes (since the OS is already animating the window
  *   rotation) or when [LocalDisableAnimations] is `true`.
  */
@@ -184,7 +214,10 @@ fun rememberGravityRotationState(
     deviceRotation: DeviceRotation = LocalDeviceRotation.current,
     windowRotation: DeviceRotation = LocalWindowRotation.current
 ): State<Float> {
-    val targetClockwiseDegrees = deviceRotation.toGravityRotationDegrees(windowRotation)
+    val targetClockwiseDegrees = rememberStickyGravityTargetDegrees(
+        deviceRotation = deviceRotation,
+        windowRotation = windowRotation
+    )
     var continuousTarget by remember { mutableFloatStateOf(targetClockwiseDegrees.toFloat()) }
     var previousWindowRotation by remember { mutableStateOf(windowRotation) }
 
@@ -195,7 +228,11 @@ fun rememberGravityRotationState(
 
     val currentMod = ((continuousTarget % 360f) + 360f) % 360f
     val rawDelta = ((targetClockwiseDegrees - currentMod + 540f) % 360f) - 180f
-    val delta = if (rawDelta == -180f) 180f else rawDelta
+    val delta = if (rawDelta == -180f || rawDelta == 180f) {
+        if (currentMod >= 180f) 180f else -180f
+    } else {
+        rawDelta
+    }
     if (delta != 0f) {
         continuousTarget += delta
     }

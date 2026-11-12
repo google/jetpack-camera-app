@@ -364,7 +364,10 @@ internal fun CompactPortraitLayout(
         } else {
             deviceRotation
         }
-        val windowGravityDeg = effectiveDeviceRotation.toGravityRotationDegrees(windowRotation)
+        val windowGravityDeg = rememberStickyGravityTargetDegrees(
+            deviceRotation = effectiveDeviceRotation,
+            windowRotation = windowRotation
+        )
         val effectiveWindowRotation = when {
             !shouldCounterRotate -> DeviceRotation.Natural
             windowGravityDeg == 90 -> DeviceRotation.Rotated90
@@ -384,8 +387,10 @@ internal fun CompactPortraitLayout(
             deviceRotation = effectiveDeviceRotation,
             windowRotation = windowRotation
         )
-        val targetGravityDegrees =
-            effectiveDeviceRotation.toGravityRotationDegrees(containerFrameRotation)
+        val targetGravityDegrees = rememberStickyGravityTargetDegrees(
+            deviceRotation = effectiveDeviceRotation,
+            windowRotation = containerFrameRotation
+        )
         val isLandscapeGravity =
             targetGravityDegrees == CompactPortraitTokens.LANDSCAPE_CCW_GRAVITY_DEGREES ||
                 targetGravityDegrees == CompactPortraitTokens.LANDSCAPE_CW_GRAVITY_DEGREES

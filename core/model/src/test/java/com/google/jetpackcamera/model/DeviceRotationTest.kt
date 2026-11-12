@@ -77,17 +77,24 @@ class DeviceRotationTest {
             )
         ).isEqualTo(90)
 
-        // Upside-down delta (180°) clamps to 0° so UI never flips upside-down
+        // Upside-down delta (180°) defaults to 0° and honors stateful fallbackOn180Degrees
         assertThat(
             DeviceRotation.Rotated180.toGravityRotationDegrees(
                 windowRotation = DeviceRotation.Natural
             )
         ).isEqualTo(0)
         assertThat(
-            DeviceRotation.Rotated90.toGravityRotationDegrees(
-                windowRotation = DeviceRotation.Rotated270
+            DeviceRotation.Rotated180.toGravityRotationDegrees(
+                windowRotation = DeviceRotation.Natural,
+                fallbackOn180Degrees = 270
             )
-        ).isEqualTo(0)
+        ).isEqualTo(270)
+        assertThat(
+            DeviceRotation.Rotated90.toGravityRotationDegrees(
+                windowRotation = DeviceRotation.Rotated270,
+                fallbackOn180Degrees = 90
+            )
+        ).isEqualTo(90)
     }
 
     @Test

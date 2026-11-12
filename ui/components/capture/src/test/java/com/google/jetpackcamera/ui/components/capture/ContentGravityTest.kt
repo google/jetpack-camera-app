@@ -46,6 +46,7 @@ import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.Density
@@ -88,6 +89,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import org.junit.Rule
 import org.junit.Test
@@ -862,6 +864,92 @@ class ContentGravityTest {
         val confirmBounds = clippedBoundsOf(CAMERA_ERROR_DIALOG_CONFIRM_BUTTON_TAG)
         assertThat(titleBounds.top.value).isLessThan(confirmBounds.top.value)
         assertThat(bodyBounds.width.value).isGreaterThan(bodyBounds.height.value)
+    }
+
+    @Config(qualifiers = "w412dp-h915dp-mdpi")
+    @Test
+    fun zoomBarLabelsAndCompactLandscapeGravity_rotateUprightAndHoldPreviousGravityAt180() {
+        var deviceRotation by mutableStateOf(DeviceRotation.Natural)
+        val state = CaptureScaffoldState(isInitiallyExpanded = false)
+        val fakeController = FakeQuickSettingsController()
+        val zoomUiState = ZoomControlUiState.Enabled(
+            zoomLevels = listOf(0.5f, 1.5f, 2.0f),
+            primaryLensFacing = LensFacing.BACK,
+            initialZoomRatio = 1.5f,
+            primaryZoomRatio = 1.5f
+        )
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CompositionLocalProvider(
+                    LocalDensity provides Density(1f),
+                    LocalDisableAnimations provides true
+                ) {
+                    CompactPortraitLayout(
+                        slots = PlaceholderCaptureSlots.sideRail().copy(
+                            zoomControls = { mod ->
+                                ZoomBar(
+                                    zoomControlUiState = zoomUiState,
+                                    onChangeZoom = {},
+                                    modifier = mod
+                                )
+                            },
+                            elapsedTimeDisplay = { mod ->
+                                ElapsedTimeText(
+                                    modifier = mod.testTag(ELAPSED_TIME_TAG),
+                                    elapsedTimeUiStateProvider = {
+                                        ElapsedTimeUiState.Enabled(elapsedTimeNanos = 0L)
+                                    }
+                                )
+                            },
+                            quickSettingsOverlay = { mod ->
+                                CaptureScaffoldDefaults.QuickSettings(
+                                    modifier = mod,
+                                    uiState = sampleQuickSettingsUiState(),
+                                    controller = fakeController,
+                                    onNavigateToSettings = {}
+                                )
+                            }
+                        ),
+                        viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+                        state = state,
+                        deviceRotation = deviceRotation,
+                        windowRotation = DeviceRotation.Natural
+                    )
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        // Natural (0°): record baseline unrotated label bounds (width != height).
+        val label0 = composeTestRule.onNodeWithText("1.5\u00D7", useUnmergedTree = true)
+            .getBoundsInRoot()
+        assertThat(label0.width.value).isNotEqualTo(label0.height.value)
+
+        // Rotate 90° CW (Rotated90 -> 270° gravity): graphicsLayer swaps the label's screen-space
+        // width and height by 90°, and LandscapeTopEdgeBanner anchors ElapsedTimeText to the left
+        // landscape top edge.
+        deviceRotation = DeviceRotation.Rotated90
+        composeTestRule.waitForIdle()
+
+        val label90 = composeTestRule.onNodeWithText("1.5\u00D7", useUnmergedTree = true)
+            .getBoundsInRoot()
+        assertThat(label90.width.value).isWithin(TOLERANCE).of(label0.height.value)
+        assertThat(label90.height.value).isWithin(TOLERANCE).of(label0.width.value)
+        val elapsedAt90 = clippedBoundsOf(ELAPSED_TIME_TAG)
+        assertThat(elapsedAt90.left.value).isLessThan(100f)
+
+        // Rotate further to Rotated180: both ZoomBar label and LandscapeTopEdgeBanner maintain
+        // the previous 270° gravity instead of snapping back to 0°.
+        deviceRotation = DeviceRotation.Rotated180
+        composeTestRule.waitForIdle()
+
+        val label180 = composeTestRule.onNodeWithText("1.5\u00D7", useUnmergedTree = true)
+            .getBoundsInRoot()
+        assertThat(label180.width.value).isWithin(TOLERANCE).of(label90.width.value)
+        assertThat(label180.height.value).isWithin(TOLERANCE).of(label90.height.value)
+        val elapsedAt180 = clippedBoundsOf(ELAPSED_TIME_TAG)
+        assertThat(elapsedAt180.left.value).isWithin(TOLERANCE).of(elapsedAt90.left.value)
     }
 
     private companion object {
