@@ -17,11 +17,13 @@ package com.google.jetpackcamera.ui.components.capture
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.graphics.Matrix
 import android.graphics.Rect as AndroidRect
 import android.util.Size
 import android.view.KeyEvent as AndroidKeyEvent
 import android.view.Surface
+import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.impl.CameraInternal
 import androidx.compose.foundation.layout.Box
@@ -68,6 +70,7 @@ import androidx.compose.ui.unit.width
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
@@ -700,6 +703,59 @@ class PreviewDisplayTest {
         }
     }
 
+    @Test
+    fun previewDisplay_withHdrSurfaceRequest_requestsColorModeHdrAcrossAllPostures() {
+        val hdrSurfaceRequest = createFakeSurfaceRequest(
+            width = 1920,
+            height = 1080,
+            dynamicRange = CXDynamicRange.HLG_10_BIT
+        )
+        var containerSize by mutableStateOf(DpSize(412.dp, 915.dp))
+        var windowRotation by mutableStateOf(DeviceRotation.Natural)
+        val requestedColorModes = mutableListOf<Int>()
+
+        composeTestRule.setContent {
+            CaptureScaffoldLayout(
+                modifier = Modifier.size(containerSize),
+                deviceRotation = windowRotation,
+                windowRotation = windowRotation,
+                viewfinder = { vfModifier ->
+                    PreviewDisplay(
+                        modifier = vfModifier,
+                        previewDisplayUiState = createUiState(AspectRatio.THREE_FOUR),
+                        onTapToFocus = { _, _ -> },
+                        onFlipCamera = {},
+                        onScaleZoom = {},
+                        onRequestWindowColorMode = { requestedColorModes += it },
+                        surfaceRequest = hdrSurfaceRequest,
+                        focusMeteringUiState = FocusMeteringUiState.Unspecified,
+                        useLandscapeAspectRatio = true
+                    )
+                }
+            )
+        }
+        composeTestRule.waitForIdle()
+        assertThat(requestedColorModes.last()).isEqualTo(ActivityInfo.COLOR_MODE_HDR)
+
+        // Counter-rotated horizontal compact split-screen (800x400dp) preserves EXTERNAL + HDR.
+        containerSize = DpSize(800.dp, 400.dp)
+        windowRotation = DeviceRotation.Rotated90
+        composeTestRule.waitForIdle()
+        assertThat(requestedColorModes.last()).isEqualTo(ActivityInfo.COLOR_MODE_HDR)
+
+        // Side-rail tablet landscape (1280x800dp) and round-trip back to compact portrait
+        // (412x915dp) preserve EXTERNAL + HDR without resetting to COLOR_MODE_DEFAULT.
+        containerSize = DpSize(1280.dp, 800.dp)
+        windowRotation = DeviceRotation.Natural
+        composeTestRule.waitForIdle()
+        assertThat(requestedColorModes.last()).isEqualTo(ActivityInfo.COLOR_MODE_HDR)
+
+        containerSize = DpSize(412.dp, 915.dp)
+        composeTestRule.waitForIdle()
+        assertThat(requestedColorModes.last()).isEqualTo(ActivityInfo.COLOR_MODE_HDR)
+        assertThat(requestedColorModes).doesNotContain(ActivityInfo.COLOR_MODE_DEFAULT)
+    }
+
     private fun createUiState(
         aspectRatio: AspectRatio,
         lastBlinkTimeStamp: Long = 0L
@@ -716,7 +772,11 @@ class PreviewDisplayTest {
     )
 
     @SuppressLint("RestrictedApi")
-    private fun createFakeSurfaceRequest(width: Int, height: Int): SurfaceRequest {
+    private fun createFakeSurfaceRequest(
+        width: Int,
+        height: Int,
+        dynamicRange: CXDynamicRange = CXDynamicRange.SDR
+    ): SurfaceRequest {
         val fakeCamera = Proxy.newProxyInstance(
             CameraInternal::class.java.classLoader,
             arrayOf(CameraInternal::class.java)
@@ -739,7 +799,12 @@ class PreviewDisplayTest {
             }
         } as CameraInternal
 
-        return SurfaceRequest(Size(width, height), fakeCamera) {}.also { request ->
+        return SurfaceRequest(
+            Size(width, height),
+            fakeCamera,
+            dynamicRange,
+            SurfaceRequest.FRAME_RATE_RANGE_UNSPECIFIED
+        ) {}.also { request ->
             request.updateTransformationInfo(
                 SurfaceRequest.TransformationInfo.of(
                     AndroidRect(0, 0, width, height),

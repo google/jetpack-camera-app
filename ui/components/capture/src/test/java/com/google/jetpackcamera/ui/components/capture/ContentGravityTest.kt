@@ -793,10 +793,10 @@ class ContentGravityTest {
                         viewfinder = { mod ->
                             observedMode = LocalCameraLayoutMode.current
                             observedActiveLayout = LocalActiveCaptureLayout.current
-                            observedInteriorGravity = LocalGravityRotationState.current.value
                             PlaceholderViewfinder(modifier = mod)
                         },
                         captureButton = { mod ->
+                            observedInteriorGravity = LocalGravityRotationState.current.value
                             Box(mod.size(80.dp).testTag(CAPTURE_BUTTON))
                         },
                         imageWell = { mod ->

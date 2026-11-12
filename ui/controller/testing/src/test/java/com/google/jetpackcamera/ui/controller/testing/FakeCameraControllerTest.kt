@@ -56,4 +56,14 @@ class FakeCameraControllerTest {
         controller.setDisplayRotation(DeviceRotation.Rotated90)
         assertThat(calledRotation).isEqualTo(DeviceRotation.Rotated90)
     }
+
+    @Test
+    fun setWindowRotation_invokesAction() {
+        var calledRotation: DeviceRotation? = null
+        val controller = FakeCameraController(
+            setWindowRotationAction = { calledRotation = it }
+        )
+        controller.setWindowRotation(DeviceRotation.Rotated270)
+        assertThat(calledRotation).isEqualTo(DeviceRotation.Rotated270)
+    }
 }

@@ -40,6 +40,7 @@ import com.google.jetpackcamera.model.VideoQuality
 sealed interface PerpetualSessionSettings {
     val aspectRatio: AspectRatio
     val captureMode: CaptureMode
+    val windowRotation: DeviceRotation
 
     data class SingleCamera(
         override val aspectRatio: AspectRatio,
@@ -52,7 +53,8 @@ sealed interface PerpetualSessionSettings {
         val mirrorMode: MirrorMode,
         val imageFormat: ImageOutputFormat,
         val lowLightBoostPriority: LowLightBoostPriority,
-        val activeCaptureSubMode: CaptureSubModeFeatureKey? = null
+        val activeCaptureSubMode: CaptureSubModeFeatureKey? = null,
+        override val windowRotation: DeviceRotation = DeviceRotation.Natural
     ) : PerpetualSessionSettings
 
     /**
@@ -62,7 +64,8 @@ sealed interface PerpetualSessionSettings {
         val subModeKey: CaptureSubModeFeatureKey,
         override val aspectRatio: AspectRatio,
         override val captureMode: CaptureMode,
-        val mirrorMode: MirrorMode = MirrorMode.OFF
+        val mirrorMode: MirrorMode = MirrorMode.OFF,
+        override val windowRotation: DeviceRotation = DeviceRotation.Natural
     ) : PerpetualSessionSettings
 }
 

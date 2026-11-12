@@ -147,7 +147,8 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                         captureMode = sessionSettings.captureMode,
                         videoCaptureUseCase = videoCapture,
                         previewMirrorMode = sessionSettings.mirrorMode
-                            .toCXConcurrentPreviewMirrorMode()
+                            .toCXConcurrentPreviewMirrorMode(),
+                        windowRotation = sessionSettings.windowRotation
                     )
                 }.apply { attachPreviewSurfaceProvider(useCaseGroup = this) }
 

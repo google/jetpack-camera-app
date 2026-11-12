@@ -302,7 +302,8 @@ internal suspend fun runSingleCameraSession(
                             imageFormat = sessionSettings.imageFormat,
                             captureMode = sessionSettings.captureMode,
                             effect = effect,
-                            captureResults = captureResults
+                            captureResults = captureResults,
+                            windowRotation = sessionSettings.windowRotation
                         )
                     }.apply {
                         attachPreviewSurfaceProvider(useCaseGroup = this)
@@ -740,11 +741,9 @@ fun CameraSessionContext.applyDeviceRotation(
     useCaseGroup.useCases.forEach {
         when (it) {
             is Preview -> {
-                // Preview's target rotation should not be updated with device rotation.
-                // Instead, preview rotation should match the display rotation.
-                // When Preview is created, it is initialized with the display rotation.
-                // This will need to be updated separately if the display rotation is not
-                // locked. Currently the app is locked to portrait orientation.
+                // Preview's target rotation, ViewPort, and StreamSharing OutConfigs track
+                // PerpetualSessionSettings.windowRotation via session rebind rather than physical
+                // device gravity rotation.
             }
 
             is ImageCapture -> {
@@ -770,15 +769,17 @@ fun createUseCaseGroup(
     captureMode: CaptureMode,
     effect: CameraEffect? = null,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null,
-    previewMirrorMode: Int = CX_SINGLE_CAMERA_PREVIEW_MIRROR_MODE
+    previewMirrorMode: Int = CX_SINGLE_CAMERA_PREVIEW_MIRROR_MODE,
+    windowRotation: DeviceRotation = sessionSettings?.windowRotation ?: DeviceRotation.Natural
 ): UseCaseGroup {
     val previewUseCase =
         createPreviewUseCase(
-            cameraInfo,
-            aspectRatio,
-            stabilizationMode,
-            previewMirrorMode,
-            captureResults
+            cameraInfo = cameraInfo,
+            aspectRatio = aspectRatio,
+            stabilizationMode = stabilizationMode,
+            previewMirrorMode = previewMirrorMode,
+            captureResults = captureResults,
+            windowRotation = windowRotation
         )
 
     // only create image use case in image or standard
@@ -799,14 +800,15 @@ fun createUseCaseGroup(
     return UseCaseGroup.Builder().apply {
         Log.d(
             TAG,
-            "Setting initial device rotation to ${initialTransientSettings.deviceRotation}"
+            "Setting initial device rotation to ${initialTransientSettings.deviceRotation}, " +
+                "window rotation to $windowRotation"
         )
         setViewPort(
-            ViewPort.Builder(
-                Rational(aspectRatio.numerator, aspectRatio.denominator),
-                // Initialize rotation to Preview's rotation, which comes from Display rotation
-                previewUseCase.targetRotation
-            ).build()
+            createSensorAlignedViewPort(
+                cameraInfo = cameraInfo,
+                aspectRatio = aspectRatio,
+                targetRotation = previewUseCase.targetRotation
+            )
         )
         addUseCase(previewUseCase)
 
@@ -816,6 +818,47 @@ fun createUseCaseGroup(
 
         effect?.let { addEffect(it) }
     }.build()
+}
+
+/**
+ * Builds a [ViewPort] aligned with [targetRotation] whose aspect-ratio [Rational] matches the
+ * camera sensor's upright orientation at [targetRotation].
+ */
+internal fun createSensorAlignedViewPort(
+    cameraInfo: CameraInfo,
+    aspectRatio: AspectRatio,
+    targetRotation: Int
+): ViewPort = ViewPort.Builder(
+    resolveViewPortAspectRatio(
+        cameraInfo = cameraInfo,
+        aspectRatio = aspectRatio,
+        targetRotation = targetRotation
+    ),
+    targetRotation
+).build()
+
+/**
+ * Applies [windowRotation] as the target rotation of this [Preview.Builder].
+ */
+internal fun Preview.Builder.applyWindowRotation(windowRotation: DeviceRotation): Preview.Builder =
+    setTargetRotation(windowRotation.toUiSurfaceRotation())
+
+/**
+ * Resolves the [ViewPort] aspect-ratio [Rational] in upright target-rotation coordinates using
+ * [CameraInfo.getSensorRotationDegrees] so landscape sessions on landscape sensors frame `4:3` /
+ * `16:9` rather than cropping a portrait strip.
+ */
+internal fun resolveViewPortAspectRatio(
+    cameraInfo: CameraInfo,
+    aspectRatio: AspectRatio,
+    targetRotation: Int
+): Rational {
+    val sensorRotationDegrees = cameraInfo.getSensorRotationDegrees(targetRotation)
+    return if (sensorRotationDegrees % 180 == 0) {
+        Rational(aspectRatio.denominator, aspectRatio.numerator)
+    } else {
+        Rational(aspectRatio.numerator, aspectRatio.denominator)
+    }
 }
 
 /**
@@ -946,8 +989,11 @@ private fun createPreviewUseCase(
     aspectRatio: AspectRatio,
     stabilizationMode: StabilizationMode,
     previewMirrorMode: Int,
-    captureResults: MutableStateFlow<TotalCaptureResult?>? = null
+    captureResults: MutableStateFlow<TotalCaptureResult?>? = null,
+    windowRotation: DeviceRotation = DeviceRotation.Natural
 ): Preview = Preview.Builder().apply {
+    applyWindowRotation(windowRotation)
+
     updateCameraStateWithCaptureResults(
         targetCameraInfo = cameraInfo,
         captureResults = captureResults

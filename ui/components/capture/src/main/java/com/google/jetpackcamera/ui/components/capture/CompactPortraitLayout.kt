@@ -107,7 +107,9 @@ import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.takeOrElse
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolution
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSpec
 import com.google.jetpackcamera.ui.components.capture.layout.CameraRowIds
 import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
@@ -339,9 +341,15 @@ internal fun CompactPortraitLayout(
 
     SeamlessRotationAnimationEffect()
 
+    var isErrorDialogPlaced by remember { mutableStateOf(false) }
+    val isErrorModalActive = isErrorDialogShowing || isErrorDialogPlaced
+    val isModalOpen = isSheetVisible || isErrorModalActive
+    val externalVfMetrics = remember { ExternalViewfinderMetrics() }
+
     BoxWithConstraints(
         modifier = modifier
             .fillMaxSize()
+            .background(Color.Black)
             .testTag(COMPACT_CONTROLS_TAG)
     ) {
         val windowWidth = maxWidth
@@ -371,6 +379,10 @@ internal fun CompactPortraitLayout(
         val gravityRotationState = rememberGravityRotationState(
             deviceRotation = effectiveDeviceRotation,
             windowRotation = containerFrameRotation
+        )
+        val unrotatedGravityRotationState = rememberGravityRotationState(
+            deviceRotation = effectiveDeviceRotation,
+            windowRotation = windowRotation
         )
         val targetGravityDegrees =
             effectiveDeviceRotation.toGravityRotationDegrees(containerFrameRotation)
@@ -415,11 +427,89 @@ internal fun CompactPortraitLayout(
         }
         val sheetGravityRotationState = rememberUpdatedState(displayedSheetGravityDegrees.toFloat())
 
+        val portraitWidth = if (shouldCounterRotate) windowHeight else windowWidth
+        val portraitHeight = if (shouldCounterRotate) windowWidth else windowHeight
+        val portraitAspectRatio = portraitHeight.value / portraitWidth.value
+        val isHandheldPortrait =
+            portraitAspectRatio >= CompactPortraitTokens.PORTRAIT_ASPECT_RATIO_THRESHOLD
+        val minTouchTarget = LocalMinimumInteractiveComponentSize.current
+            .takeOrElse { CompactPortraitTokens.DefaultMinTouchTarget }
+        val (topBarHeight, topBarTopPadding) = computeTopBarMetrics(
+            includeStatusBarsInTopBar = includeStatusBarsInTopBar,
+            minTouchTarget = minTouchTarget,
+            windowRotation = effectiveWindowRotation
+        )
+        val navInset = WindowInsets.navigationBarsIgnoringVisibility
+            .toPortraitWindowInsets(effectiveWindowRotation)
+            .asPaddingValues()
+            .calculateBottomPadding()
+        val rawGestureInset = WindowInsets.systemGestures
+            .toPortraitWindowInsets(effectiveWindowRotation)
+            .asPaddingValues()
+            .calculateBottomPadding()
+        val effectiveGestureInset = max(CompactPortraitTokens.MinGestureInset, rawGestureInset)
+        val spec = remember(minTouchTarget) {
+            CameraLayoutDefaults.spec(minInteractiveTouchTarget = minTouchTarget)
+        }
+        val portraitSolution = if (isHandheldPortrait) {
+            val cameraWindow = remember(
+                portraitWidth,
+                portraitHeight,
+                topBarHeight,
+                navInset,
+                effectiveGestureInset
+            ) {
+                CameraWindow(
+                    width = portraitWidth,
+                    height = portraitHeight,
+                    topInset = topBarHeight,
+                    navInset = navInset,
+                    gestureInset = effectiveGestureInset
+                )
+            }
+            remember(spec, cameraWindow) { CameraLayoutSolver.solve(spec, cameraWindow) }
+        } else {
+            null
+        }
+
+        CompositionLocalProvider(
+            LocalOverlapTargetBounds provides overlapTargetBounds,
+            LocalActiveCaptureLayout provides "CompactPortraitLayout",
+            LocalDeviceRotation provides effectiveDeviceRotation,
+            LocalWindowRotation provides if (shouldCounterRotate) {
+                windowRotation
+            } else {
+                effectiveWindowRotation
+            },
+            LocalCompactCounterRotation provides effectiveWindowRotation,
+            LocalGravityRotationState provides if (shouldCounterRotate) {
+                unrotatedGravityRotationState
+            } else {
+                gravityRotationState
+            },
+            LocalCameraLayoutSolution provides portraitSolution,
+            LocalLayoutDirection provides localeDirection
+        ) {
+            OuterViewfinderHost(
+                viewfinder = viewfinder,
+                solution = portraitSolution,
+                spec = spec,
+                topBarHeight = topBarHeight,
+                shouldCounterRotate = shouldCounterRotate,
+                counterRotation = effectiveWindowRotation,
+                metrics = externalVfMetrics,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .suppressBackgroundForModal(isModalOpen)
+            )
+        }
+
         CompositionLocalProvider(
             LocalOverlapTargetBounds provides overlapTargetBounds,
             LocalActiveCaptureLayout provides "CompactPortraitLayout",
             LocalDeviceRotation provides effectiveDeviceRotation,
             LocalWindowRotation provides effectiveWindowRotation,
+            LocalCompactCounterRotation provides effectiveWindowRotation,
             LocalGravityRotationState provides gravityRotationState
         ) {
             Box(
@@ -430,6 +520,7 @@ internal fun CompactPortraitLayout(
                 BottomSheetScaffold(
                     modifier = Modifier.fillMaxSize(),
                     scaffoldState = scaffoldState,
+                    containerColor = Color.Transparent,
                     sheetPeekHeight = CompactPortraitTokens.SheetPeekHeight,
                     sheetDragHandle = {
                         BottomSheetDefaults.DragHandle(
@@ -509,17 +600,14 @@ internal fun CompactPortraitLayout(
                     snackbarHost = {}
                 ) {
                     BoxWithConstraints(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(Color.Black)
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        var isErrorDialogPlaced by remember { mutableStateOf(false) }
-                        val isErrorModalActive = isErrorDialogShowing || isErrorDialogPlaced
-                        val isModalOpen = isSheetVisible || isErrorModalActive
-
-                        val windowAspectRatio = maxHeight.value / maxWidth.value
-                        val isHandheldPortrait = windowAspectRatio >=
-                            CompactPortraitTokens.PORTRAIT_ASPECT_RATIO_THRESHOLD
+                        val portraitViewfinderProxy: @Composable (Modifier) -> Unit = { proxyMod ->
+                            ExternalViewfinderProxy(
+                                metrics = externalVfMetrics,
+                                modifier = proxyMod
+                            )
+                        }
                         val bottomElapsedTimeDisplay:
                             @Composable PreviewOverlaySlotScope.(Modifier) -> Unit =
                             if (isLandscapeGravity) {
@@ -545,8 +633,9 @@ internal fun CompactPortraitLayout(
                                 windowRotation = effectiveWindowRotation,
                                 includeStatusBarsInTopBar = includeStatusBarsInTopBar,
                                 controlsVisible = controlsVisible,
+                                precomputedSolution = portraitSolution,
                                 modifier = Modifier.suppressBackgroundForModal(isModalOpen),
-                                viewfinder = viewfinder,
+                                viewfinder = portraitViewfinderProxy,
                                 topStartContent = topStartContent,
                                 viewfinderTopEndContent = viewfinderTopEndContent,
                                 onRequiresImmersiveChange = onRequiresImmersiveChange,
@@ -588,13 +677,6 @@ internal fun CompactPortraitLayout(
                             }
                         } else {
                             Column(modifier = Modifier.suppressBackgroundForModal(isModalOpen)) {
-                                val minTouchTarget = LocalMinimumInteractiveComponentSize.current
-                                    .takeOrElse { CompactPortraitTokens.DefaultMinTouchTarget }
-                                val (topBarHeight, topBarTopPadding) = computeTopBarMetrics(
-                                    includeStatusBarsInTopBar = includeStatusBarsInTopBar,
-                                    minTouchTarget = minTouchTarget,
-                                    windowRotation = effectiveWindowRotation
-                                )
                                 CompactTopBarBox(
                                     topBarHeight = topBarHeight,
                                     topBarTopPadding = topBarTopPadding,
@@ -603,7 +685,7 @@ internal fun CompactPortraitLayout(
                                     topBarTrailingContent = topBarTrailingContent
                                 )
                                 Box {
-                                    viewfinder(Modifier)
+                                    portraitViewfinderProxy(Modifier)
                                     OverlapAwareStyleProvider(Modifier.align(Alignment.TopStart)) {
                                         topStartContent(Modifier)
                                     }
@@ -695,6 +777,144 @@ internal fun CompactPortraitLayout(
                 screenFlashOverlay(Modifier)
             }
         }
+    }
+}
+
+private class ExternalViewfinderMetrics {
+    var portraitWidthPx by mutableIntStateOf(0)
+    var portraitHeightPx by mutableIntStateOf(0)
+    var reportedTopPx by mutableIntStateOf(AlignmentLine.Unspecified)
+}
+
+@Composable
+private fun OuterViewfinderHost(
+    viewfinder: @Composable (Modifier) -> Unit,
+    solution: CameraLayoutSolution?,
+    spec: CameraLayoutSpec,
+    topBarHeight: Dp,
+    shouldCounterRotate: Boolean,
+    counterRotation: DeviceRotation,
+    metrics: ExternalViewfinderMetrics,
+    modifier: Modifier = Modifier
+) {
+    Layout(
+        modifier = modifier,
+        content = { viewfinder(Modifier) }
+    ) { measurables, constraints ->
+        val measurable = measurables.firstOrNull()
+        if (measurable == null) {
+            layout(constraints.maxWidth, constraints.maxHeight) {}
+        } else if (!shouldCounterRotate) {
+            if (solution != null) {
+                val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+                val vf = measurable.measure(looseConstraints)
+                val reportedTop = vf[ViewfinderTopLine]
+                val viewfinderY = if (vf.height in 1 until constraints.maxHeight) {
+                    val ratio = vf.width.toFloat() / vf.height.toFloat()
+                    solution.viewfinderBandFor(ratio, spec.viewfinders)?.top?.roundToPx()
+                } else {
+                    null
+                } ?: 0
+                val vfX = (constraints.maxWidth - vf.width) / 2
+                if (metrics.portraitWidthPx != vf.width) metrics.portraitWidthPx = vf.width
+                if (metrics.portraitHeightPx != vf.height) metrics.portraitHeightPx = vf.height
+                if (metrics.reportedTopPx != reportedTop) metrics.reportedTopPx = reportedTop
+                layout(constraints.maxWidth, constraints.maxHeight) {
+                    vf.placeRelative(vfX, viewfinderY)
+                }
+            } else {
+                val topBarPx = topBarHeight.roundToPx().coerceIn(0, constraints.maxHeight)
+                val availHeight = (constraints.maxHeight - topBarPx).coerceAtLeast(0)
+                val vf = measurable.measure(
+                    Constraints(
+                        minWidth = 0,
+                        maxWidth = constraints.maxWidth,
+                        minHeight = 0,
+                        maxHeight = availHeight
+                    )
+                )
+                if (metrics.portraitWidthPx != vf.width) metrics.portraitWidthPx = vf.width
+                if (metrics.portraitHeightPx != vf.height) metrics.portraitHeightPx = vf.height
+                if (metrics.reportedTopPx != AlignmentLine.Unspecified) {
+                    metrics.reportedTopPx = AlignmentLine.Unspecified
+                }
+                layout(constraints.maxWidth, constraints.maxHeight) {
+                    vf.placeRelative(0, topBarPx)
+                }
+            }
+        } else if (solution != null) {
+            val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+            val vf = measurable.measure(looseConstraints)
+            val reportedTop = vf[ViewfinderTopLine]
+            val xOffset = if (
+                reportedTop == AlignmentLine.Unspecified &&
+                vf.width in 1 until constraints.maxWidth &&
+                vf.height > 0
+            ) {
+                val portraitRatio = vf.height.toFloat() / vf.width.toFloat()
+                val bandTopPx = solution
+                    .viewfinderBandFor(portraitRatio, spec.viewfinders)
+                    ?.top
+                    ?.roundToPx() ?: 0
+                if (counterRotation == DeviceRotation.Rotated90) {
+                    (constraints.maxWidth - bandTopPx - vf.width).coerceAtLeast(0)
+                } else {
+                    bandTopPx.coerceIn(0, (constraints.maxWidth - vf.width).coerceAtLeast(0))
+                }
+            } else {
+                0
+            }
+            val yOffset = (constraints.maxHeight - vf.height) / 2
+            if (metrics.portraitWidthPx != vf.height) metrics.portraitWidthPx = vf.height
+            if (metrics.portraitHeightPx != vf.width) metrics.portraitHeightPx = vf.width
+            if (metrics.reportedTopPx != reportedTop) metrics.reportedTopPx = reportedTop
+            layout(constraints.maxWidth, constraints.maxHeight) {
+                vf.place(xOffset, yOffset)
+            }
+        } else {
+            val topBarPx = topBarHeight.roundToPx().coerceIn(0, constraints.maxWidth)
+            val availWidth = (constraints.maxWidth - topBarPx).coerceAtLeast(0)
+            val vf = measurable.measure(
+                Constraints(
+                    minWidth = 0,
+                    maxWidth = availWidth,
+                    minHeight = 0,
+                    maxHeight = constraints.maxHeight
+                )
+            )
+            val xOffset = if (counterRotation == DeviceRotation.Rotated90) {
+                (availWidth - vf.width) / 2
+            } else {
+                topBarPx + (availWidth - vf.width) / 2
+            }
+            val yOffset = (constraints.maxHeight - vf.height) / 2
+            if (metrics.portraitWidthPx != vf.height) metrics.portraitWidthPx = vf.height
+            if (metrics.portraitHeightPx != vf.width) metrics.portraitHeightPx = vf.width
+            if (metrics.reportedTopPx != AlignmentLine.Unspecified) {
+                metrics.reportedTopPx = AlignmentLine.Unspecified
+            }
+            layout(constraints.maxWidth, constraints.maxHeight) {
+                vf.place(xOffset, yOffset)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExternalViewfinderProxy(
+    metrics: ExternalViewfinderMetrics,
+    modifier: Modifier = Modifier
+) {
+    Layout(modifier = modifier) { _, constraints ->
+        val w = metrics.portraitWidthPx.coerceIn(0, constraints.maxWidth)
+        val h = metrics.portraitHeightPx.coerceIn(0, constraints.maxHeight)
+        val reportedTop = metrics.reportedTopPx
+        val lines: Map<AlignmentLine, Int> = if (reportedTop == AlignmentLine.Unspecified) {
+            emptyMap()
+        } else {
+            mapOf(ViewfinderTopLine to reportedTop)
+        }
+        layout(w, h, alignmentLines = lines) {}
     }
 }
 
@@ -928,6 +1148,7 @@ internal fun AdaptivePortraitCaptureLayout(
     modifier: Modifier = Modifier,
     windowRotation: DeviceRotation = LocalWindowRotation.current,
     includeStatusBarsInTopBar: Boolean = true,
+    precomputedSolution: CameraLayoutSolution? = null,
     snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     val localeDirection = LocalLayoutDirection.current
@@ -978,7 +1199,9 @@ internal fun AdaptivePortraitCaptureLayout(
     val spec = remember(minTouchTarget) {
         CameraLayoutDefaults.spec(minInteractiveTouchTarget = minTouchTarget)
     }
-    val solution = remember(spec, window) { CameraLayoutSolver.solve(spec, window) }
+    val solution = precomputedSolution ?: remember(spec, window) {
+        CameraLayoutSolver.solve(spec, window)
+    }
 
     val currentOnRequiresImmersiveChange by rememberUpdatedState(onRequiresImmersiveChange)
     DisposableEffect(solution.requiresImmersive) {
