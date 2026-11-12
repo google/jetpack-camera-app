@@ -33,6 +33,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -82,6 +92,7 @@ import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
@@ -96,6 +107,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * Robolectric Compose UI tests verifying content gravity rotation:
@@ -894,6 +906,22 @@ class ContentGravityTest {
                                     modifier = mod
                                 )
                             },
+                            captureModeToggle = { mod ->
+                                CaptureModeToggleButton(
+                                    uiState = CaptureModeToggleUiState.Available(
+                                        selectedCaptureMode = CaptureMode.IMAGE_ONLY,
+                                        imageOnlyUiState = SingleSelectableUiState.SelectableUi(
+                                            CaptureMode.IMAGE_ONLY
+                                        ),
+                                        videoOnlyUiState = SingleSelectableUiState.SelectableUi(
+                                            CaptureMode.VIDEO_ONLY
+                                        )
+                                    ),
+                                    onChangeCaptureMode = {},
+                                    onToggleWhenDisabled = {},
+                                    modifier = mod
+                                )
+                            },
                             elapsedTimeDisplay = { mod ->
                                 ElapsedTimeText(
                                     modifier = mod.testTag(ELAPSED_TIME_TAG),
@@ -950,6 +978,71 @@ class ContentGravityTest {
         assertThat(label180.height.value).isWithin(TOLERANCE).of(label90.height.value)
         val elapsedAt180 = clippedBoundsOf(ELAPSED_TIME_TAG)
         assertThat(elapsedAt180.left.value).isWithin(TOLERANCE).of(elapsedAt90.left.value)
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertIsDisplayed()
+    }
+
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    @Test
+    fun toggleSwitchIcons_rotateInPlaceAroundCenterWhileKeepingThumbClipInTrackSpace() {
+        // Asymmetric painter filling ONLY the top third of its 24x24 box.
+        val topBandPainter = object : Painter() {
+            private var activeColorFilter: ColorFilter? = null
+            override val intrinsicSize: Size = Size(24f, 24f)
+            override fun applyColorFilter(colorFilter: ColorFilter?): Boolean {
+                activeColorFilter = colorFilter
+                return true
+            }
+            override fun DrawScope.onDraw() {
+                drawRect(
+                    color = Color.White,
+                    topLeft = Offset.Zero,
+                    size = Size(size.width, size.height / 3f),
+                    colorFilter = activeColorFilter
+                )
+            }
+        }
+
+        fun renderLeftIconAt(rotationDegrees: Float): android.graphics.Bitmap {
+            val bitmap = createBitmap(60, 24)
+            val composeCanvas = Canvas(bitmap.asImageBitmap())
+            CanvasDrawScope().draw(
+                density = Density(1f),
+                layoutDirection = LayoutDirection.Ltr,
+                canvas = composeCanvas,
+                size = Size(60f, 24f)
+            ) {
+                // Thumb covers the left half [0, 12] of the [0, 24] left icon.
+                drawClippedSwitchIcons(
+                    thumbRect = Rect(0f, 0f, 12f, 24f),
+                    iconSizePx = 24f,
+                    iconPadding = 0f,
+                    leftIconPainter = topBandPainter,
+                    rightIconPainter = null,
+                    offIconColor = Color.Red,
+                    onIconColor = Color.Green,
+                    iconRotationDegrees = rotationDegrees
+                )
+            }
+            return bitmap
+        }
+
+        // At 0°: top band is at y=4 across x=[0..23], clipped Green on x=4 and Red on x=20.
+        val bmp0 = renderLeftIconAt(0f)
+        assertThat(bmp0.getPixel(4, 4)).isEqualTo(android.graphics.Color.GREEN)
+        assertThat(bmp0.getPixel(20, 4)).isEqualTo(android.graphics.Color.RED)
+        assertThat(bmp0.getPixel(12, 20)).isEqualTo(android.graphics.Color.TRANSPARENT)
+
+        // At +90° CW: top band rotates to the right band x=[16..23], y=[0..23] (outside thumb
+        // [0..12], so Red at (20, 12) and transparent at (4, 12)).
+        val bmp90 = renderLeftIconAt(90f)
+        assertThat(bmp90.getPixel(20, 12)).isEqualTo(android.graphics.Color.RED)
+        assertThat(bmp90.getPixel(4, 12)).isEqualTo(android.graphics.Color.TRANSPARENT)
+
+        // At 270° (-90° CCW): top band rotates to the left band x=[0..7], y=[0..23] (inside thumb
+        // [0..12], so Green at (4, 12) and transparent at (20, 12)).
+        val bmp270 = renderLeftIconAt(270f)
+        assertThat(bmp270.getPixel(4, 12)).isEqualTo(android.graphics.Color.GREEN)
+        assertThat(bmp270.getPixel(20, 12)).isEqualTo(android.graphics.Color.TRANSPARENT)
     }
 
     private companion object {
