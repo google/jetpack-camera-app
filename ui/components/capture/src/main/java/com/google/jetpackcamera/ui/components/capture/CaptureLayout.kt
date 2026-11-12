@@ -16,7 +16,6 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
@@ -24,7 +23,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.darkColorScheme
@@ -35,7 +33,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.HorizontalAlignmentLine
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.DeviceRotation
@@ -207,30 +204,31 @@ internal fun CaptureScaffoldLayout(
         )
 
         CompositionLocalProvider(LocalCameraLayoutMode provides layoutMode) {
+            val resolvedSlots = slots ?: CaptureSlots(
+                topBar = indicatorRow,
+                topBarTrailingContent = topBarTrailingContent,
+                zoomControls = zoomLevelDisplay,
+                quickSettingsButton = quickSettingsButton,
+                captureButton = captureButton,
+                flipCameraButton = flipCameraButton,
+                imageWell = imageWell,
+                captureModeToggle = captureModeToggle,
+                captureModeCarousel = captureModeCarousel,
+                elapsedTimeDisplay = elapsedTimeDisplay,
+                topStartContent = topStartContent,
+                viewfinderTopEndContent = viewfinderTopEndContent,
+                quickSettingsOverlay = { slotModifier ->
+                    quickSettingsOverlay(slotModifier)
+                },
+                snackBar = snackBar,
+                errorDialog = errorDialog
+            )
+
             when (layoutMode) {
                 CameraLayoutMode.COMPACT,
                 CameraLayoutMode.COMPACT_SLIM -> {
-                    val compactSlots = slots ?: CaptureSlots(
-                        topBar = indicatorRow,
-                        topBarTrailingContent = topBarTrailingContent,
-                        zoomControls = zoomLevelDisplay,
-                        quickSettingsButton = quickSettingsButton,
-                        captureButton = captureButton,
-                        flipCameraButton = flipCameraButton,
-                        imageWell = imageWell,
-                        captureModeToggle = captureModeToggle,
-                        captureModeCarousel = captureModeCarousel,
-                        elapsedTimeDisplay = elapsedTimeDisplay,
-                        topStartContent = topStartContent,
-                        viewfinderTopEndContent = viewfinderTopEndContent,
-                        quickSettingsOverlay = { slotModifier ->
-                            quickSettingsOverlay(slotModifier)
-                        },
-                        snackBar = snackBar,
-                        errorDialog = errorDialog
-                    )
                     CompactPortraitLayout(
-                        slots = compactSlots,
+                        slots = resolvedSlots,
                         viewfinder = movableViewfinder,
                         state = state,
                         deviceRotation = deviceRotation,
@@ -246,14 +244,8 @@ internal fun CaptureScaffoldLayout(
                 }
 
                 CameraLayoutMode.FOLDABLE -> {
-                    val railSlots = slots ?: rememberPlaceholderRailSlots(
-                        isCompactHeight = false,
-                        state = state,
-                        snackBar = snackBar,
-                        errorDialog = errorDialog
-                    )
                     FoldableLayout(
-                        slots = railSlots,
+                        slots = resolvedSlots,
                         viewfinder = movableViewfinder,
                         state = state,
                         controlsVisible = controlsVisible,
@@ -265,14 +257,8 @@ internal fun CaptureScaffoldLayout(
                 }
 
                 CameraLayoutMode.TABLET_PORTRAIT -> {
-                    val railSlots = slots ?: rememberPlaceholderRailSlots(
-                        isCompactHeight = false,
-                        state = state,
-                        snackBar = snackBar,
-                        errorDialog = errorDialog
-                    )
                     TabletPortraitLayout(
-                        slots = railSlots,
+                        slots = resolvedSlots,
                         viewfinder = movableViewfinder,
                         state = state,
                         controlsVisible = controlsVisible,
@@ -284,14 +270,8 @@ internal fun CaptureScaffoldLayout(
                 }
 
                 CameraLayoutMode.TABLET_LANDSCAPE -> {
-                    val railSlots = slots ?: rememberPlaceholderRailSlots(
-                        isCompactHeight = false,
-                        state = state,
-                        snackBar = snackBar,
-                        errorDialog = errorDialog
-                    )
                     TabletLandscapeLayout(
-                        slots = railSlots,
+                        slots = resolvedSlots,
                         viewfinder = movableViewfinder,
                         state = state,
                         controlsVisible = controlsVisible,
@@ -304,14 +284,8 @@ internal fun CaptureScaffoldLayout(
 
                 CameraLayoutMode.COMPACT_SHORT,
                 CameraLayoutMode.COMPACT_SHORT_SLIM -> {
-                    val railSlots = slots ?: rememberPlaceholderRailSlots(
-                        isCompactHeight = true,
-                        state = state,
-                        snackBar = snackBar,
-                        errorDialog = errorDialog
-                    )
                     CompactShortLayout(
-                        slots = railSlots,
+                        slots = resolvedSlots,
                         viewfinder = movableViewfinder,
                         state = state,
                         controlsVisible = controlsVisible,
@@ -324,38 +298,6 @@ internal fun CaptureScaffoldLayout(
             }
         }
     }
-}
-
-// TODO(#635, #644, #648, #649): Replace placeholder side-rail slots with real CaptureScaffold
-// slots once Wave 1 adaptive controls merge into main.
-@Composable
-private fun rememberPlaceholderRailSlots(
-    isCompactHeight: Boolean,
-    state: CaptureScaffoldState,
-    snackBar: @Composable (Modifier, SnackbarHostState) -> Unit,
-    errorDialog: @Composable (Modifier) -> Unit
-): CaptureSlots = remember(isCompactHeight, state, snackBar, errorDialog) {
-    PlaceholderCaptureSlots.sideRail(
-        isCompactHeight = isCompactHeight,
-        tagQuickSettingsOverlay = true
-    ).copy(
-        quickSettingsButton = { slotModifier ->
-            PlaceholderControlBox(
-                label = "QS",
-                width = CaptureSlotTokens.IconTouchTargetSize,
-                height = CaptureSlotTokens.IconTouchTargetSize,
-                modifier = slotModifier.clickable(
-                    role = Role.Button,
-                    onClick = state::toggleQuickSettings
-                ),
-                color = CaptureSlotTokens.QuickSettingsButtonColor,
-                shape = CircleShape,
-                testTag = QUICK_SETTINGS_DROP_DOWN
-            )
-        },
-        snackBar = snackBar,
-        errorDialog = errorDialog
-    )
 }
 
 @PreviewPortraitDevices

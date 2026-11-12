@@ -40,8 +40,24 @@ import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
+import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutMode
+import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeOption
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -311,18 +327,71 @@ class AdaptiveCaptureLayoutTest {
 
     @Config(qualifiers = "sw800dp-w1280dp-h800dp-land-mdpi")
     @Test
-    fun tabletLandscape_resolvesToTabletLandscapeLayoutWithInteractivePlaceholderRailSlots() {
+    fun tabletLandscape_resolvesToTabletLandscapeLayoutWithRealControlsAndVerticalPlaceholders() {
         val state = CaptureScaffoldState(isInitiallyExpanded = false)
+        var selectedCaptureMode: CaptureMode? = null
+        val quickSettingsController = FakeQuickSettingsController(
+            setCaptureModeAction = { selectedCaptureMode = it }
+        )
         var observedMode: CameraLayoutMode? = null
         var observedLayout: String? = null
+        val readyUiState = LOADING_CAPTURE_UI_STATE_SKELETON.copy(
+            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
+                captureMode = CaptureMode.IMAGE_ONLY,
+                isEnabled = true
+            ),
+            flipLensUiState = FlipLensUiState.Available(
+                selectedLensFacing = LensFacing.BACK,
+                availableLensFacings = listOf(
+                    SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                    SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                )
+            ),
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                zoomLevels = listOf(0.5f, 1.0f, 2.0f),
+                primaryLensFacing = LensFacing.BACK,
+                initialZoomRatio = 1.0f,
+                primaryZoomRatio = 1.0f
+            ),
+            captureModeToggleUiState = CaptureModeToggleUiState.Available(
+                selectedCaptureMode = CaptureMode.IMAGE_ONLY,
+                imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+                videoOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+            ),
+            captureSubModeUiState = CaptureSubModeUiState.Available(
+                selectedSubMode = CaptureSubModeId.DEFAULT,
+                availableSubModes = listOf(
+                    SingleSelectableUiState.SelectableUi(
+                        CaptureSubModeOption(
+                            id = CaptureSubModeId.DEFAULT,
+                            labelResId = R.string.quick_settings_text_capture_mode_image_only
+                        )
+                    ),
+                    SingleSelectableUiState.SelectableUi(
+                        CaptureSubModeOption(
+                            id = CaptureSubModeId("video"),
+                            labelResId = R.string.quick_settings_text_capture_mode_video_only
+                        )
+                    )
+                )
+            ),
+            quickSettingsUiState = QuickSettingsUiState.Available(
+                aspectRatioUiState = AspectRatioUiState.Unavailable,
+                captureModeUiState = CaptureModeUiState.Unavailable,
+                flashModeUiState = FlashModeUiState.Unavailable,
+                flipLensUiState = FlipLensUiState.Unavailable,
+                hdrUiState = HdrUiState.Unavailable
+            )
+        )
 
         composeTestRule.setContent {
             MaterialTheme {
                 CompositionLocalProvider(LocalDisableAnimations provides true) {
                     CaptureScaffold(
-                        captureUiState = { LOADING_CAPTURE_UI_STATE_SKELETON },
+                        captureUiState = { readyUiState },
                         surfaceRequest = null,
                         state = state,
+                        quickSettingsController = quickSettingsController,
                         overlay = {
                             observedMode = LocalCameraLayoutMode.current
                             observedLayout = LocalActiveCaptureLayout.current
@@ -339,13 +408,30 @@ class AdaptiveCaptureLayoutTest {
             CameraLayoutMode.TABLET_LANDSCAPE,
             "TabletLandscapeLayout"
         )
+        // Real controls are placed directly into the side rails and bottom HUD.
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+
+        // Real ZoomBar renders vertically inside StartSideRail (height strictly exceeds width).
+        val zoomBounds = composeTestRule.onNodeWithTag(
+            ZOOM_BUTTON_ROW_TAG
+        ).getUnclippedBoundsInRoot()
+        assertThat(zoomBounds.bottom - zoomBounds.top)
+            .isGreaterThan(zoomBounds.right - zoomBounds.left)
+
+        // Vertical placeholders stand in cleanly for TopBar (#649) and CaptureModeToggle (#635).
+        composeTestRule.onNodeWithTag(VIDEO_QUALITY_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).assertIsDisplayed().performClick()
+        composeTestRule.waitForIdle()
+        assertThat(selectedCaptureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
+
         composeTestRule
             .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
             .assertDoesNotExist()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertDoesNotExist()
 
-        // Clicking the interactive placeholder "QS" button toggles state.isQuickSettingsOpen.
+        // Clicking real ToggleQuickSettingsButton opens QuickSettingsContent inside the card shell.
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).performClick()
         composeTestRule.waitForIdle()
 
