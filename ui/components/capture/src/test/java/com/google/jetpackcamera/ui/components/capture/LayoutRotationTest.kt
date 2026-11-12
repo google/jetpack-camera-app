@@ -25,11 +25,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
@@ -37,13 +39,21 @@ import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
+import androidx.compose.ui.unit.width
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolution
 import com.google.jetpackcamera.ui.components.capture.layout.CameraRowIds
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
+import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,6 +62,7 @@ import org.robolectric.annotation.Config
 
 private object LayoutRotationTestTokens {
     const val INDICATOR_TAG = "RotationTestIndicatorRow"
+    const val VIEWFINDER_TOP_MARKER_TAG = "RotationTestViewfinderTopMarker"
 
     val CaptureButtonSize = 80.dp
     val ControlSize = 48.dp
@@ -63,9 +74,9 @@ private object LayoutRotationTestTokens {
 
 /**
  * Robolectric Compose UI tests verifying layout-level counter-rotation scoping across full-screen
- * compact handhelds, portrait & horizontal split-screen panes (`550x500dp` and `800x400dp`),
- * 7-mode side-rail postures (`FOLDABLE`, `TABLET_PORTRAIT`, `TABLET_LANDSCAPE`, `COMPACT_SHORT`),
- * and [CutoutAwareRow] cutout remapping.
+ * compact handhelds, portrait & horizontal split-screen panes (`852x420dp`, `800x400dp`,
+ * `550x500dp`), un-rotated viewfinder hosting, 7-mode side-rail postures (`FOLDABLE`,
+ * `TABLET_PORTRAIT`, `TABLET_LANDSCAPE`, `COMPACT_SHORT`), and [CutoutAwareRow] cutout remapping.
  */
 @RunWith(RobolectricTestRunner::class)
 class LayoutRotationTest {
@@ -81,14 +92,22 @@ class LayoutRotationTest {
         slots: CaptureSlots? = null,
         onViewfinderObserved: (
             mode: CameraLayoutMode,
-            effectiveWindowRotation: DeviceRotation,
-            gravityRotationDegrees: Float,
+            vfWindowRotation: DeviceRotation,
+            vfGravityDegrees: Float,
             solution: CameraLayoutSolution?,
             viewfinderSize: IntSize
-        ) -> Unit = { _, _, _, _, _ -> }
+        ) -> Unit = { _, _, _, _, _ -> },
+        onChromeObserved: (
+            chromeWindowRotation: DeviceRotation,
+            chromeGravityDegrees: Float,
+            solution: CameraLayoutSolution?
+        ) -> Unit = { _, _, _ -> }
     ) {
         MaterialTheme {
-            CompositionLocalProvider(LocalDisableAnimations provides true) {
+            CompositionLocalProvider(
+                LocalDensity provides Density(1f),
+                LocalDisableAnimations provides true
+            ) {
                 CaptureScaffoldLayout(
                     modifier = modifier,
                     deviceRotation = deviceRotation,
@@ -96,8 +115,8 @@ class LayoutRotationTest {
                     slots = slots,
                     viewfinder = { vfModifier ->
                         val mode = LocalCameraLayoutMode.current
-                        val effectiveWinRot = LocalWindowRotation.current
-                        val gravityDeg = LocalGravityRotationState.current.value
+                        val vfWinRot = LocalWindowRotation.current
+                        val vfGravityDeg = LocalGravityRotationState.current.value
                         val solution = LocalCameraLayoutSolution.current
                         Box(
                             modifier = vfModifier
@@ -105,16 +124,28 @@ class LayoutRotationTest {
                                 .onSizeChanged { vfSize ->
                                     onViewfinderObserved(
                                         mode,
-                                        effectiveWinRot,
-                                        gravityDeg,
+                                        vfWinRot,
+                                        vfGravityDeg,
                                         solution,
                                         vfSize
                                     )
                                 }
                                 .testTag(PREVIEW_DISPLAY)
-                        )
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .size(width = 24.dp, height = 6.dp)
+                                    .testTag(LayoutRotationTestTokens.VIEWFINDER_TOP_MARKER_TAG)
+                            )
+                        }
                     },
                     captureButton = { mod ->
+                        onChromeObserved(
+                            LocalWindowRotation.current,
+                            LocalGravityRotationState.current.value,
+                            LocalCameraLayoutSolution.current
+                        )
                         Box(
                             mod
                                 .size(LayoutRotationTestTokens.CaptureButtonSize)
@@ -180,11 +211,12 @@ class LayoutRotationTest {
 
     @Config(qualifiers = "sw360dp-w740dp-h360dp-normal-long-land-mdpi")
     @Test
-    fun compactPortraitLayout_fullScreenLandscapePhone_counterRotatesToPortrait() {
+    fun compactPortraitLayout_landscapePhone_counterRotatesChromeWithUprightViewfinder() {
         var windowRotation by mutableStateOf(DeviceRotation.Rotated90)
         var observedMode: CameraLayoutMode? = null
-        var observedEffectiveWinRot: DeviceRotation? = null
-        var observedGravityDeg: Float? = null
+        var observedVfWinRot: DeviceRotation? = null
+        var observedChromeWinRot: DeviceRotation? = null
+        var observedChromeGravityDeg: Float? = null
         var observedSolution: CameraLayoutSolution? = null
         var observedViewfinderSize = IntSize.Zero
 
@@ -192,22 +224,32 @@ class LayoutRotationTest {
             RotationLayoutUnderTest(
                 deviceRotation = windowRotation,
                 windowRotation = windowRotation,
-                onViewfinderObserved = { mode, effWinRot, gravDeg, solution, vfSize ->
+                onViewfinderObserved = { mode, vfWinRot, _, solution, vfSize ->
                     observedMode = mode
-                    observedEffectiveWinRot = effWinRot
-                    observedGravityDeg = gravDeg
+                    observedVfWinRot = vfWinRot
                     observedSolution = solution
                     observedViewfinderSize = vfSize
+                },
+                onChromeObserved = { chromeWinRot, chromeGravDeg, _ ->
+                    observedChromeWinRot = chromeWinRot
+                    observedChromeGravityDeg = chromeGravDeg
                 }
             )
         }
         composeTestRule.waitForIdle()
 
         assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
-        assertThat(observedEffectiveWinRot).isEqualTo(DeviceRotation.Rotated90)
+        assertThat(observedVfWinRot).isEqualTo(DeviceRotation.Rotated90)
+        assertThat(observedChromeWinRot).isEqualTo(DeviceRotation.Rotated90)
         assertThat(observedSolution).isNotNull()
-        assertThat(observedViewfinderSize).isEqualTo(IntSize(360, 740))
-        assertThat(((observedGravityDeg!! % 360f) + 360f) % 360f).isEqualTo(270f)
+        assertThat(observedViewfinderSize).isEqualTo(IntSize(740, 360))
+        assertThat(((observedChromeGravityDeg!! % 360f) + 360f) % 360f).isEqualTo(270f)
+
+        // Viewfinder top marker remains at physical top of the 740x360dp window (0° rotation).
+        val topMarker90 = composeTestRule
+            .onNodeWithTag(LayoutRotationTestTokens.VIEWFINDER_TOP_MARKER_TAG)
+            .getBoundsInRoot()
+        assertThat(topMarker90.top.value).isEqualTo(0f)
 
         val captureBand90 = observedSolution!!.rowBands.getValue(CameraRowIds.CAPTURE_ROW)
         val expectedCaptureCenterX90 =
@@ -228,10 +270,11 @@ class LayoutRotationTest {
         composeTestRule.waitForIdle()
 
         assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
-        assertThat(observedEffectiveWinRot).isEqualTo(DeviceRotation.Rotated270)
+        assertThat(observedVfWinRot).isEqualTo(DeviceRotation.Rotated270)
+        assertThat(observedChromeWinRot).isEqualTo(DeviceRotation.Rotated270)
         assertThat(observedSolution).isNotNull()
-        assertThat(observedViewfinderSize).isEqualTo(IntSize(360, 740))
-        assertThat(((observedGravityDeg!! % 360f) + 360f) % 360f).isEqualTo(90f)
+        assertThat(observedViewfinderSize).isEqualTo(IntSize(740, 360))
+        assertThat(((observedChromeGravityDeg!! % 360f) + 360f) % 360f).isEqualTo(90f)
 
         val captureBand270 = observedSolution!!.rowBands.getValue(CameraRowIds.CAPTURE_ROW)
         val expectedCaptureCenterX270 =
@@ -283,39 +326,148 @@ class LayoutRotationTest {
 
     @Config(qualifiers = "sw800dp-w1400dp-h1000dp-mdpi")
     @Test
-    fun compactHorizontalPanes_800x400And550x500_rotateCompactLayout90DegreesToFillSpace() {
-        var paneSize by mutableStateOf(DpSize(800.dp, 400.dp))
+    fun compactHorizontalSplitScreen_keepsViewfinderUnrotatedAcrossSizesAndHostRotations() {
+        var paneSize by mutableStateOf(DpSize(852.dp, 420.dp))
+        var hostWindowRotation by mutableStateOf(DeviceRotation.Natural)
         var observedMode: CameraLayoutMode? = null
-        var observedEffectiveWinRot: DeviceRotation? = null
-        var observedGravityDeg: Float? = null
+        var observedVfWinRot: DeviceRotation? = null
+        var observedVfGravityDeg: Float? = null
+        var observedChromeWinRot: DeviceRotation? = null
+        var observedChromeGravityDeg: Float? = null
         var observedViewfinderSize = IntSize.Zero
 
         composeTestRule.setContent {
             RotationLayoutUnderTest(
                 modifier = Modifier.size(paneSize),
-                deviceRotation = DeviceRotation.Natural,
-                windowRotation = DeviceRotation.Natural,
-                onViewfinderObserved = { mode, effWinRot, gravDeg, _, vfSize ->
+                deviceRotation = hostWindowRotation,
+                windowRotation = hostWindowRotation,
+                onViewfinderObserved = { mode, vfWinRot, vfGravDeg, _, vfSize ->
                     observedMode = mode
-                    observedEffectiveWinRot = effWinRot
-                    observedGravityDeg = gravDeg
+                    observedVfWinRot = vfWinRot
+                    observedVfGravityDeg = vfGravDeg
                     observedViewfinderSize = vfSize
+                },
+                onChromeObserved = { chromeWinRot, chromeGravDeg, _ ->
+                    observedChromeWinRot = chromeWinRot
+                    observedChromeGravityDeg = chromeGravDeg
                 }
             )
         }
+
+        val paneSizes = listOf(
+            DpSize(852.dp, 420.dp) to IntSize(852, 420),
+            DpSize(800.dp, 400.dp) to IntSize(800, 400),
+            DpSize(550.dp, 500.dp) to IntSize(502, 500)
+        )
+        val hostRotations = listOf(
+            DeviceRotation.Natural,
+            DeviceRotation.Rotated90,
+            DeviceRotation.Rotated270
+        )
+
+        for ((size, expectedVfSize) in paneSizes) {
+            for (winRot in hostRotations) {
+                paneSize = size
+                hostWindowRotation = winRot
+                composeTestRule.waitForIdle()
+
+                val label = "pane=$size hostWinRot=$winRot"
+                assertWithMessage(label).that(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
+                // Viewfinder stays in un-rotated host window frame (0° upright, LocalWindowRotation
+                // == windowRotation), while UI chrome counter-rotates into portrait bands.
+                assertWithMessage(label).that(observedVfWinRot).isEqualTo(winRot)
+                assertWithMessage(label).that(observedVfGravityDeg).isEqualTo(0f)
+                assertWithMessage(label).that(observedViewfinderSize).isEqualTo(expectedVfSize)
+                assertWithMessage(label).that(observedChromeWinRot?.isLandscape).isTrue()
+                assertWithMessage(label)
+                    .that(((observedChromeGravityDeg!! % 360f) + 360f) % 360f)
+                    .isIn(listOf(90f, 270f))
+
+                val topMarker = composeTestRule
+                    .onNodeWithTag(LayoutRotationTestTokens.VIEWFINDER_TOP_MARKER_TAG)
+                    .getBoundsInRoot()
+                assertWithMessage("$label viewfinder top marker upright at y=0")
+                    .that(topMarker.top.value)
+                    .isEqualTo(0f)
+                assertWithMessage("$label viewfinder top marker horizontal")
+                    .that(topMarker.width.value)
+                    .isGreaterThan(topMarker.height.value)
+            }
+        }
+    }
+
+    @Config(qualifiers = "sw800dp-w1400dp-h1000dp-mdpi")
+    @Test
+    fun previewDisplay_inHorizontalCompactSplitScreen_alignsSolvedBandHorizontallyWithChrome() {
+        var hostRotation by mutableStateOf(DeviceRotation.Rotated270)
+        var observedSolution: CameraLayoutSolution? = null
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CompositionLocalProvider(
+                    LocalDensity provides Density(1f),
+                    LocalDisableAnimations provides true
+                ) {
+                    CaptureScaffoldLayout(
+                        modifier = Modifier.size(width = 800.dp, height = 400.dp),
+                        deviceRotation = hostRotation,
+                        windowRotation = hostRotation,
+                        viewfinder = { vfModifier ->
+                            observedSolution = LocalCameraLayoutSolution.current
+                            PreviewDisplay(
+                                modifier = vfModifier,
+                                previewDisplayUiState = PreviewDisplayUiState(
+                                    lastBlinkTimeStamp = 0L,
+                                    aspectRatioUiState = AspectRatioUiState.Available(
+                                        selectedAspectRatio = AspectRatio.THREE_FOUR,
+                                        availableAspectRatios = listOf(
+                                            SingleSelectableUiState.SelectableUi(
+                                                AspectRatio.THREE_FOUR
+                                            )
+                                        )
+                                    )
+                                ),
+                                onTapToFocus = { _, _ -> },
+                                onFlipCamera = {},
+                                onScaleZoom = {},
+                                onRequestWindowColorMode = {},
+                                surfaceRequest = null,
+                                focusMeteringUiState = FocusMeteringUiState.Unspecified,
+                                useLandscapeAspectRatio = true
+                            )
+                        },
+                        indicatorRow = { mod ->
+                            Box(
+                                mod
+                                    .size(120.dp, 36.dp)
+                                    .testTag(LayoutRotationTestTokens.INDICATOR_TAG)
+                            )
+                        },
+                        captureButton = { mod ->
+                            Box(mod.size(80.dp).testTag(CAPTURE_BUTTON))
+                        }
+                    )
+                }
+            }
+        }
         composeTestRule.waitForIdle()
 
-        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
-        assertThat(observedEffectiveWinRot).isEqualTo(DeviceRotation.Rotated270)
-        assertThat(observedViewfinderSize).isEqualTo(IntSize(400, 800))
-        assertThat(((observedGravityDeg!! % 360f) + 360f) % 360f).isEqualTo(90f)
+        val band270 = checkNotNull(observedSolution).viewfinderBandFor(3f / 4f)!!
+        val vfBounds270 = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getBoundsInRoot()
+        // Rotated270 (-90° CCW chrome): top bar on left [0, 48], 4:3 frame [48, 48 + 533.33] x 400.
+        assertThat(vfBounds270.left.value).isWithin(1f).of(band270.top.value)
+        assertThat(vfBounds270.width.value).isWithin(1f).of(band270.height.value)
+        assertThat(vfBounds270.height.value).isWithin(1f).of(400f)
 
-        // 550x500dp (W > H with H >= 480dp) also resolves to COMPACT and counter-rotates cleanly!
-        paneSize = DpSize(550.dp, 500.dp)
+        // Rotated90 (+90° CW chrome): top bar on right [752, 800], 4:3 frame flush against x=752.
+        hostRotation = DeviceRotation.Rotated90
         composeTestRule.waitForIdle()
-        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
-        assertThat(observedEffectiveWinRot).isEqualTo(DeviceRotation.Rotated270)
-        assertThat(((observedGravityDeg!! % 360f) + 360f) % 360f).isEqualTo(90f)
+
+        val band90 = checkNotNull(observedSolution).viewfinderBandFor(3f / 4f)!!
+        val vfBounds90 = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getBoundsInRoot()
+        assertThat(vfBounds90.right.value).isWithin(1f).of(800f - band90.top.value)
+        assertThat(vfBounds90.width.value).isWithin(1f).of(band90.height.value)
+        assertThat(vfBounds90.height.value).isWithin(1f).of(400f)
     }
 
     @Config(qualifiers = "sw800dp-w1400dp-h1400dp-mdpi")

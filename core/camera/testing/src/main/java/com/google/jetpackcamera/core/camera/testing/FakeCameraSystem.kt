@@ -77,6 +77,8 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     private var screenFlashEvents = Channel<CameraSystem.ScreenFlashEvent>(capacity = UNLIMITED)
     private val zoomChanges = MutableStateFlow<CameraZoomRatio?>(null)
     private val currentSettings = MutableStateFlow(defaultCameraSettings)
+    var windowRotation: DeviceRotation = DeviceRotation.Natural
+        private set
     var externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard
         private set
 
@@ -275,6 +277,10 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         currentSettings.update { old ->
             old.copy(deviceRotation = deviceRotation)
         }
+    }
+
+    override fun setWindowRotation(windowRotation: DeviceRotation) {
+        this.windowRotation = windowRotation
     }
 
     override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {

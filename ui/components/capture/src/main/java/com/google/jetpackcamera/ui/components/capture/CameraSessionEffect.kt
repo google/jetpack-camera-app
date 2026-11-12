@@ -47,18 +47,22 @@ import com.google.jetpackcamera.ui.controller.CameraController
  *    lifecycle stops, [enabled] becomes `false`, or the effect leaves the composition.
  * 2. Collects [debouncedOrientationFlow] and forwards device rotation changes to
  *    [CameraController.setDisplayRotation] and [onDeviceRotationChanged] while [isRecording] is
- *    `false`.
- * 3. While [isRecording] is `true`, freezes display rotation updates and locks the host
- *    [Activity]'s `requestedOrientation` to [ActivityInfo.SCREEN_ORIENTATION_LOCKED], restoring its
- *    previous `requestedOrientation` and flushing any pending sensor rotation once recording ends.
+ *    `false`, and forwards [windowRotation] changes to [CameraController.setWindowRotation] while
+ *    [isRecording] is `false`.
+ * 3. While [isRecording] is `true`, freezes both device and window rotation updates and locks the
+ *    host [Activity]'s `requestedOrientation` to [ActivityInfo.SCREEN_ORIENTATION_LOCKED],
+ *    restoring its previous `requestedOrientation` and flushing any pending device or window
+ *    rotation once recording ends.
  *
  * [enabled] has no default value so that host screens make an explicit readiness or runtime
  * permission decision before starting the camera session.
  *
- * @param cameraController the [CameraController] to start, stop, and update with display rotation.
+ * @param cameraController the [CameraController] to start, stop, and update with rotation changes.
  * @param enabled whether the camera session is allowed to run (for example, `true` once required
  *   camera permissions have been granted).
  * @param isRecording whether an active or starting video recording session is in progress.
+ * @param windowRotation active OS display/window [DeviceRotation] used for preview target rotation
+ *   and viewport framing.
  * @param onDeviceRotationChanged optional callback notified with the active (unfrozen) physical
  *   [DeviceRotation].
  * @param onSessionStarted optional callback invoked right after [CameraController.startCamera].
@@ -69,6 +73,7 @@ fun CameraSessionEffect(
     cameraController: CameraController,
     enabled: Boolean,
     isRecording: Boolean = false,
+    windowRotation: DeviceRotation = rememberWindowRotation(),
     onDeviceRotationChanged: (DeviceRotation) -> Unit = {},
     onSessionStarted: () -> Unit = {},
     onSessionStopped: () -> Unit = {}
@@ -98,6 +103,12 @@ fun CameraSessionEffect(
         var lastDeliveredRotation by remember(cameraController) {
             mutableStateOf<DeviceRotation?>(null)
         }
+        var pendingWindowRotation by remember(cameraController) {
+            mutableStateOf<DeviceRotation?>(null)
+        }
+        var lastDeliveredWindowRotation by remember(cameraController) {
+            mutableStateOf<DeviceRotation?>(null)
+        }
 
         LaunchedEffect(cameraController, context, lifecycleOwner) {
             lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -112,6 +123,16 @@ fun CameraSessionEffect(
             }
         }
 
+        LaunchedEffect(cameraController, lifecycleOwner, windowRotation) {
+            pendingWindowRotation = windowRotation
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                if (!currentIsRecording && windowRotation != lastDeliveredWindowRotation) {
+                    lastDeliveredWindowRotation = windowRotation
+                    cameraController.setWindowRotation(windowRotation)
+                }
+            }
+        }
+
         LaunchedEffect(isRecording, cameraController) {
             if (!isRecording) {
                 val rotation = pendingRotation
@@ -119,6 +140,11 @@ fun CameraSessionEffect(
                     lastDeliveredRotation = rotation
                     cameraController.setDisplayRotation(rotation)
                     currentOnDeviceRotationChanged(rotation)
+                }
+                val winRot = pendingWindowRotation
+                if (winRot != null && winRot != lastDeliveredWindowRotation) {
+                    lastDeliveredWindowRotation = winRot
+                    cameraController.setWindowRotation(winRot)
                 }
             }
         }

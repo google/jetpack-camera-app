@@ -25,12 +25,14 @@ import com.google.jetpackcamera.ui.controller.CameraController
  * @param stopCameraAction The action to perform when [stopCamera] is called.
  * @param tapToFocusAction The action to perform when [tapToFocus] is called.
  * @param setDisplayRotationAction The action to perform when [setDisplayRotation] is called.
+ * @param setWindowRotationAction The action to perform when [setWindowRotation] is called.
  */
 class FakeCameraController(
     var startCameraAction: () -> Unit = {},
     var stopCameraAction: () -> Unit = {},
     var tapToFocusAction: (x: Float, y: Float) -> Unit = { _, _ -> },
-    var setDisplayRotationAction: (DeviceRotation) -> Unit = {}
+    var setDisplayRotationAction: (DeviceRotation) -> Unit = {},
+    var setWindowRotationAction: (DeviceRotation) -> Unit = {}
 ) : CameraController {
     override fun startCamera() {
         startCameraAction()
@@ -46,5 +48,9 @@ class FakeCameraController(
 
     override fun setDisplayRotation(deviceRotation: DeviceRotation) {
         setDisplayRotationAction(deviceRotation)
+    }
+
+    override fun setWindowRotation(windowRotation: DeviceRotation) {
+        setWindowRotationAction(windowRotation)
     }
 }

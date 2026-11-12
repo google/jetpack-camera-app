@@ -77,6 +77,14 @@ val LocalWindowRotation: ProvidableCompositionLocal<DeviceRotation> =
     compositionLocalOf { DeviceRotation.Natural }
 
 /**
+ * Provides the active counter-rotation applied by [CompactPortraitLayout] when rendering in a
+ * horizontal (`width > height`) window (`Rotated90` or `Rotated270`), or [DeviceRotation.Natural]
+ * when no counter-rotation is active.
+ */
+internal val LocalCompactCounterRotation: ProvidableCompositionLocal<DeviceRotation> =
+    compositionLocalOf { DeviceRotation.Natural }
+
+/**
  * Provides a shared, root-animated [State] holding the continuous clockwise gravity compensation
  * angle in degrees. Reading [State.value] inside [Modifier.graphicsLayer] updates only the draw/
  * RenderNode phase with zero recompositions or layout passes.

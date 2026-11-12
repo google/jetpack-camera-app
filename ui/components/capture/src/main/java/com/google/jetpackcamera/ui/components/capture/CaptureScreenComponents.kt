@@ -149,6 +149,7 @@ import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
@@ -921,6 +922,7 @@ fun PreviewDisplay(
     )
 
     val layoutSolution = LocalCameraLayoutSolution.current
+    val compactCounterRotation = LocalCompactCounterRotation.current
     var imageVisible by remember { mutableStateOf(true) }
     val targetBoundsState = LocalOverlapTargetBounds.current
 
@@ -972,35 +974,68 @@ fun PreviewDisplay(
                     .layout { measurable, constraints ->
                         val maxWidth = constraints.maxWidth.toDp()
                         val maxHeight = constraints.maxHeight.toDp()
-                        val solvedBand = if (maxHeight > maxWidth) {
-                            layoutSolution?.viewfinderBandFor(aspectRatio.toFloat())
+                        val isPortraitBounds = maxHeight >= maxWidth
+                        val solvedBand = layoutSolution?.viewfinderBandFor(aspectRatio.toFloat())
+                        if (solvedBand != null && isPortraitBounds) {
+                            val topOffsetPx = solvedBand.top.roundToPx()
+                                .coerceIn(0, constraints.maxHeight)
+                            val widthPx = maxWidth.roundToPx().coerceIn(0, constraints.maxWidth)
+                            val heightPx = solvedBand.height.roundToPx()
+                                .coerceIn(0, (constraints.maxHeight - topOffsetPx).coerceAtLeast(0))
+                            val placeable = measurable.measure(Constraints.fixed(widthPx, heightPx))
+                            val totalHeight =
+                                (topOffsetPx + placeable.height).coerceAtMost(constraints.maxHeight)
+                            layout(
+                                width = placeable.width,
+                                height = totalHeight,
+                                alignmentLines = mapOf(ViewfinderTopLine to topOffsetPx)
+                            ) {
+                                placeable.place(0, topOffsetPx)
+                            }
+                        } else if (solvedBand != null) {
+                            val portraitTopOffsetPx = solvedBand.top.roundToPx()
+                                .coerceIn(0, constraints.maxWidth)
+                            val widthPx = solvedBand.height.roundToPx()
+                                .coerceIn(
+                                    0,
+                                    (constraints.maxWidth - portraitTopOffsetPx).coerceAtLeast(0)
+                                )
+                            val heightPx = maxHeight.roundToPx().coerceIn(0, constraints.maxHeight)
+                            val placeable = measurable.measure(Constraints.fixed(widthPx, heightPx))
+                            val leftOffsetPx = if (
+                                compactCounterRotation == DeviceRotation.Rotated90
+                            ) {
+                                (constraints.maxWidth - portraitTopOffsetPx - placeable.width)
+                                    .coerceAtLeast(0)
+                            } else {
+                                portraitTopOffsetPx
+                            }
+                            val verticalOffsetPx = (constraints.maxHeight - placeable.height) / 2
+                            layout(
+                                width = constraints.maxWidth,
+                                height = placeable.height,
+                                alignmentLines = mapOf(ViewfinderTopLine to portraitTopOffsetPx)
+                            ) {
+                                placeable.place(leftOffsetPx, verticalOffsetPx)
+                            }
                         } else {
-                            null
-                        }
-                        val topOffsetPx = (solvedBand?.top ?: 0.dp).roundToPx()
-                            .coerceIn(0, constraints.maxHeight)
-                        val size = if (solvedBand != null) {
-                            DpSize(maxWidth, solvedBand.height)
-                        } else {
-                            calculateViewfinderSize(
+                            val size = calculateViewfinderSize(
                                 maxWidth = maxWidth,
                                 maxHeight = maxHeight,
                                 aspectRatio = aspectRatio,
                                 useLandscapeAspectRatio = useLandscapeAspectRatio
                             )
-                        }
-                        val widthPx = size.width.roundToPx().coerceIn(0, constraints.maxWidth)
-                        val heightPx = size.height.roundToPx()
-                            .coerceIn(0, (constraints.maxHeight - topOffsetPx).coerceAtLeast(0))
-                        val placeable = measurable.measure(Constraints.fixed(widthPx, heightPx))
-                        val totalHeight =
-                            (topOffsetPx + placeable.height).coerceAtMost(constraints.maxHeight)
-                        layout(
-                            width = placeable.width,
-                            height = totalHeight,
-                            alignmentLines = mapOf(ViewfinderTopLine to topOffsetPx)
-                        ) {
-                            placeable.place(0, topOffsetPx)
+                            val widthPx = size.width.roundToPx().coerceIn(0, constraints.maxWidth)
+                            val heightPx = size.height.roundToPx()
+                                .coerceIn(0, constraints.maxHeight)
+                            val placeable = measurable.measure(Constraints.fixed(widthPx, heightPx))
+                            layout(
+                                width = placeable.width,
+                                height = placeable.height,
+                                alignmentLines = mapOf(ViewfinderTopLine to 0)
+                            ) {
+                                placeable.place(0, 0)
+                            }
                         }
                     }
                     .testTag(PREVIEW_DISPLAY)
@@ -1021,11 +1056,9 @@ fun PreviewDisplay(
                     }
             ) {
                 if (surfaceRequest != null) {
-                    val isCounterRotatedLandscape = LocalWindowRotation.current.isLandscape
                     val implementationMode = when {
-                        Build.VERSION.SDK_INT <= 24 || isCounterRotatedLandscape ->
-                            ImplementationMode.EMBEDDED
-                        else -> ImplementationMode.EXTERNAL
+                        Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
+                        else -> ImplementationMode.EMBEDDED
                     }
 
                     DetectWindowColorModeChanges(
