@@ -662,15 +662,13 @@ private suspend fun updateCamera2RequestOptions(
                         "Setting LLB with " +
                             "CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY"
                     )
-                    val captureRequestOptions = CaptureRequestOptions.Builder()
-                        .setCaptureRequestOption(
-                            CaptureRequest.CONTROL_AE_MODE,
-                            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
-                        )
-                        .build()
-
-                    Camera2CameraControl.from(camera.cameraControl)
-                        .addCaptureRequestOptions(captureRequestOptions)
+                    // Set on the shared builder rather than through a separate
+                    // addCaptureRequestOptions() call. setCaptureRequestOptions() below replaces
+                    // all options previously applied through Camera2CameraControl.
+                    optionsBuilder.setCaptureRequestOption(
+                        CaptureRequest.CONTROL_AE_MODE,
+                        CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                    )
                 }
             }
 
