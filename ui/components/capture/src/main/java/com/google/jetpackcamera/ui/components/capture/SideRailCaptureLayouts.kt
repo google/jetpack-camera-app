@@ -419,10 +419,19 @@ internal fun SideRailCaptureScaffold(
                             )
                         }
 
+                        val carouselHorizontalClearance = if (config.clearRailsForQuickSettings) {
+                            topOverlayClearance
+                        } else {
+                            0.dp
+                        }
                         OverlapAwareCaptureSlot(
                             modifier = Modifier
                                 .align(Alignment.BottomCenter)
-                                .padding(bottom = config.hudVerticalPadding)
+                                .padding(
+                                    start = carouselHorizontalClearance,
+                                    end = carouselHorizontalClearance,
+                                    bottom = config.hudVerticalPadding
+                                )
                                 .suppressBackgroundForModal(isModalOpen),
                             orientation = Orientation.Horizontal,
                             isCompact = config.isCompactHeight,
