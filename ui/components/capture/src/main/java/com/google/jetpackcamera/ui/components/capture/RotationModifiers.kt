@@ -207,16 +207,16 @@ internal fun rememberStickyGravityTargetDegrees(
  *   window so icons never flip upside-down or snap back to `0°`.
  * - Uses shortest-path angle interpolation (`±90°`) and routes `180°` landscape-to-landscape
  *   transitions (`90° <-> 270°`) across `0°` upright (`-90f <-> +90f`) rather than `180°`.
- * - Snaps immediately by default ([animateQuarterTurns] = `false`), or when [windowRotation]
- *   changes (since the OS is already animating the window rotation), when [LocalDisableAnimations]
- *   is `true`, or on a `180°` half-turn flip (`90° <-> 270°`). When [animateQuarterTurns] is
- *   `true`, `90°` quarter-turns animate smoothly while `180°` flips still snap immediately.
+ * - Animates `90°` quarter-turns smoothly by default ([animateQuarterTurns] = `true`), while
+ *   snapping immediately on a `180°` half-turn flip (`90° <-> 270°`), when [windowRotation] changes
+ *   (since the OS is already animating the window rotation), when [LocalDisableAnimations] is
+ *   `true`, or when [animateQuarterTurns] is `false`.
  */
 @Composable
 fun rememberGravityRotationState(
     deviceRotation: DeviceRotation = LocalDeviceRotation.current,
     windowRotation: DeviceRotation = LocalWindowRotation.current,
-    animateQuarterTurns: Boolean = false
+    animateQuarterTurns: Boolean = true
 ): State<Float> {
     val targetClockwiseDegrees = rememberStickyGravityTargetDegrees(
         deviceRotation = deviceRotation,
