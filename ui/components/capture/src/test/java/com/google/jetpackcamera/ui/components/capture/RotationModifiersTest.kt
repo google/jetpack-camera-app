@@ -21,6 +21,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -72,6 +73,60 @@ class RotationModifiersTest {
         deviceRotation = DeviceRotation.Rotated270
         composeTestRule.waitForIdle()
         assertThat(currentDegrees).isEqualTo(90f)
+    }
+
+    @Test
+    fun rememberGravityRotationState_snapsByDefaultAndSupportsQuarterTurnAnimationWith180Snap() {
+        var deviceRotation by mutableStateOf(DeviceRotation.Natural)
+        var animateQuarterTurns by mutableStateOf(false)
+        var currentDegrees = 0f
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides false) {
+                val state = rememberGravityRotationState(
+                    deviceRotation = deviceRotation,
+                    windowRotation = DeviceRotation.Natural,
+                    animateQuarterTurns = animateQuarterTurns
+                )
+                currentDegrees = state.value
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.autoAdvance = false
+        try {
+            // Default (animateQuarterTurns = false): 90° turn snaps immediately without waiting 250ms
+            deviceRotation = DeviceRotation.Rotated270
+            Snapshot.sendApplyNotifications()
+            composeTestRule.mainClock.advanceTimeByFrame()
+            assertThat(currentDegrees).isEqualTo(90f)
+
+            // Enable quarter-turn animation: 90° -> 0° animates across frames over 250ms
+            animateQuarterTurns = true
+            Snapshot.sendApplyNotifications()
+            composeTestRule.mainClock.advanceTimeByFrame()
+
+            deviceRotation = DeviceRotation.Natural
+            Snapshot.sendApplyNotifications()
+            composeTestRule.mainClock.advanceTimeBy(125L)
+            assertThat(currentDegrees).isGreaterThan(0f)
+            assertThat(currentDegrees).isLessThan(90f)
+            composeTestRule.mainClock.advanceTimeBy(250L)
+            assertThat(currentDegrees).isEqualTo(0f)
+
+            // Quarter-turn to 90° CCW (gravity +90°), then 180° flip to 90° CW (gravity -90°/270°):
+            // the 180° flip must snap immediately even when animateQuarterTurns = true
+            deviceRotation = DeviceRotation.Rotated270
+            Snapshot.sendApplyNotifications()
+            composeTestRule.mainClock.advanceTimeBy(350L)
+            assertThat(currentDegrees).isEqualTo(90f)
+
+            deviceRotation = DeviceRotation.Rotated90
+            Snapshot.sendApplyNotifications()
+            composeTestRule.mainClock.advanceTimeBy(32L)
+            assertThat(((currentDegrees % 360f) + 360f) % 360f).isEqualTo(270f)
+        } finally {
+            composeTestRule.mainClock.autoAdvance = true
+        }
     }
 
     @Test

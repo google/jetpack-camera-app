@@ -33,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
@@ -148,13 +149,16 @@ fun rememberDeviceRotation(): DeviceRotation {
  * oriented upright against gravity inside the current window:
  * - Uses shortest-path angle interpolation (`±90°`) so transitions across `0° <-> 270°` never spin
  *   `270°` the long way around.
- * - Snaps immediately when [windowRotation] changes (since the OS is already animating the window
- *   rotation) or when [LocalDisableAnimations] is `true`.
+ * - Snaps immediately by default ([animateQuarterTurns] = `false`), or when [windowRotation]
+ *   changes (since the OS is already animating the window rotation), when [LocalDisableAnimations]
+ *   is `true`, or on a `180°` half-turn flip (`90° <-> 270°`). When [animateQuarterTurns] is
+ *   `true`, `90°` quarter-turns animate smoothly while `180°` flips still snap immediately.
  */
 @Composable
 fun rememberGravityRotationState(
     deviceRotation: DeviceRotation = LocalDeviceRotation.current,
-    windowRotation: DeviceRotation = LocalWindowRotation.current
+    windowRotation: DeviceRotation = LocalWindowRotation.current,
+    animateQuarterTurns: Boolean = false
 ): State<Float> {
     val targetClockwiseDegrees = deviceRotation.toGravityRotationDegrees(windowRotation)
     var continuousTarget by remember { mutableFloatStateOf(targetClockwiseDegrees.toFloat()) }
@@ -167,15 +171,21 @@ fun rememberGravityRotationState(
 
     val currentMod = ((continuousTarget % 360f) + 360f) % 360f
     val rawDelta = ((targetClockwiseDegrees - currentMod + 540f) % 360f) - 180f
+    val isHalfTurnFlip = rawDelta == -180f || rawDelta == 180f
     val delta = if (rawDelta == -180f) 180f else rawDelta
-    if (delta != 0f) {
+    var snapCurrentTransition by remember { mutableStateOf(false) }
+    if (delta != 0f || windowRotationChanged) {
+        snapCurrentTransition = windowRotationChanged || isHalfTurnFlip
         continuousTarget += delta
     }
 
     val disableAnimations = LocalDisableAnimations.current
+    if (!animateQuarterTurns || disableAnimations) {
+        return rememberUpdatedState(continuousTarget)
+    }
     return animateFloatAsState(
         targetValue = continuousTarget,
-        animationSpec = if (disableAnimations || windowRotationChanged) {
+        animationSpec = if (snapCurrentTransition) {
             snap()
         } else {
             tween(
