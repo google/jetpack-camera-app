@@ -103,3 +103,6 @@ const val START_SIDE_RAIL_TAG = "rail_capture_start"
 
 /** Test tag for the end-aligned adaptive side rail on the capture screen. */
 const val END_SIDE_RAIL_TAG = "rail_capture_end"
+
+/** Test tag for the compact controls container on the capture screen. */
+const val COMPACT_CONTROLS_TAG = "container_capture_controls_compact"
