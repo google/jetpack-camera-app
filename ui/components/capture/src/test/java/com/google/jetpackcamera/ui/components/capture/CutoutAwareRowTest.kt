@@ -43,6 +43,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
@@ -315,6 +316,35 @@ class CutoutAwareRowTest {
                 rtlReferenceWidth = 360
             )
         ).containsExactly(IntRect(left = 310, top = 0, right = 350, bottom = 40))
+
+        // Verify fallbackViewWidth / fallbackViewHeight when rowBoundsInWindow is null on pass 1.
+        val landscapeLeftCutout = listOf(android.graphics.Rect(0, 300, 48, 340))
+        assertThat(
+            resolveLocalCutoutRects(
+                cutoutRectsOverride = null,
+                windowCutoutRects = landscapeLeftCutout,
+                rowBoundsInWindow = null,
+                isRtl = false,
+                rtlReferenceWidth = 360,
+                windowRotation = DeviceRotation.Rotated270,
+                fallbackViewWidth = 800,
+                fallbackViewHeight = 360
+            )
+        ).containsExactly(IntRect(left = 20, top = 0, right = 60, bottom = 48))
+
+        val landscapeRightCutout = listOf(android.graphics.Rect(752, 20, 800, 60))
+        assertThat(
+            resolveLocalCutoutRects(
+                cutoutRectsOverride = null,
+                windowCutoutRects = landscapeRightCutout,
+                rowBoundsInWindow = null,
+                isRtl = false,
+                rtlReferenceWidth = 360,
+                windowRotation = DeviceRotation.Rotated90,
+                fallbackViewWidth = 800,
+                fallbackViewHeight = 360
+            )
+        ).containsExactly(IntRect(left = 20, top = 0, right = 60, bottom = 48))
     }
 
     @Test

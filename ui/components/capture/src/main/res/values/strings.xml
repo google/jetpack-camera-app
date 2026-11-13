@@ -139,6 +139,8 @@
 
     <!-- Accessibility label for the live camera viewfinder surface where the user can tap to focus. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="camera_viewfinder_content_description">Camera viewfinder</string>
+    <!-- Accessibility action label (read aloud by screen readers, e.g. "Double-tap to focus center") on the camera viewfinder to focus and meter at the center of the frame. "Focus" is an imperative verb. [CHAR LIMIT=40] -->
+    <string name="preview_tap_to_focus_action_label">Focus center</string>
 
     <!-- Accessibility announcement when the camera is actively focusing on a tapped point in the viewfinder. [CHAR LIMIT=NONE] -->
     <string name="focus_scanning">Focusing</string>

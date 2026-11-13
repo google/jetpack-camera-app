@@ -49,6 +49,39 @@ enum class DeviceRotation {
         }
     }
 
+    /**
+     * Returns the clockwise rotation in degrees needed inside a window at [windowRotation] so that
+     * UI elements remain oriented upright against physical gravity (`this` device rotation).
+     *
+     * An upside-down (`180°`) delta is mapped to `0` so camera controls and layouts never flip
+     * upside-down.
+     */
+    fun toGravityRotationDegrees(windowRotation: DeviceRotation): Int {
+        val rawDelta =
+            (
+                (windowRotation.toClockwiseRotationDegrees() - toClockwiseRotationDegrees()) %
+                    360 + 360
+                ) % 360
+        return if (rawDelta == 180) 0 else rawDelta
+    }
+
+    /**
+     * Returns the clockwise rotation in degrees needed to counter-rotate a root container back to
+     * the device's natural portrait coordinate frame when the OS window is rotated to `this`
+     * orientation.
+     */
+    fun toWindowCounterRotationDegrees(): Float {
+        return when (this) {
+            Natural -> 0f
+            Rotated90 -> 90f
+            Rotated180 -> 180f
+            Rotated270 -> -90f
+        }
+    }
+
+    val isLandscape: Boolean
+        get() = this == Rotated90 || this == Rotated270
+
     companion object {
         /**
          * Returns the [DeviceRotation] corresponding to a UI [Surface] rotation constant.

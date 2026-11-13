@@ -23,4 +23,33 @@
     <string name="debug_hide_components_desc" translatable="false">Hiding components</string>
     <string name="debug_show_components_desc" translatable="false">Displaying components</string>
     <string name="debug_zoom_ratio_text" translatable="false">%1$.2fx</string>
+    <string name="debug_text_layout_prefix" translatable="false">"Layout: "</string>
+    <string
+        name="debug_text_window_orientation_prefix"
+        translatable="false">"Window Orientation: "</string>
+    <string name="debug_text_form_factor_prefix" translatable="false">"Form Factor: "</string>
+    <string name="debug_text_layout_mode_prefix" translatable="false">"Layout Mode: "</string>
+    <string name="debug_text_active_layout_prefix" translatable="false">"Active Layout: "</string>
+    <string name="debug_text_device_rotation_prefix" translatable="false">"Device Rotation: "</string>
+    <string name="debug_text_window_rotation_prefix" translatable="false">"Window Rotation: "</string>
+    <string name="debug_text_expected_layout_rotation_prefix" translatable="false">"Expected Layout Rotation: "</string>
+    <string name="debug_text_icon_rotation_prefix" translatable="false">"Icon Rotation: "</string>
+    <string name="debug_text_window_size" translatable="false">%1$dx%2$ddp</string>
+    <string name="debug_text_rotation_degrees" translatable="false">%1$d°</string>
+    <string name="debug_text_window_orientation_portrait" translatable="false">PORTRAIT</string>
+    <string name="debug_text_window_orientation_horizontal" translatable="false">HORIZONTAL</string>
+    <string name="debug_text_form_factor_compact" translatable="false">COMPACT</string>
+    <string name="debug_text_form_factor_compact_slim" translatable="false">COMPACT_SLIM</string>
+    <string name="debug_text_form_factor_compact_short" translatable="false">COMPACT_SHORT</string>
+    <string
+        name="debug_text_form_factor_compact_short_slim"
+        translatable="false">COMPACT_SHORT_SLIM</string>
+    <string name="debug_text_form_factor_foldable" translatable="false">FOLDABLE</string>
+    <string
+        name="debug_text_form_factor_tablet_portrait"
+        translatable="false">TABLET_PORTRAIT</string>
+    <string
+        name="debug_text_form_factor_tablet_landscape"
+        translatable="false">TABLET_LANDSCAPE</string>
+    <string name="debug_text_form_factor_unknown" translatable="false">UNKNOWN</string>
 </resources>

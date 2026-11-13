@@ -36,6 +36,13 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+            isIncludeAndroidResources = true
+        }
+    }
+
     flavorDimensions += "flavor"
     productFlavors {
         create("stable") {
@@ -73,9 +80,17 @@ dependencies {
     // CameraX
     implementation(libs.camera.core)
 
+    // Compose - Testing
+    debugImplementation(libs.compose.test.manifest)
+    // noinspection TestManifestGradleConfiguration: required for release build unit tests
+    testImplementation(libs.compose.test.manifest)
+    testImplementation(libs.compose.junit)
+
     // Testing
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.junit)
     androidTestImplementation(libs.truth)
     androidTestImplementation(libs.androidx.junit)
 

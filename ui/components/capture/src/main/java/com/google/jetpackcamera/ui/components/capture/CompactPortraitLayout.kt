@@ -60,6 +60,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -90,8 +91,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.takeOrElse
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolution
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSpec
 import com.google.jetpackcamera.ui.components.capture.layout.CameraRowIds
 import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
@@ -199,15 +203,19 @@ internal fun Modifier.suppressBackgroundForModal(isModalOpen: Boolean): Modifier
  * Hosts the camera viewfinder, top status/indicator bar, bottom control stack, and an in-hierarchy
  * [BottomSheetScaffold] for Quick Settings controlled by [state] without spawning secondary
  * windows. Tags its root container with [COMPACT_CONTROLS_TAG], provides
- * [LocalActiveCaptureLayout] = `"CompactPortraitLayout"`, and scopes [LocalCaptureRtlPolicy]
- * (`mirrorCompactBottomBar`) exclusively to the horizontal capture and bottom-toolbar rows while
- * restoring the active locale's `LayoutDirection` inside every child slot.
+ * [LocalActiveCaptureLayout] = `"CompactPortraitLayout"`, counter-rotates into canonical portrait
+ * coordinates when `windowWidth > windowHeight` (`COMPACT` / `COMPACT_SLIM` horizontal postures),
+ * and scopes [LocalCaptureRtlPolicy] (`mirrorCompactBottomBar`) exclusively to the horizontal
+ * capture and bottom-toolbar rows while restoring the active locale's `LayoutDirection` inside
+ * every child slot.
  *
  * @param slots [CaptureSlots] supplying the capture screen UI controls and overlays.
  * @param viewfinder Composable rendering the camera preview frame.
  * @param modifier [Modifier] applied to the outer layout container.
  * @param state Mode-agnostic [CaptureScaffoldState] controlling the Quick Settings bottom sheet and
  *   snackbar host.
+ * @param deviceRotation Physical gravity orientation of the device.
+ * @param windowRotation Display/window rotation reported by Android.
  * @param controlsVisible Whether the camera control slots should be composed and visible.
  * @param isErrorDialogShowing Whether a modal camera error dialog is currently visible above the
  *   capture chrome.
@@ -228,6 +236,8 @@ internal fun CompactPortraitLayout(
     viewfinder: @Composable (Modifier) -> Unit,
     modifier: Modifier = Modifier,
     state: CaptureScaffoldState = rememberCaptureScaffoldState(),
+    deviceRotation: DeviceRotation = LocalDeviceRotation.current,
+    windowRotation: DeviceRotation = LocalWindowRotation.current,
     controlsVisible: Boolean = true,
     isErrorDialogShowing: Boolean = false,
     includeStatusBarsInTopBar: Boolean = true,
@@ -286,219 +296,486 @@ internal fun CompactPortraitLayout(
         onDismissQuickSettings()
     }
 
-    CompositionLocalProvider(
-        LocalOverlapTargetBounds provides overlapTargetBounds,
-        LocalActiveCaptureLayout provides "CompactPortraitLayout"
+    SeamlessRotationAnimationEffect()
+
+    val isSheetVisible = state.isQuickSettingsOpen ||
+        bottomSheetState.isVisible ||
+        bottomSheetState.targetValue == SheetValue.Expanded
+    var isErrorDialogPlaced by remember { mutableStateOf(false) }
+    val isErrorModalActive = isErrorDialogShowing || isErrorDialogPlaced
+    val isModalOpen = isSheetVisible || isErrorModalActive
+    val externalVfMetrics = remember { ExternalViewfinderMetrics() }
+
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .testTag(COMPACT_CONTROLS_TAG)
     ) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .testTag(COMPACT_CONTROLS_TAG)
+        val windowWidth = maxWidth
+        val windowHeight = maxHeight
+        val shouldCounterRotate = windowWidth > windowHeight
+        val effectiveDeviceRotation = if (
+            deviceRotation == DeviceRotation.Natural &&
+            windowRotation.isLandscape &&
+            shouldCounterRotate
         ) {
-            BottomSheetScaffold(
-                modifier = Modifier.fillMaxSize(),
-                scaffoldState = scaffoldState,
-                sheetPeekHeight = CompactPortraitTokens.SheetPeekHeight,
-                sheetDragHandle = {
-                    BottomSheetDefaults.DragHandle(
-                        modifier = Modifier
-                            .testTag(QUICK_SETTINGS_DRAG_HANDLE)
-                            .minimumInteractiveComponentSize()
-                            .clickable(
-                                role = Role.Button,
-                                onClickLabel = dismissQuickSettingsLabel,
-                                onClick = handleDismissQuickSettings
-                            )
-                    )
-                },
-                sheetShape = RoundedCornerShape(
-                    topStart = CompactPortraitTokens.SheetTopCornerRadius,
-                    topEnd = CompactPortraitTokens.SheetTopCornerRadius
-                ),
-                sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                sheetContent = {
-                    CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                        OverlapAwareCaptureSlot(
-                            orientation = Orientation.Vertical,
-                            isCompact = false,
-                            content = slots.quickSettingsOverlay
-                        )
-                    }
-                },
-                snackbarHost = {}
+            windowRotation
+        } else {
+            deviceRotation
+        }
+        val windowGravityDeg = effectiveDeviceRotation.toGravityRotationDegrees(windowRotation)
+        val effectiveWindowRotation = when {
+            !shouldCounterRotate -> DeviceRotation.Natural
+            windowGravityDeg == 90 -> DeviceRotation.Rotated90
+            windowGravityDeg == 270 -> DeviceRotation.Rotated270
+            windowRotation.isLandscape -> windowRotation
+            else -> DeviceRotation.Rotated270
+        }
+        val containerCounterDeg = effectiveWindowRotation.toWindowCounterRotationDegrees().toInt()
+        val containerFrameRotation = DeviceRotation.snapFrom(
+            ((windowRotation.toClockwiseRotationDegrees() - containerCounterDeg) % 360 + 360) % 360
+        )
+        val gravityRotationState = rememberGravityRotationState(
+            deviceRotation = effectiveDeviceRotation,
+            windowRotation = containerFrameRotation
+        )
+        val unrotatedGravityRotationState = rememberGravityRotationState(
+            deviceRotation = effectiveDeviceRotation,
+            windowRotation = windowRotation
+        )
+
+        val portraitWidth = if (shouldCounterRotate) windowHeight else windowWidth
+        val portraitHeight = if (shouldCounterRotate) windowWidth else windowHeight
+        val portraitAspectRatio = portraitHeight.value / portraitWidth.value
+        val isHandheldPortrait =
+            portraitAspectRatio >= CompactPortraitTokens.PORTRAIT_ASPECT_RATIO_THRESHOLD
+        val minTouchTarget = LocalMinimumInteractiveComponentSize.current
+            .takeOrElse { CompactPortraitTokens.DefaultMinTouchTarget }
+        val (topBarHeight, topBarTopPadding) = computeTopBarMetrics(
+            includeStatusBarsInTopBar = includeStatusBarsInTopBar,
+            minTouchTarget = minTouchTarget,
+            windowRotation = effectiveWindowRotation
+        )
+        val navInset = WindowInsets.navigationBarsIgnoringVisibility
+            .toPortraitWindowInsets(effectiveWindowRotation)
+            .asPaddingValues()
+            .calculateBottomPadding()
+        val rawGestureInset = WindowInsets.systemGestures
+            .toPortraitWindowInsets(effectiveWindowRotation)
+            .asPaddingValues()
+            .calculateBottomPadding()
+        val effectiveGestureInset = max(CompactPortraitTokens.MinGestureInset, rawGestureInset)
+        val spec = remember(minTouchTarget) {
+            CameraLayoutDefaults.spec(minInteractiveTouchTarget = minTouchTarget)
+        }
+        val portraitSolution = if (isHandheldPortrait) {
+            val cameraWindow = remember(
+                portraitWidth,
+                portraitHeight,
+                topBarHeight,
+                navInset,
+                effectiveGestureInset
             ) {
-                BoxWithConstraints(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black)
-                ) {
-                    val isSheetVisible = state.isQuickSettingsOpen ||
-                        bottomSheetState.isVisible ||
-                        bottomSheetState.targetValue == SheetValue.Expanded
-                    var isErrorDialogPlaced by remember { mutableStateOf(false) }
-                    val isErrorModalActive = isErrorDialogShowing || isErrorDialogPlaced
-                    val isModalOpen = isSheetVisible || isErrorModalActive
+                CameraWindow(
+                    width = portraitWidth,
+                    height = portraitHeight,
+                    topInset = topBarHeight,
+                    navInset = navInset,
+                    gestureInset = effectiveGestureInset
+                )
+            }
+            remember(spec, cameraWindow) { CameraLayoutSolver.solve(spec, cameraWindow) }
+        } else {
+            null
+        }
 
-                    val windowAspectRatio = maxHeight.value / maxWidth.value
-                    val isHandheldPortrait =
-                        windowAspectRatio >= CompactPortraitTokens.PORTRAIT_ASPECT_RATIO_THRESHOLD
-                    if (isHandheldPortrait) {
-                        AdaptivePortraitCaptureLayout(
-                            windowWidth = maxWidth,
-                            windowHeight = maxHeight,
-                            includeStatusBarsInTopBar = includeStatusBarsInTopBar,
-                            controlsVisible = controlsVisible,
-                            modifier = Modifier.suppressBackgroundForModal(isModalOpen),
-                            viewfinder = viewfinder,
-                            topStartContent = topStartContent,
-                            viewfinderTopEndContent = viewfinderTopEndContent,
-                            onRequiresImmersiveChange = onRequiresImmersiveChange,
-                            indicatorRow = indicatorRow,
-                            topBarTrailingContent = topBarTrailingContent,
-                            elapsedTimeDisplay = elapsedTimeDisplay,
-                            zoomControls = zoomLevelDisplay,
-                            imageWell = imageWell,
-                            captureButton = captureButton,
-                            flipCameraButton = flipCameraButton,
-                            captureModeCarousel = captureModeCarousel,
-                            quickSettingsToggleButton = quickSettingsButton,
-                            captureModeToggleSwitch = captureModeToggle,
-                            snackbarHost = { hostModifier ->
-                                PillSnackbarHost(
-                                    snackbarHostState = state.snackbarHostState,
-                                    modifier = hostModifier
-                                )
-                            }
-                        )
-                        Box(
+        CompositionLocalProvider(
+            LocalOverlapTargetBounds provides overlapTargetBounds,
+            LocalActiveCaptureLayout provides "CompactPortraitLayout",
+            LocalDeviceRotation provides effectiveDeviceRotation,
+            LocalWindowRotation provides if (shouldCounterRotate) {
+                windowRotation
+            } else {
+                effectiveWindowRotation
+            },
+            LocalCompactCounterRotation provides effectiveWindowRotation,
+            LocalGravityRotationState provides if (shouldCounterRotate) {
+                unrotatedGravityRotationState
+            } else {
+                gravityRotationState
+            },
+            LocalCameraLayoutSolution provides portraitSolution,
+            LocalLayoutDirection provides localeDirection
+        ) {
+            OuterViewfinderHost(
+                viewfinder = viewfinder,
+                solution = portraitSolution,
+                spec = spec,
+                topBarHeight = topBarHeight,
+                shouldCounterRotate = shouldCounterRotate,
+                counterRotation = effectiveWindowRotation,
+                metrics = externalVfMetrics,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .suppressBackgroundForModal(isModalOpen)
+            )
+        }
+
+        CompositionLocalProvider(
+            LocalOverlapTargetBounds provides overlapTargetBounds,
+            LocalActiveCaptureLayout provides "CompactPortraitLayout",
+            LocalDeviceRotation provides effectiveDeviceRotation,
+            LocalWindowRotation provides effectiveWindowRotation,
+            LocalCompactCounterRotation provides effectiveWindowRotation,
+            LocalGravityRotationState provides gravityRotationState
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .counterRotateToPortrait(effectiveWindowRotation)
+            ) {
+                BottomSheetScaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    scaffoldState = scaffoldState,
+                    containerColor = Color.Transparent,
+                    sheetPeekHeight = CompactPortraitTokens.SheetPeekHeight,
+                    sheetDragHandle = {
+                        BottomSheetDefaults.DragHandle(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .suppressBackgroundForModal(isModalOpen)
-                                .windowInsetsPadding(
-                                    WindowInsets.systemBarsIgnoringVisibility
-                                        .union(WindowInsets.displayCutout)
-                                )
-                        ) {
-                            CompositionLocalProvider(
-                                LocalLayoutDirection provides localeDirection
-                            ) {
-                                snackBar(Modifier, state.snackbarHostState)
-                            }
-                        }
-                    } else {
-                        Column(modifier = Modifier.suppressBackgroundForModal(isModalOpen)) {
-                            val minTouchTarget = LocalMinimumInteractiveComponentSize.current
-                                .takeOrElse { CompactPortraitTokens.DefaultMinTouchTarget }
-                            val (topBarHeight, topBarTopPadding) = computeTopBarMetrics(
-                                includeStatusBarsInTopBar = includeStatusBarsInTopBar,
-                                minTouchTarget = minTouchTarget
-                            )
-                            CompactTopBarBox(
-                                topBarHeight = topBarHeight,
-                                topBarTopPadding = topBarTopPadding,
-                                indicatorRow = indicatorRow,
-                                topBarTrailingContent = topBarTrailingContent
-                            )
-                            Box {
-                                viewfinder(Modifier)
-                                OverlapAwareStyleProvider(Modifier.align(Alignment.TopStart)) {
-                                    topStartContent(Modifier)
-                                }
-                                OverlapAwareStyleProvider(Modifier.align(Alignment.TopEnd)) {
-                                    viewfinderTopEndContent(Modifier)
-                                }
-                            }
-                        }
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .suppressBackgroundForModal(isModalOpen)
-                                .windowInsetsPadding(
-                                    WindowInsets.systemBarsIgnoringVisibility
-                                        .union(WindowInsets.displayCutout)
-                                )
-                        ) {
-                            if (controlsVisible) {
-                                VerticalMaterialControls(
-                                    captureButton = captureButton,
-                                    imageWell = imageWell,
-                                    flipCameraButton = flipCameraButton,
-                                    quickSettingsToggleButton = quickSettingsButton,
-                                    captureModeToggleSwitch = captureModeToggle,
-                                    captureModeCarousel = captureModeCarousel,
-                                    zoomControls = zoomLevelDisplay,
-                                    elapsedTimeDisplay = elapsedTimeDisplay,
-                                    snackbarHost = { hostModifier ->
-                                        PillSnackbarHost(
-                                            snackbarHostState = state.snackbarHostState,
-                                            modifier = hostModifier
-                                        )
-                                    }
-                                )
-                            }
-                            CompositionLocalProvider(
-                                LocalLayoutDirection provides localeDirection
-                            ) {
-                                snackBar(Modifier, state.snackbarHostState)
-                            }
-                        }
-                    }
-
-                    CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                        OverlapAwareStyleProvider(
-                            modifier = Modifier.suppressBackgroundForModal(isModalOpen)
-                        ) {
-                            overlay(Modifier)
-                        }
-                    }
-
-                    if (isSheetVisible && !isErrorModalActive) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .testTag(QUICK_SETTINGS_SCRIM)
-                                .semantics {
-                                    contentDescription = dismissQuickSettingsLabel
-                                    traversalIndex = 1f
-                                }
+                                .testTag(QUICK_SETTINGS_DRAG_HANDLE)
+                                .minimumInteractiveComponentSize()
                                 .clickable(
                                     role = Role.Button,
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
+                                    onClickLabel = dismissQuickSettingsLabel,
                                     onClick = handleDismissQuickSettings
                                 )
                         )
-                    }
-
-                    CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                        Box(
-                            modifier = Modifier.onSizeChanged { size ->
-                                isErrorDialogPlaced = size.width > 0 && size.height > 0
+                    },
+                    sheetShape = RoundedCornerShape(
+                        topStart = CompactPortraitTokens.SheetTopCornerRadius,
+                        topEnd = CompactPortraitTokens.SheetTopCornerRadius
+                    ),
+                    sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    sheetContent = {
+                        CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                            OverlapAwareCaptureSlot(
+                                orientation = Orientation.Vertical,
+                                isCompact = false,
+                                content = slots.quickSettingsOverlay
+                            )
+                        }
+                    },
+                    snackbarHost = {}
+                ) {
+                    BoxWithConstraints(
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        val portraitViewfinderProxy: @Composable (Modifier) -> Unit = { proxyMod ->
+                            ExternalViewfinderProxy(
+                                metrics = externalVfMetrics,
+                                modifier = proxyMod
+                            )
+                        }
+                        if (isHandheldPortrait) {
+                            AdaptivePortraitCaptureLayout(
+                                windowWidth = maxWidth,
+                                windowHeight = maxHeight,
+                                windowRotation = effectiveWindowRotation,
+                                includeStatusBarsInTopBar = includeStatusBarsInTopBar,
+                                controlsVisible = controlsVisible,
+                                precomputedSolution = portraitSolution,
+                                modifier = Modifier.suppressBackgroundForModal(isModalOpen),
+                                viewfinder = portraitViewfinderProxy,
+                                topStartContent = topStartContent,
+                                viewfinderTopEndContent = viewfinderTopEndContent,
+                                onRequiresImmersiveChange = onRequiresImmersiveChange,
+                                indicatorRow = indicatorRow,
+                                topBarTrailingContent = topBarTrailingContent,
+                                elapsedTimeDisplay = elapsedTimeDisplay,
+                                zoomControls = zoomLevelDisplay,
+                                imageWell = imageWell,
+                                captureButton = captureButton,
+                                flipCameraButton = flipCameraButton,
+                                captureModeCarousel = captureModeCarousel,
+                                quickSettingsToggleButton = quickSettingsButton,
+                                captureModeToggleSwitch = captureModeToggle,
+                                snackbarHost = { hostModifier ->
+                                    PillSnackbarHost(
+                                        snackbarHostState = state.snackbarHostState,
+                                        modifier = hostModifier
+                                    )
+                                }
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .suppressBackgroundForModal(isModalOpen)
+                                    .windowInsetsPadding(
+                                        WindowInsets.systemBarsIgnoringVisibility
+                                            .union(WindowInsets.displayCutout)
+                                            .toPortraitWindowInsets(effectiveWindowRotation)
+                                    )
+                            ) {
+                                CompositionLocalProvider(
+                                    LocalLayoutDirection provides localeDirection
+                                ) {
+                                    snackBar(Modifier, state.snackbarHostState)
+                                }
                             }
-                        ) {
-                            errorDialog(Modifier)
+                        } else {
+                            Column(modifier = Modifier.suppressBackgroundForModal(isModalOpen)) {
+                                CompactTopBarBox(
+                                    topBarHeight = topBarHeight,
+                                    topBarTopPadding = topBarTopPadding,
+                                    windowRotation = effectiveWindowRotation,
+                                    indicatorRow = indicatorRow,
+                                    topBarTrailingContent = topBarTrailingContent
+                                )
+                                Box {
+                                    portraitViewfinderProxy(Modifier)
+                                    OverlapAwareStyleProvider(Modifier.align(Alignment.TopStart)) {
+                                        topStartContent(Modifier)
+                                    }
+                                    OverlapAwareStyleProvider(Modifier.align(Alignment.TopEnd)) {
+                                        viewfinderTopEndContent(Modifier)
+                                    }
+                                }
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .suppressBackgroundForModal(isModalOpen)
+                                    .windowInsetsPadding(
+                                        WindowInsets.systemBarsIgnoringVisibility
+                                            .union(WindowInsets.displayCutout)
+                                            .toPortraitWindowInsets(effectiveWindowRotation)
+                                    )
+                            ) {
+                                if (controlsVisible) {
+                                    VerticalMaterialControls(
+                                        windowRotation = effectiveWindowRotation,
+                                        captureButton = captureButton,
+                                        imageWell = imageWell,
+                                        flipCameraButton = flipCameraButton,
+                                        quickSettingsToggleButton = quickSettingsButton,
+                                        captureModeToggleSwitch = captureModeToggle,
+                                        captureModeCarousel = captureModeCarousel,
+                                        zoomControls = zoomLevelDisplay,
+                                        elapsedTimeDisplay = elapsedTimeDisplay,
+                                        snackbarHost = { hostModifier ->
+                                            PillSnackbarHost(
+                                                snackbarHostState = state.snackbarHostState,
+                                                modifier = hostModifier
+                                            )
+                                        }
+                                    )
+                                }
+                                CompositionLocalProvider(
+                                    LocalLayoutDirection provides localeDirection
+                                ) {
+                                    snackBar(Modifier, state.snackbarHostState)
+                                }
+                            }
+                        }
+
+                        CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                            OverlapAwareStyleProvider(
+                                modifier = Modifier.suppressBackgroundForModal(isModalOpen)
+                            ) {
+                                overlay(Modifier)
+                            }
+                        }
+
+                        if (isSheetVisible && !isErrorModalActive) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .testTag(QUICK_SETTINGS_SCRIM)
+                                    .semantics {
+                                        contentDescription = dismissQuickSettingsLabel
+                                        traversalIndex = 1f
+                                    }
+                                    .clickable(
+                                        role = Role.Button,
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                        onClick = handleDismissQuickSettings
+                                    )
+                            )
+                        }
+
+                        CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                            Box(
+                                modifier = Modifier.onSizeChanged { size ->
+                                    isErrorDialogPlaced = size.width > 0 && size.height > 0
+                                }
+                            ) {
+                                errorDialog(Modifier)
+                            }
                         }
                     }
                 }
+                // Drawn last and outside of both the inset-padded controls and the bottom sheet so
+                // the flash covers the entire window, including system bar and cutout areas.
+                screenFlashOverlay(Modifier)
             }
-            // Drawn last and outside of both the inset-padded controls and the bottom sheet so the
-            // flash covers the entire window, including system bar and display cutout areas.
-            screenFlashOverlay(Modifier)
         }
+    }
+}
+
+private class ExternalViewfinderMetrics {
+    var portraitWidthPx by mutableIntStateOf(0)
+    var portraitHeightPx by mutableIntStateOf(0)
+    var reportedTopPx by mutableIntStateOf(AlignmentLine.Unspecified)
+}
+
+@Composable
+private fun OuterViewfinderHost(
+    viewfinder: @Composable (Modifier) -> Unit,
+    solution: CameraLayoutSolution?,
+    spec: CameraLayoutSpec,
+    topBarHeight: Dp,
+    shouldCounterRotate: Boolean,
+    counterRotation: DeviceRotation,
+    metrics: ExternalViewfinderMetrics,
+    modifier: Modifier = Modifier
+) {
+    Layout(
+        modifier = modifier,
+        content = { viewfinder(Modifier) }
+    ) { measurables, constraints ->
+        val measurable = measurables.firstOrNull()
+        if (measurable == null) {
+            layout(constraints.maxWidth, constraints.maxHeight) {}
+        } else if (!shouldCounterRotate) {
+            if (solution != null) {
+                val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+                val vf = measurable.measure(looseConstraints)
+                val reportedTop = vf[ViewfinderTopLine]
+                val viewfinderY = if (vf.height in 1 until constraints.maxHeight) {
+                    val ratio = vf.width.toFloat() / vf.height.toFloat()
+                    solution.viewfinderBandFor(ratio, spec.viewfinders)?.top?.roundToPx()
+                } else {
+                    null
+                } ?: 0
+                val vfX = (constraints.maxWidth - vf.width) / 2
+                if (metrics.portraitWidthPx != vf.width) metrics.portraitWidthPx = vf.width
+                if (metrics.portraitHeightPx != vf.height) metrics.portraitHeightPx = vf.height
+                if (metrics.reportedTopPx != reportedTop) metrics.reportedTopPx = reportedTop
+                layout(constraints.maxWidth, constraints.maxHeight) {
+                    vf.placeRelative(vfX, viewfinderY)
+                }
+            } else {
+                val topBarPx = topBarHeight.roundToPx().coerceIn(0, constraints.maxHeight)
+                val availHeight = (constraints.maxHeight - topBarPx).coerceAtLeast(0)
+                val vf = measurable.measure(
+                    Constraints(
+                        minWidth = 0,
+                        maxWidth = constraints.maxWidth,
+                        minHeight = 0,
+                        maxHeight = availHeight
+                    )
+                )
+                if (metrics.portraitWidthPx != vf.width) metrics.portraitWidthPx = vf.width
+                if (metrics.portraitHeightPx != vf.height) metrics.portraitHeightPx = vf.height
+                if (metrics.reportedTopPx != AlignmentLine.Unspecified) {
+                    metrics.reportedTopPx = AlignmentLine.Unspecified
+                }
+                layout(constraints.maxWidth, constraints.maxHeight) {
+                    vf.placeRelative(0, topBarPx)
+                }
+            }
+        } else if (solution != null) {
+            val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+            val vf = measurable.measure(looseConstraints)
+            val reportedTop = vf[ViewfinderTopLine]
+            val xOffset = if (
+                reportedTop == AlignmentLine.Unspecified &&
+                vf.width in 1 until constraints.maxWidth &&
+                vf.height > 0
+            ) {
+                val portraitRatio = vf.height.toFloat() / vf.width.toFloat()
+                val bandTopPx = solution
+                    .viewfinderBandFor(portraitRatio, spec.viewfinders)
+                    ?.top
+                    ?.roundToPx() ?: 0
+                if (counterRotation == DeviceRotation.Rotated90) {
+                    (constraints.maxWidth - bandTopPx - vf.width).coerceAtLeast(0)
+                } else {
+                    bandTopPx.coerceIn(0, (constraints.maxWidth - vf.width).coerceAtLeast(0))
+                }
+            } else {
+                0
+            }
+            val yOffset = (constraints.maxHeight - vf.height) / 2
+            if (metrics.portraitWidthPx != vf.height) metrics.portraitWidthPx = vf.height
+            if (metrics.portraitHeightPx != vf.width) metrics.portraitHeightPx = vf.width
+            if (metrics.reportedTopPx != reportedTop) metrics.reportedTopPx = reportedTop
+            layout(constraints.maxWidth, constraints.maxHeight) {
+                vf.place(xOffset, yOffset)
+            }
+        } else {
+            val topBarPx = topBarHeight.roundToPx().coerceIn(0, constraints.maxWidth)
+            val availWidth = (constraints.maxWidth - topBarPx).coerceAtLeast(0)
+            val vf = measurable.measure(
+                Constraints(
+                    minWidth = 0,
+                    maxWidth = availWidth,
+                    minHeight = 0,
+                    maxHeight = constraints.maxHeight
+                )
+            )
+            val xOffset = if (counterRotation == DeviceRotation.Rotated90) {
+                (availWidth - vf.width) / 2
+            } else {
+                topBarPx + (availWidth - vf.width) / 2
+            }
+            val yOffset = (constraints.maxHeight - vf.height) / 2
+            if (metrics.portraitWidthPx != vf.height) metrics.portraitWidthPx = vf.height
+            if (metrics.portraitHeightPx != vf.width) metrics.portraitHeightPx = vf.width
+            if (metrics.reportedTopPx != AlignmentLine.Unspecified) {
+                metrics.reportedTopPx = AlignmentLine.Unspecified
+            }
+            layout(constraints.maxWidth, constraints.maxHeight) {
+                vf.place(xOffset, yOffset)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExternalViewfinderProxy(
+    metrics: ExternalViewfinderMetrics,
+    modifier: Modifier = Modifier
+) {
+    Layout(modifier = modifier) { _, constraints ->
+        val w = metrics.portraitWidthPx.coerceIn(0, constraints.maxWidth)
+        val h = metrics.portraitHeightPx.coerceIn(0, constraints.maxHeight)
+        val reportedTop = metrics.reportedTopPx
+        val lines: Map<AlignmentLine, Int> = if (reportedTop == AlignmentLine.Unspecified) {
+            emptyMap()
+        } else {
+            mapOf(ViewfinderTopLine to reportedTop)
+        }
+        layout(w, h, alignmentLines = lines) {}
     }
 }
 
 @Composable
 private fun computeTopBarMetrics(
     includeStatusBarsInTopBar: Boolean,
-    minTouchTarget: Dp
+    minTouchTarget: Dp,
+    windowRotation: DeviceRotation = LocalWindowRotation.current
 ): Pair<Dp, Dp> {
-    val cutoutTopInset = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
+    val portraitCutoutInsets = WindowInsets.displayCutout.toPortraitWindowInsets(windowRotation)
+    val cutoutTopInset = portraitCutoutInsets.asPaddingValues().calculateTopPadding()
     return if (includeStatusBarsInTopBar) {
-        val statusBarTopInset = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-        val combinedTopInset = WindowInsets.statusBars
-            .union(WindowInsets.displayCutout)
+        val portraitStatusBars = WindowInsets.statusBars.toPortraitWindowInsets(windowRotation)
+        val statusBarTopInset = portraitStatusBars.asPaddingValues().calculateTopPadding()
+        val combinedTopInset = portraitStatusBars
+            .union(portraitCutoutInsets)
             .asPaddingValues()
             .calculateTopPadding()
         max(combinedTopInset, statusBarTopInset + minTouchTarget) to statusBarTopInset
@@ -513,7 +790,8 @@ private fun CompactTopBarBox(
     topBarTopPadding: Dp,
     indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    windowRotation: DeviceRotation = LocalWindowRotation.current
 ) {
     val localeDirection = LocalLayoutDirection.current
     CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
@@ -523,7 +801,9 @@ private fun CompactTopBarBox(
                 .height(topBarHeight)
                 .padding(top = topBarTopPadding)
                 .windowInsetsPadding(
-                    WindowInsets.displayCutout.only(WindowInsetsSides.Horizontal)
+                    WindowInsets.displayCutout
+                        .toPortraitWindowInsets(windowRotation)
+                        .only(WindowInsetsSides.Horizontal)
                 )
                 .padding(horizontal = CompactPortraitTokens.LowerSectionHorizontalPadding),
             contentAlignment = Alignment.CenterStart
@@ -683,7 +963,9 @@ internal fun AdaptivePortraitCaptureLayout(
     captureModeToggleSwitch: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     controlsVisible: Boolean,
     modifier: Modifier = Modifier,
+    windowRotation: DeviceRotation = LocalWindowRotation.current,
     includeStatusBarsInTopBar: Boolean = true,
+    precomputedSolution: CameraLayoutSolution? = null,
     snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     val localeDirection = LocalLayoutDirection.current
@@ -695,9 +977,11 @@ internal fun AdaptivePortraitCaptureLayout(
     }
 
     val navInset = WindowInsets.navigationBarsIgnoringVisibility
+        .toPortraitWindowInsets(windowRotation)
         .asPaddingValues()
         .calculateBottomPadding()
     val rawGestureInset = WindowInsets.systemGestures
+        .toPortraitWindowInsets(windowRotation)
         .asPaddingValues()
         .calculateBottomPadding()
     val effectiveGestureInset = max(CompactPortraitTokens.MinGestureInset, rawGestureInset)
@@ -705,7 +989,8 @@ internal fun AdaptivePortraitCaptureLayout(
         .takeOrElse { CompactPortraitTokens.DefaultMinTouchTarget }
     val (topBarHeight, topBarTopPadding) = computeTopBarMetrics(
         includeStatusBarsInTopBar = includeStatusBarsInTopBar,
-        minTouchTarget = minTouchTarget
+        minTouchTarget = minTouchTarget,
+        windowRotation = windowRotation
     )
 
     val window = remember(
@@ -731,7 +1016,9 @@ internal fun AdaptivePortraitCaptureLayout(
     val spec = remember(minTouchTarget) {
         CameraLayoutDefaults.spec(minInteractiveTouchTarget = minTouchTarget)
     }
-    val solution = remember(spec, window) { CameraLayoutSolver.solve(spec, window) }
+    val solution = precomputedSolution ?: remember(spec, window) {
+        CameraLayoutSolver.solve(spec, window)
+    }
 
     val currentOnRequiresImmersiveChange by rememberUpdatedState(onRequiresImmersiveChange)
     DisposableEffect(solution.requiresImmersive) {
@@ -762,6 +1049,7 @@ internal fun AdaptivePortraitCaptureLayout(
                 CompactTopBarBox(
                     topBarHeight = topBarHeight,
                     topBarTopPadding = topBarTopPadding,
+                    windowRotation = windowRotation,
                     modifier = Modifier.layoutId(CaptureSlotId.TopBar),
                     indicatorRow = indicatorRow,
                     topBarTrailingContent = topBarTrailingContent
@@ -946,6 +1234,7 @@ internal fun AdaptivePortraitCaptureLayout(
 @Composable
 internal fun VerticalMaterialControls(
     modifier: Modifier = Modifier,
+    windowRotation: DeviceRotation = LocalWindowRotation.current,
     captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     imageWell: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
@@ -969,6 +1258,7 @@ internal fun VerticalMaterialControls(
         contentAlignment = Alignment.BottomCenter
     ) {
         val navBarBottom = WindowInsets.navigationBarsIgnoringVisibility
+            .toPortraitWindowInsets(windowRotation)
             .asPaddingValues()
             .calculateBottomPadding()
         val isShortScreen = maxHeight < CompactPortraitTokens.ShortScreenThreshold
@@ -1075,6 +1365,21 @@ private fun CompactPortraitStandardPhonePreview() {
 )
 @Composable
 private fun CompactPortraitShortPhonePreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        CompactPortraitLayout(
+            slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
+            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+        )
+    }
+}
+
+@Preview(
+    name = "CompactPortrait - Phone Horizontal (800x400dp)",
+    device = "spec:width=800dp,height=400dp",
+    showBackground = true
+)
+@Composable
+private fun CompactPortraitHorizontalPhonePreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CompactPortraitLayout(
             slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),

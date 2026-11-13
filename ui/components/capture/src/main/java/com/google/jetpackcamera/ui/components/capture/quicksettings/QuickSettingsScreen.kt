@@ -37,6 +37,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.ui.components.capture.LocalWindowRotation
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.AspectRatioRow
@@ -44,6 +45,7 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.CaptureMo
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrRow
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.QuickNavSettings
+import com.google.jetpackcamera.ui.components.capture.toPortraitWindowInsets
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -72,10 +74,12 @@ fun QuickSettingsScaffoldContent(
     showMoreSettingsButton: Boolean = true
 ) {
     if (quickSettingsUiState is QuickSettingsUiState.Available) {
+        val portraitNavBars = WindowInsets.navigationBarsIgnoringVisibility
+            .toPortraitWindowInsets(LocalWindowRotation.current)
         Column(
             modifier = modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
+                .windowInsetsPadding(portraitNavBars)
                 .padding(bottom = 24.dp)
                 .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
         ) {
