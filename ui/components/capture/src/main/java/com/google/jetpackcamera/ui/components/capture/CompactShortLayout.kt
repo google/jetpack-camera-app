@@ -342,7 +342,7 @@ private fun PreviewOverlaySlotScope.ConstrainedSlot(
                 .coerceIn(constraints.minHeight, constraints.maxHeight)
             layout(resolvedWidth, resolvedHeight) {
                 placeables.forEach { placeable ->
-                    placeable.place(
+                    placeable.placeRelative(
                         x = (resolvedWidth - placeable.width) / 2,
                         y = (resolvedHeight - placeable.height) / 2
                     )

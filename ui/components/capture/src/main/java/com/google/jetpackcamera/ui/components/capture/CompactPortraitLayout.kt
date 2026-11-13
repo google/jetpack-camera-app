@@ -108,6 +108,9 @@ import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSo
 val LocalActiveCaptureLayout: ProvidableCompositionLocal<String> =
     compositionLocalOf { "CompactPortraitLayout" }
 
+/**
+ * Dimension and spacing constants used by [CompactPortraitLayout].
+ */
 internal object CompactPortraitTokens {
     val SheetPeekHeight = 0.dp
     val SheetTopCornerRadius = 28.dp
