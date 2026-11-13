@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.pointer.pointerInput
@@ -144,9 +145,10 @@ fun ToggleSwitch(
         label = "thumbColor"
     )
 
-    // --- 4. Icon Painters ---
+    // --- 4. Icon Painters & Gravity State ---
     val offIconPainter = leftIcon?.let { painterResource(id = it) }
     val onIconPainter = rightIcon?.let { painterResource(id = it) }
+    val gravityRotationState = LocalGravityRotationState.current
 
     // --- 5. Gesture Handlers ---
     val draggableState = rememberDraggableState { delta ->
@@ -243,7 +245,8 @@ fun ToggleSwitch(
                     disableColor.copy(
                         alpha = DISABLED_ICON_ALPHA
                     )
-                }
+                },
+                iconRotationDegrees = gravityRotationState.value
             )
         }
     }
@@ -313,19 +316,22 @@ private fun DrawScope.drawSwitchTrack(color: Color, cornerRadius: CornerRadius) 
 }
 
 /**
- * Draws the 'Off' and 'On' icons, clipping them based on the thumb's position.
+ * Draws the 'Off' and 'On' icons, rotating each icon around its own center by
+ * [iconRotationDegrees] while keeping the two-tone thumb clip boundary in track coordinates.
  */
-private fun DrawScope.drawClippedSwitchIcons(
+internal fun DrawScope.drawClippedSwitchIcons(
     thumbRect: Rect,
     iconSizePx: Float,
     iconPadding: Float,
     leftIconPainter: Painter?,
     rightIconPainter: Painter?,
     offIconColor: Color,
-    onIconColor: Color
+    onIconColor: Color,
+    iconRotationDegrees: Float = 0f
 ) {
     val iconY = iconPadding
     val iconDrawSize = Size(iconSizePx, iconSizePx)
+    val iconPivot = Offset(iconSizePx / 2f, iconSizePx / 2f)
 
     // --- Draw the OFF Icon (Left Side) ---
     if (leftIconPainter != null) {
@@ -334,8 +340,10 @@ private fun DrawScope.drawClippedSwitchIcons(
 
         // Draw the base (unselected) icon first
         translate(left = offIconX, top = iconY) {
-            with(leftIconPainter) {
-                draw(size = iconDrawSize, colorFilter = ColorFilter.tint(offIconColor))
+            rotate(degrees = iconRotationDegrees, pivot = iconPivot) {
+                with(leftIconPainter) {
+                    draw(size = iconDrawSize, colorFilter = ColorFilter.tint(offIconColor))
+                }
             }
         }
 
@@ -347,8 +355,10 @@ private fun DrawScope.drawClippedSwitchIcons(
             bottom = offIconRect.bottom
         ) {
             translate(left = offIconX, top = iconY) {
-                with(leftIconPainter) {
-                    draw(size = iconDrawSize, colorFilter = ColorFilter.tint(onIconColor))
+                rotate(degrees = iconRotationDegrees, pivot = iconPivot) {
+                    with(leftIconPainter) {
+                        draw(size = iconDrawSize, colorFilter = ColorFilter.tint(onIconColor))
+                    }
                 }
             }
         }
@@ -360,8 +370,10 @@ private fun DrawScope.drawClippedSwitchIcons(
 
         // Draw the base (unselected) icon first
         translate(left = onIconX, top = iconY) {
-            with(rightIconPainter) {
-                draw(size = iconDrawSize, colorFilter = ColorFilter.tint(offIconColor))
+            rotate(degrees = iconRotationDegrees, pivot = iconPivot) {
+                with(rightIconPainter) {
+                    draw(size = iconDrawSize, colorFilter = ColorFilter.tint(offIconColor))
+                }
             }
         }
 
@@ -373,8 +385,10 @@ private fun DrawScope.drawClippedSwitchIcons(
             bottom = onIconRect.bottom
         ) {
             translate(left = onIconX, top = iconY) {
-                with(rightIconPainter) {
-                    draw(size = iconDrawSize, colorFilter = ColorFilter.tint(onIconColor))
+                rotate(degrees = iconRotationDegrees, pivot = iconPivot) {
+                    with(rightIconPainter) {
+                        draw(size = iconDrawSize, colorFilter = ColorFilter.tint(onIconColor))
+                    }
                 }
             }
         }

@@ -27,10 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
-<<<<<<< HEAD
 import androidx.compose.ui.Alignment
-=======
->>>>>>> kim/adaptive/debug-layout-readout
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onSizeChanged
@@ -88,6 +85,53 @@ class RotationModifiersTest {
         deviceRotation = DeviceRotation.Rotated270
         composeTestRule.waitForIdle()
         assertThat(currentDegrees).isEqualTo(90f)
+    }
+
+    @Test
+    fun rememberGravityRotationState_maintainsPreviousGravityAt180AndRoutesThroughUprightZero() {
+        var deviceRotation by mutableStateOf(DeviceRotation.Natural)
+        var currentDegrees = 0f
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                val state = rememberGravityRotationState(
+                    deviceRotation = deviceRotation,
+                    windowRotation = DeviceRotation.Natural
+                )
+                currentDegrees = state.value
+            }
+        }
+        composeTestRule.waitForIdle()
+        assertThat(currentDegrees).isEqualTo(0f)
+
+        // Direct 0° -> 180° stays at previous gravity (0°).
+        deviceRotation = DeviceRotation.Rotated180
+        composeTestRule.waitForIdle()
+        assertThat(currentDegrees).isEqualTo(0f)
+
+        // 0° -> Rotated90 (-90°) -> Rotated180 holds -90° instead of snapping back to 0°.
+        deviceRotation = DeviceRotation.Rotated90
+        composeTestRule.waitForIdle()
+        assertThat(currentDegrees).isEqualTo(-90f)
+
+        deviceRotation = DeviceRotation.Rotated180
+        composeTestRule.waitForIdle()
+        assertThat(currentDegrees).isEqualTo(-90f)
+
+        // Continuing from Rotated180 to Rotated270 (+90°) sweeps +180° through 0° upright to +90°.
+        deviceRotation = DeviceRotation.Rotated270
+        composeTestRule.waitForIdle()
+        assertThat(currentDegrees).isEqualTo(90f)
+
+        // Re-entering Rotated180 from Rotated270 holds +90°; continuing to Rotated90 sweeps -180°
+        // back through 0° upright to -90°.
+        deviceRotation = DeviceRotation.Rotated180
+        composeTestRule.waitForIdle()
+        assertThat(currentDegrees).isEqualTo(90f)
+
+        deviceRotation = DeviceRotation.Rotated90
+        composeTestRule.waitForIdle()
+        assertThat(currentDegrees).isEqualTo(-90f)
     }
 
     @Test

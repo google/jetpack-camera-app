@@ -37,9 +37,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
@@ -585,9 +583,7 @@ private fun QuickSettingsOverlayCardPlaceholder(
                     tonalElevation = SideRailTokens.QuickSettingsCardTonalElevation
                 ) {
                     CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                        Box(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            content(Modifier)
-                        }
+                        content(Modifier)
                     }
                 }
             }

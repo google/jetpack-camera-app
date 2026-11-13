@@ -202,8 +202,18 @@ internal fun CaptureScaffoldLayout(
             heightDp = maxHeight,
             isFullScreenCompactPhone = isFullScreenCompactPhone
         )
+        val isCompactPortraitBacked = layoutMode == CameraLayoutMode.COMPACT ||
+            layoutMode == CameraLayoutMode.COMPACT_SLIM
+        val outerGravityRotationState = if (isCompactPortraitBacked) {
+            LocalGravityRotationState.current
+        } else {
+            DefaultGravityRotationState
+        }
 
-        CompositionLocalProvider(LocalCameraLayoutMode provides layoutMode) {
+        CompositionLocalProvider(
+            LocalCameraLayoutMode provides layoutMode,
+            LocalGravityRotationState provides outerGravityRotationState
+        ) {
             val resolvedSlots = slots ?: CaptureSlots(
                 topBar = indicatorRow,
                 topBarTrailingContent = topBarTrailingContent,
@@ -223,7 +233,6 @@ internal fun CaptureScaffoldLayout(
                 snackBar = snackBar,
                 errorDialog = errorDialog
             )
-
             when (layoutMode) {
                 CameraLayoutMode.COMPACT,
                 CameraLayoutMode.COMPACT_SLIM -> {

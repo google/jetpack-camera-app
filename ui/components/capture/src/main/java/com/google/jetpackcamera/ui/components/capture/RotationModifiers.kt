@@ -37,8 +37,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -59,8 +61,17 @@ import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.google.jetpackcamera.model.DeviceRotation
+import kotlin.math.roundToInt
 
 private const val UI_ROTATION_DURATION_MS = 250
+private const val QUADRANT_DEGREES = 90
+private const val FULL_CIRCLE_DEGREES = 360
+
+/**
+ * Shared zero-degree (`0f`) gravity rotation [State] used as the default for
+ * [LocalGravityRotationState] and bound explicitly by adaptive side-rail layouts that stay
+ * naturally oriented with the OS window.
+ */
 internal val DefaultGravityRotationState: State<Float> = mutableFloatStateOf(0f)
 
 /**
@@ -163,10 +174,39 @@ fun rememberDeviceRotation(): DeviceRotation {
 }
 
 /**
+ * Remembers the target clockwise gravity compensation angle in degrees (`0`, `90`, or `270`),
+ * holding the previous non-inverted gravity angle whenever the relative delta between
+ * [windowRotation] and [deviceRotation] is `180°` so symbols and overlays never flip upside-down or
+ * snap back to `0°` while held at `180°`.
+ */
+@Composable
+internal fun rememberStickyGravityTargetDegrees(
+    deviceRotation: DeviceRotation = LocalDeviceRotation.current,
+    windowRotation: DeviceRotation = LocalWindowRotation.current
+): Int {
+    var lastNon180Degrees by remember { mutableIntStateOf(0) }
+    var previousWindowRotation by remember { mutableStateOf(windowRotation) }
+    if (previousWindowRotation != windowRotation) {
+        previousWindowRotation = windowRotation
+        lastNon180Degrees = 0
+    }
+    val resolved = deviceRotation.toGravityRotationDegrees(
+        windowRotation = windowRotation,
+        fallbackOn180Degrees = lastNon180Degrees
+    )
+    if (resolved != lastNon180Degrees) {
+        lastNon180Degrees = resolved
+    }
+    return resolved
+}
+
+/**
  * Remembers a single continuous clockwise rotation [State] in degrees that keeps UI elements
  * oriented upright against gravity inside the current window:
- * - Uses shortest-path angle interpolation (`±90°`) so transitions across `0° <-> 270°` never spin
- *   `270°` the long way around.
+ * - Holds the previous non-`180°` gravity target while the device is at `180°` relative to the
+ *   window so icons never flip upside-down or snap back to `0°`.
+ * - Uses shortest-path angle interpolation (`±90°`) and routes `180°` landscape-to-landscape
+ *   transitions (`90° <-> 270°`) across `0°` upright (`-90f <-> +90f`) rather than `180°`.
  * - Animates `90°` quarter-turns smoothly by default ([animateQuarterTurns] = `true`), while
  *   snapping immediately on a `180°` half-turn flip (`90° <-> 270°`), when [windowRotation] changes
  *   (since the OS is already animating the window rotation), when [LocalDisableAnimations] is
@@ -178,7 +218,10 @@ fun rememberGravityRotationState(
     windowRotation: DeviceRotation = LocalWindowRotation.current,
     animateQuarterTurns: Boolean = true
 ): State<Float> {
-    val targetClockwiseDegrees = deviceRotation.toGravityRotationDegrees(windowRotation)
+    val targetClockwiseDegrees = rememberStickyGravityTargetDegrees(
+        deviceRotation = deviceRotation,
+        windowRotation = windowRotation
+    )
     var continuousTarget by remember { mutableFloatStateOf(targetClockwiseDegrees.toFloat()) }
     var previousWindowRotation by remember { mutableStateOf(windowRotation) }
 
@@ -190,7 +233,11 @@ fun rememberGravityRotationState(
     val currentMod = ((continuousTarget % 360f) + 360f) % 360f
     val rawDelta = ((targetClockwiseDegrees - currentMod + 540f) % 360f) - 180f
     val isHalfTurnFlip = rawDelta == -180f || rawDelta == 180f
-    val delta = if (rawDelta == -180f) 180f else rawDelta
+    val delta = if (isHalfTurnFlip) {
+        if (currentMod >= 180f) 180f else -180f
+    } else {
+        rawDelta
+    }
     var snapCurrentTransition by remember { mutableStateOf(false) }
     if (delta != 0f || windowRotationChanged) {
         snapCurrentTransition = windowRotationChanged || isHalfTurnFlip
@@ -227,42 +274,79 @@ fun Modifier.animateToUpright(rotationState: State<Float>? = null): Modifier = c
 }
 
 /**
+ * Snaps an arbitrary continuous clockwise [degrees] angle to the nearest 90-degree quadrant
+ * (`0`, `90`, `180`, or `270`).
+ */
+internal fun snapToQuadrantDegrees(degrees: Float): Int {
+    if (!degrees.isFinite()) return 0
+    val quadrants = (degrees / QUADRANT_DEGREES.toFloat()).roundToInt()
+    return ((quadrants * QUADRANT_DEGREES) % FULL_CIRCLE_DEGREES + FULL_CIRCLE_DEGREES) %
+        FULL_CIRCLE_DEGREES
+}
+
+/**
+ * Measures and places a rectangular composable with swapped width and height constraints when
+ * [LocalGravityRotationState] snaps to `90°` or `270°`, centering the rotated layer within the
+ * swapped layout box so rectangular overlays orient upright without clipping or misaligned hit
+ * targets.
+ *
+ * When [LocalGravityRotationState] snaps to `0°` (such as in portrait or in adaptive side-rail
+ * layouts), constraints and placement remain unrotated.
+ */
+fun Modifier.rotateLayoutToGravity(): Modifier = composed {
+    val gravityState = LocalGravityRotationState.current
+    val snappedDegrees by remember(gravityState) {
+        derivedStateOf { snapToQuadrantDegrees(gravityState.value) }
+    }
+    rotateLayoutToGravity(snappedDegrees)
+}
+
+/**
  * Measures and places a rectangular composable with swapped width and height constraints when
  * [rotationDegrees] is `90°` or `270°`, centering the rotated layer within the swapped layout box
  * so rectangular overlays orient upright without clipping or misaligned hit targets.
  */
 fun Modifier.rotateLayoutToGravity(rotationDegrees: Int): Modifier =
     layout { measurable, constraints ->
-        val normalized = ((rotationDegrees % 360) + 360) % 360
-        val swapAxes = normalized == 90 || normalized == 270
-        val childConstraints = if (swapAxes) {
-            val swappedMaxWidth = if (constraints.hasBoundedHeight) {
-                constraints.maxHeight
-            } else {
-                constraints.maxWidth
+        val normalized =
+            ((rotationDegrees % FULL_CIRCLE_DEGREES) + FULL_CIRCLE_DEGREES) % FULL_CIRCLE_DEGREES
+        if (normalized == 0) {
+            val placeable = measurable.measure(constraints)
+            layout(placeable.width, placeable.height) {
+                placeable.place(0, 0)
             }
-            val swappedMaxHeight = if (constraints.hasBoundedWidth) {
-                constraints.maxWidth
-            } else {
-                constraints.maxHeight
-            }
-            Constraints(
-                minWidth = constraints.minHeight.coerceAtMost(swappedMaxWidth),
-                maxWidth = swappedMaxWidth,
-                minHeight = constraints.minWidth.coerceAtMost(swappedMaxHeight),
-                maxHeight = swappedMaxHeight
-            )
         } else {
-            constraints
-        }
-        val placeable = measurable.measure(childConstraints)
-        val layoutWidth = if (swapAxes) placeable.height else placeable.width
-        val layoutHeight = if (swapAxes) placeable.width else placeable.height
-        layout(layoutWidth, layoutHeight) {
-            val offsetX = (layoutWidth - placeable.width) / 2
-            val offsetY = (layoutHeight - placeable.height) / 2
-            placeable.placeWithLayer(offsetX, offsetY) {
-                rotationZ = normalized.toFloat()
+            val swapAxes =
+                normalized == QUADRANT_DEGREES || normalized == QUADRANT_DEGREES * 3
+            val childConstraints = if (swapAxes) {
+                val swappedMaxWidth = if (constraints.hasBoundedHeight) {
+                    constraints.maxHeight
+                } else {
+                    constraints.maxWidth
+                }
+                val swappedMaxHeight = if (constraints.hasBoundedWidth) {
+                    constraints.maxWidth
+                } else {
+                    constraints.maxHeight
+                }
+                Constraints(
+                    minWidth = constraints.minHeight.coerceAtMost(swappedMaxWidth),
+                    maxWidth = swappedMaxWidth,
+                    minHeight = constraints.minWidth.coerceAtMost(swappedMaxHeight),
+                    maxHeight = swappedMaxHeight
+                )
+            } else {
+                constraints
+            }
+            val placeable = measurable.measure(childConstraints)
+            val layoutWidth = if (swapAxes) placeable.height else placeable.width
+            val layoutHeight = if (swapAxes) placeable.width else placeable.height
+            layout(layoutWidth, layoutHeight) {
+                val offsetX = (layoutWidth - placeable.width) / 2
+                val offsetY = (layoutHeight - placeable.height) / 2
+                placeable.placeWithLayer(offsetX, offsetY) {
+                    rotationZ = normalized.toFloat()
+                }
             }
         }
     }

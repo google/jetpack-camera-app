@@ -222,7 +222,9 @@ fun CameraControlIconButton(
     val backgroundStyle = LocalCameraControlBackgroundStyle.current
     FilledIconButton(
         onClick = onClick,
-        modifier = modifier.size(CameraControlIconButtonSize),
+        modifier = modifier
+            .size(CameraControlIconButtonSize)
+            .animateToUpright(),
         enabled = enabled,
         shape = CircleShape,
         colors = IconButtonDefaults.filledIconButtonColors(
@@ -546,7 +548,9 @@ fun PauseResumeToggleButton(
                     currentRecordingState !is VideoRecordingState.Active.Paused
                 )
             },
-            modifier = modifier.size(size)
+            modifier = modifier
+                .size(size)
+                .animateToUpright()
         ) {
             Icon(
                 modifier = Modifier
@@ -602,6 +606,7 @@ fun AmplitudeToggleButton(
         FilledIconToggleButton(
             modifier = modifier
                 .size(buttonSize)
+                .animateToUpright()
                 .testTag(AUDIO_INPUT_TOGGLE)
                 .semantics {
                     stateDescription = if (audioUiState is AudioUiState.Enabled.On) {
@@ -1310,7 +1315,9 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
     ) {
         if (displayedState != null) {
             Icon(
-                modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+                modifier = Modifier
+                    .size(IconButtonDefaults.smallIconSize)
+                    .animateToUpright(),
                 painter = when (displayedState) {
                     is StabilizationUiState.Specific ->
                         when (displayedState.stabilizationMode) {
@@ -1395,7 +1402,9 @@ fun VideoQualityIcon(videoQuality: VideoQuality, modifier: Modifier = Modifier) 
     ) {
         if (displayedQuality != null) {
             Icon(
-                modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+                modifier = Modifier
+                    .size(IconButtonDefaults.smallIconSize)
+                    .animateToUpright(),
                 painter = when (displayedQuality) {
                     VideoQuality.SD ->
                         painterResource(R.drawable.video_resolution_sd_icon)
@@ -1589,6 +1598,7 @@ fun FlipCameraButton(
                 contentDescription = contentDescription,
                 modifier = Modifier
                     .size(IconButtonDefaults.largeIconSize)
+                    .animateToUpright()
                     .rotate(animatedRotation.value)
             )
         }

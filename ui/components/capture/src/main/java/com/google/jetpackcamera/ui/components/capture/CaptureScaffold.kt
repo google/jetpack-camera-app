@@ -66,7 +66,6 @@ import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScaffoldContent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
@@ -735,25 +734,14 @@ object CaptureScaffoldDefaults {
         showMoreSettingsButton: Boolean = true
     ) {
         if (controller != null) {
-            if (LocalActiveCaptureLayout.current == "CompactPortraitLayout") {
-                QuickSettingsScaffoldContent(
-                    quickSettingsUiState = uiState,
-                    onNavigateToSettings = onNavigateToSettings,
-                    quickSettingsController = controller,
-                    modifier = modifier,
-                    showMoreSettingsButton = showMoreSettingsButton
-                )
-            } else if (uiState is QuickSettingsUiState.Available) {
-                QuickSettingsContent(
-                    quickSettingsUiState = uiState,
-                    quickSettingsController = controller,
-                    onNavigateToSettings = onNavigateToSettings,
-                    modifier = modifier
-                        .padding(vertical = 20.dp)
-                        .testTag(QUICK_SETTINGS_BOTTOM_SHEET),
-                    showMoreSettingsButton = showMoreSettingsButton
-                )
-            }
+            val isFloatingCard = LocalActiveCaptureLayout.current != "CompactPortraitLayout"
+            QuickSettingsScaffoldContent(
+                quickSettingsUiState = uiState,
+                onNavigateToSettings = onNavigateToSettings,
+                quickSettingsController = controller,
+                modifier = if (isFloatingCard) modifier.padding(top = 20.dp) else modifier,
+                showMoreSettingsButton = showMoreSettingsButton
+            )
         }
     }
 

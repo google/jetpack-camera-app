@@ -50,6 +50,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -76,6 +77,11 @@ import java.text.DecimalFormatSymbols
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.floor
+import kotlin.math.sin
+
+private const val MIN_ROTATED_LABEL_SCALE = 0.6f
+private val RotatedLabelPillMargin = 6.dp
+private val UnrotatedLabelPillMargin = 4.dp
 
 /**
  * Styling configuration for [ZoomBar].
@@ -522,8 +528,7 @@ private fun ZoomBarItem(
                 fontScale = density.fontScale.coerceAtMost(ZoomBarDefaults.MAX_LABEL_FONT_SCALE)
             )
         ) {
-            // TODO(#619): Apply Modifier.animateToUpright() to keep labels upright on rotation
-            //  (https://github.com/google/jetpack-camera-app/pull/619).
+            val gravityRotationState = LocalGravityRotationState.current
             BasicText(
                 text = labelText,
                 style = MaterialTheme.typography.labelLarge.copy(
@@ -538,7 +543,30 @@ private fun ZoomBarItem(
                 },
                 modifier = Modifier
                     .wrapContentSize(unbounded = true)
-                    .padding(horizontal = 2.dp),
+                    .padding(horizontal = 2.dp)
+                    .graphicsLayer {
+                        val rotation = gravityRotationState.value
+                        rotationZ = rotation
+                        if (size.width > 0f) {
+                            val rotationRadians = Math.toRadians(rotation.toDouble())
+                            val unrotatedMaxSpanPx =
+                                (ZoomBarDefaults.SlotSize - UnrotatedLabelPillMargin).toPx()
+                            val rotatedMaxSpanPx =
+                                (ZoomBarDefaults.IndicatorHeight - RotatedLabelPillMargin).toPx()
+                            val maxSpanPx = lerp(
+                                unrotatedMaxSpanPx,
+                                rotatedMaxSpanPx,
+                                abs(sin(rotationRadians)).toFloat()
+                            )
+                            val scale = if (size.width > maxSpanPx) {
+                                (maxSpanPx / size.width).coerceAtLeast(MIN_ROTATED_LABEL_SCALE)
+                            } else {
+                                1f
+                            }
+                            scaleX = scale
+                            scaleY = scale
+                        }
+                    },
                 softWrap = false
             )
         }
