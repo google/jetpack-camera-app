@@ -13,11 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(InternalCameraApi::class)
+
 package com.google.jetpackcamera.core.camera
 
 import android.graphics.Rect
 import android.util.Size
+import android.view.Surface
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.Preview
+import androidx.camera.core.UseCaseGroup
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
+import com.google.jetpackcamera.model.DeviceRotation
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -98,5 +109,61 @@ class CameraSessionTest {
         assertThat(getHeightFromCropRect(null, rotationDegrees = 0)).isEqualTo(0)
         assertThat(getWidthFromCropRect(null, rotationDegrees = 90)).isEqualTo(0)
         assertThat(getHeightFromCropRect(null, rotationDegrees = 90)).isEqualTo(0)
+    }
+
+    @Test
+    fun previewTargetRotation_syncsWithWindowRotationInPlace_independentlyOfDeviceRotation() {
+        val expectedSurfaceRotations = mapOf(
+            DeviceRotation.Natural to Surface.ROTATION_0,
+            DeviceRotation.Rotated270 to Surface.ROTATION_90,
+            DeviceRotation.Rotated180 to Surface.ROTATION_180,
+            DeviceRotation.Rotated90 to Surface.ROTATION_270
+        )
+
+        for (initialWindowRot in DeviceRotation.entries) {
+            val preview = Preview.Builder().applyWindowRotation(initialWindowRot).build()
+            val imageCapture = ImageCapture.Builder()
+                .setTargetRotation(DeviceRotation.Natural.toUiSurfaceRotation())
+                .build()
+            val group = UseCaseGroup.Builder()
+                .addUseCase(preview)
+                .addUseCase(imageCapture)
+                .build()
+
+            assertThat(preview.targetRotation)
+                .isEqualTo(expectedSurfaceRotations.getValue(initialWindowRot))
+
+            for (updatedWindowRot in DeviceRotation.entries) {
+                for (deviceRot in DeviceRotation.entries) {
+                    imageCapture.targetRotation = deviceRot.toUiSurfaceRotation()
+                    applyWindowRotation(updatedWindowRot, group)
+
+                    assertThat(preview.targetRotation)
+                        .isEqualTo(expectedSurfaceRotations.getValue(updatedWindowRot))
+                    assertThat(imageCapture.targetRotation)
+                        .isEqualTo(deviceRot.toUiSurfaceRotation())
+                }
+            }
+        }
+    }
+
+    @Test
+    fun transientSessionSettingsAndFakeCameraSystem_trackWindowRotation() {
+        val baseTransient = TransientSessionSettings(
+            isAudioEnabled = true,
+            deviceRotation = DeviceRotation.Natural,
+            flashMode = FlashMode.OFF,
+            primaryLensFacing = LensFacing.BACK,
+            zoomRatios = mapOf(LensFacing.BACK to 1f),
+            testPattern = TestPattern.Off
+        )
+        assertThat(baseTransient.windowRotation).isEqualTo(DeviceRotation.Natural)
+        assertThat(baseTransient.copy(windowRotation = DeviceRotation.Rotated90))
+            .isNotEqualTo(baseTransient)
+
+        val fakeSystem = FakeCameraSystem()
+        assertThat(fakeSystem.windowRotation).isEqualTo(DeviceRotation.Natural)
+        fakeSystem.setWindowRotation(DeviceRotation.Rotated180)
+        assertThat(fakeSystem.windowRotation).isEqualTo(DeviceRotation.Rotated180)
     }
 }

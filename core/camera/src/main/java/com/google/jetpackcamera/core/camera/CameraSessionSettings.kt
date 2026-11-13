@@ -80,7 +80,8 @@ data class TransientSessionSettings(
     val flashMode: FlashMode,
     val primaryLensFacing: LensFacing,
     val zoomRatios: Map<LensFacing, Float>,
-    val testPattern: TestPattern
+    val testPattern: TestPattern,
+    val windowRotation: DeviceRotation = DeviceRotation.Natural
 )
 
 data class InitialRecordingSettings(

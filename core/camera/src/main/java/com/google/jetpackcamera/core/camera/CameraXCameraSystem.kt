@@ -102,6 +102,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
@@ -150,6 +151,7 @@ class CameraXCameraSystem(
     private val videoCaptureControlEvents = Channel<VideoCaptureControlEvent>()
 
     private val currentSettings = MutableStateFlow<CameraAppSettings?>(null)
+    private val currentWindowRotation = MutableStateFlow(DeviceRotation.Natural)
     private var externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard
 
     // Per-lens default sub-modes that failed to bind during the current initialization cycle.
@@ -598,73 +600,75 @@ class CameraXCameraSystem(
         clearCameraError()
 
         val transientSettings = MutableStateFlow<TransientSessionSettings?>(null)
-        currentSettings
-            .filterNotNull()
-            .map { currentCameraSettings ->
-                transientSettings.value = TransientSessionSettings(
-                    isAudioEnabled = currentCameraSettings.audioEnabled,
-                    deviceRotation = currentCameraSettings.deviceRotation,
-                    flashMode = currentCameraSettings.flashMode,
-                    primaryLensFacing = currentCameraSettings.cameraLensFacing,
-                    zoomRatios = currentCameraSettings.defaultZoomRatios,
-                    testPattern = currentCameraSettings.debugSettings.testPattern
+        combine(
+            currentSettings.filterNotNull(),
+            currentWindowRotation
+        ) { currentCameraSettings, windowRotation ->
+            transientSettings.value = TransientSessionSettings(
+                isAudioEnabled = currentCameraSettings.audioEnabled,
+                deviceRotation = currentCameraSettings.deviceRotation,
+                flashMode = currentCameraSettings.flashMode,
+                primaryLensFacing = currentCameraSettings.cameraLensFacing,
+                zoomRatios = currentCameraSettings.defaultZoomRatios,
+                testPattern = currentCameraSettings.debugSettings.testPattern,
+                windowRotation = windowRotation
+            )
+
+            val activeSubMode =
+                registeredSubModes[currentCameraSettings.activeCaptureSubModeId]
+            val activeSubModeBinding = activeSubMode?.provider?.sessionBinding
+            if (activeSubMode != null &&
+                activeSubModeBinding is CameraSessionBinding.Custom
+            ) {
+                PerpetualSessionSettings.CustomSession(
+                    subModeKey = activeSubMode.key,
+                    aspectRatio = currentCameraSettings.aspectRatio,
+                    captureMode = currentCameraSettings.captureMode,
+                    mirrorMode = currentCameraSettings.mirrorMode
+                )
+            } else {
+                val cameraConstraints =
+                    systemConstraints.forCurrentLens(currentCameraSettings)
+                if (cameraConstraints == null) {
+                    Log.e(
+                        TAG,
+                        "Could not retrieve constraints for " +
+                            "${currentCameraSettings.cameraLensFacing}"
+                    )
+                    currentCameraState.update { old ->
+                        old.copy(
+                            isCameraRunning = false,
+                            cameraError = CameraError.CameraRemoved
+                        )
+                    }
+                    return@combine null
+                }
+
+                val resolvedStabilizationMode = resolveStabilizationMode(
+                    requestedStabilizationMode = currentCameraSettings.stabilizationMode,
+                    targetFrameRate = currentCameraSettings.targetFrameRate,
+                    cameraConstraints = cameraConstraints
                 )
 
-                val activeSubMode =
-                    registeredSubModes[currentCameraSettings.activeCaptureSubModeId]
-                val activeSubModeBinding = activeSubMode?.provider?.sessionBinding
-                if (activeSubMode != null &&
-                    activeSubModeBinding is CameraSessionBinding.Custom
-                ) {
-                    PerpetualSessionSettings.CustomSession(
-                        subModeKey = activeSubMode.key,
-                        aspectRatio = currentCameraSettings.aspectRatio,
-                        captureMode = currentCameraSettings.captureMode,
-                        mirrorMode = currentCameraSettings.mirrorMode
-                    )
-                } else {
-                    val cameraConstraints =
-                        systemConstraints.forCurrentLens(currentCameraSettings)
-                    if (cameraConstraints == null) {
-                        Log.e(
-                            TAG,
-                            "Could not retrieve constraints for " +
-                                "${currentCameraSettings.cameraLensFacing}"
-                        )
-                        currentCameraState.update { old ->
-                            old.copy(
-                                isCameraRunning = false,
-                                cameraError = CameraError.CameraRemoved
-                            )
-                        }
-                        return@map null
-                    }
-
-                    val resolvedStabilizationMode = resolveStabilizationMode(
-                        requestedStabilizationMode = currentCameraSettings.stabilizationMode,
-                        targetFrameRate = currentCameraSettings.targetFrameRate,
-                        cameraConstraints = cameraConstraints
-                    )
-
-                    val activeCameraEffect = cameraEffectProviders.keys.firstOrNull {
-                        it.id == currentCameraSettings.selectedCameraEffect
-                    }
-
-                    PerpetualSessionSettings.SingleCamera(
-                        aspectRatio = currentCameraSettings.aspectRatio,
-                        captureMode = currentCameraSettings.captureMode,
-                        activeCameraEffect = activeCameraEffect,
-                        targetFrameRate = currentCameraSettings.targetFrameRate,
-                        stabilizationMode = resolvedStabilizationMode,
-                        dynamicRange = currentCameraSettings.dynamicRange,
-                        videoQuality = currentCameraSettings.videoQuality,
-                        mirrorMode = currentCameraSettings.mirrorMode,
-                        imageFormat = currentCameraSettings.imageFormat,
-                        lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority,
-                        activeCaptureSubMode = activeSubMode?.key
-                    )
+                val activeCameraEffect = cameraEffectProviders.keys.firstOrNull {
+                    it.id == currentCameraSettings.selectedCameraEffect
                 }
+
+                PerpetualSessionSettings.SingleCamera(
+                    aspectRatio = currentCameraSettings.aspectRatio,
+                    captureMode = currentCameraSettings.captureMode,
+                    activeCameraEffect = activeCameraEffect,
+                    targetFrameRate = currentCameraSettings.targetFrameRate,
+                    stabilizationMode = resolvedStabilizationMode,
+                    dynamicRange = currentCameraSettings.dynamicRange,
+                    videoQuality = currentCameraSettings.videoQuality,
+                    mirrorMode = currentCameraSettings.mirrorMode,
+                    imageFormat = currentCameraSettings.imageFormat,
+                    lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority,
+                    activeCaptureSubMode = activeSubMode?.key
+                )
             }
+        }
             .distinctUntilChanged()
             .collectLatest { sessionSettings ->
                 if (sessionSettings == null) return@collectLatest
@@ -1392,6 +1396,10 @@ class CameraXCameraSystem(
         currentSettings.update { old ->
             old?.copy(deviceRotation = deviceRotation)
         }
+    }
+
+    override fun setWindowRotation(windowRotation: DeviceRotation) {
+        currentWindowRotation.value = windowRotation
     }
 
     override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {

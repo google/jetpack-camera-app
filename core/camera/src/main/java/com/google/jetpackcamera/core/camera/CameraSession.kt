@@ -302,7 +302,8 @@ internal suspend fun runSingleCameraSession(
                             imageFormat = sessionSettings.imageFormat,
                             captureMode = sessionSettings.captureMode,
                             effect = effect,
-                            captureResults = captureResults
+                            captureResults = captureResults,
+                            windowRotation = currentTransientSettings.windowRotation
                         )
                     }.apply {
                         attachPreviewSurfaceProvider(useCaseGroup = this)
@@ -333,6 +334,7 @@ internal suspend fun runSingleCameraSession(
                         }
 
                         applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
+                        applyWindowRotation(currentTransientSettings.windowRotation, useCaseGroup)
 
                         if (videoCaptureUseCase != null) {
                             val resolutionInfo = videoCaptureUseCase.resolutionInfo
@@ -613,6 +615,16 @@ suspend fun processTransientSettingEvents(
             }
         }
 
+        if (prevTransientSettings.windowRotation != newTransientSettings.windowRotation) {
+            Log.d(
+                TAG,
+                "Updating window rotation from " +
+                    "${prevTransientSettings.windowRotation} -> " +
+                    "${newTransientSettings.windowRotation}"
+            )
+            applyWindowRotation(newTransientSettings.windowRotation, useCaseGroup)
+        }
+
         // setzoomratio when the primary zoom value changes.
         if (prevTransientSettings.primaryLensFacing == newTransientSettings.primaryLensFacing &&
             prevTransientSettings.zoomRatios[prevTransientSettings.primaryLensFacing] !=
@@ -740,11 +752,8 @@ fun CameraSessionContext.applyDeviceRotation(
     useCaseGroup.useCases.forEach {
         when (it) {
             is Preview -> {
-                // Preview's target rotation should not be updated with device rotation.
-                // Instead, preview rotation should match the display rotation.
-                // When Preview is created, it is initialized with the display rotation.
-                // This will need to be updated separately if the display rotation is not
-                // locked. Currently the app is locked to portrait orientation.
+                // Preview's target rotation tracks TransientSessionSettings.windowRotation via
+                // applyWindowRotation rather than physical device gravity rotation.
             }
 
             is ImageCapture -> {
@@ -754,6 +763,27 @@ fun CameraSessionContext.applyDeviceRotation(
             is VideoCapture<*> -> {
                 it.targetRotation = targetRotation
             }
+        }
+    }
+}
+
+/**
+ * Updates [Preview.setTargetRotation] in place when [TransientSessionSettings.windowRotation]
+ * changes, without rebinding the camera session.
+ *
+ * Depends on CameraX fixes `aosp/4408335`, `aosp/4408336`, and `aosp/4408337`, which dynamically
+ * recalculate [ViewPort] and StreamSharing crop/rotation when [Preview.setTargetRotation] is
+ * updated on a bound use case.
+ */
+@InternalCameraApi
+fun applyWindowRotation(
+    windowRotation: DeviceRotation,
+    useCaseGroup: UseCaseGroup
+) {
+    val targetRotation = windowRotation.toUiSurfaceRotation()
+    useCaseGroup.useCases.forEach { useCase ->
+        if (useCase is Preview) {
+            useCase.targetRotation = targetRotation
         }
     }
 }
@@ -770,15 +800,17 @@ fun createUseCaseGroup(
     captureMode: CaptureMode,
     effect: CameraEffect? = null,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null,
-    previewMirrorMode: Int = CX_SINGLE_CAMERA_PREVIEW_MIRROR_MODE
+    previewMirrorMode: Int = CX_SINGLE_CAMERA_PREVIEW_MIRROR_MODE,
+    windowRotation: DeviceRotation = initialTransientSettings.windowRotation
 ): UseCaseGroup {
     val previewUseCase =
         createPreviewUseCase(
-            cameraInfo,
-            aspectRatio,
-            stabilizationMode,
-            previewMirrorMode,
-            captureResults
+            cameraInfo = cameraInfo,
+            aspectRatio = aspectRatio,
+            stabilizationMode = stabilizationMode,
+            previewMirrorMode = previewMirrorMode,
+            captureResults = captureResults,
+            windowRotation = windowRotation
         )
 
     // only create image use case in image or standard
@@ -799,12 +831,14 @@ fun createUseCaseGroup(
     return UseCaseGroup.Builder().apply {
         Log.d(
             TAG,
-            "Setting initial device rotation to ${initialTransientSettings.deviceRotation}"
+            "Setting initial device rotation to ${initialTransientSettings.deviceRotation}, " +
+                "window rotation to $windowRotation"
         )
+        // TODO(#592): Plumb windowRotation into PR #592's getViewPortAspectRatio /
+        //  isPreviewLandscape once #592 merges into main.
         setViewPort(
             ViewPort.Builder(
                 Rational(aspectRatio.numerator, aspectRatio.denominator),
-                // Initialize rotation to Preview's rotation, which comes from Display rotation
                 previewUseCase.targetRotation
             ).build()
         )
@@ -817,6 +851,12 @@ fun createUseCaseGroup(
         effect?.let { addEffect(it) }
     }.build()
 }
+
+/**
+ * Applies [windowRotation] as the target rotation of this [Preview.Builder].
+ */
+internal fun Preview.Builder.applyWindowRotation(windowRotation: DeviceRotation): Preview.Builder =
+    setTargetRotation(windowRotation.toUiSurfaceRotation())
 
 /**
  * Maps a given resolution [Size] to its corresponding [VideoQuality] based on the short edge.
@@ -946,8 +986,11 @@ private fun createPreviewUseCase(
     aspectRatio: AspectRatio,
     stabilizationMode: StabilizationMode,
     previewMirrorMode: Int,
-    captureResults: MutableStateFlow<TotalCaptureResult?>? = null
+    captureResults: MutableStateFlow<TotalCaptureResult?>? = null,
+    windowRotation: DeviceRotation = DeviceRotation.Natural
 ): Preview = Preview.Builder().apply {
+    applyWindowRotation(windowRotation)
+
     updateCameraStateWithCaptureResults(
         targetCameraInfo = cameraInfo,
         captureResults = captureResults

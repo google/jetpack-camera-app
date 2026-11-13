@@ -34,6 +34,7 @@ import com.google.jetpackcamera.core.camera.InternalCameraApi
 import com.google.jetpackcamera.core.camera.PerpetualSessionSettings
 import com.google.jetpackcamera.core.camera.appLensFacing
 import com.google.jetpackcamera.core.camera.applyDeviceRotation
+import com.google.jetpackcamera.core.camera.applyWindowRotation
 import com.google.jetpackcamera.core.camera.attachPreviewSurfaceProvider
 import com.google.jetpackcamera.core.camera.concurrentCompositionScaleX
 import com.google.jetpackcamera.core.camera.createUseCaseGroup
@@ -147,7 +148,8 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                         captureMode = sessionSettings.captureMode,
                         videoCaptureUseCase = videoCapture,
                         previewMirrorMode = sessionSettings.mirrorMode
-                            .toCXConcurrentPreviewMirrorMode()
+                            .toCXConcurrentPreviewMirrorMode(),
+                        windowRotation = initialTransientSettings.windowRotation
                     )
                 }.apply { attachPreviewSurfaceProvider(useCaseGroup = this) }
 
@@ -307,6 +309,7 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                     }
 
                     applyDeviceRotation(initialTransientSettings.deviceRotation, useCaseGroup)
+                    applyWindowRotation(initialTransientSettings.windowRotation, useCaseGroup)
                     processTransientSettingEvents(
                         primaryCamera,
                         perLensConstraints[primaryLensFacing],

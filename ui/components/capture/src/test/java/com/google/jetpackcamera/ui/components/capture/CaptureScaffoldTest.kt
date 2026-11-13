@@ -681,6 +681,52 @@ class CaptureScaffoldTest {
     }
 
     @Test
+    fun cameraSessionEffect_forwardsWindowRotationAndFreezesWhileRecording() {
+        var isRecording by mutableStateOf(false)
+        var windowRotation by mutableStateOf(DeviceRotation.Natural)
+        val deliveredWindowRotations = mutableListOf<DeviceRotation>()
+        val cameraController = FakeCameraController(
+            setWindowRotationAction = { deliveredWindowRotations += it }
+        )
+
+        composeTestRule.setContent {
+            CameraSessionEffect(
+                cameraController = cameraController,
+                enabled = true,
+                isRecording = isRecording,
+                windowRotation = windowRotation
+            )
+        }
+        composeTestRule.waitForIdle()
+        assertThat(deliveredWindowRotations).containsExactly(DeviceRotation.Natural)
+
+        composeTestRule.runOnIdle { windowRotation = DeviceRotation.Rotated90 }
+        composeTestRule.waitForIdle()
+        assertThat(deliveredWindowRotations)
+            .containsExactly(DeviceRotation.Natural, DeviceRotation.Rotated90)
+            .inOrder()
+
+        // While recording, window rotation updates are frozen and queued until recording stops.
+        composeTestRule.runOnIdle { isRecording = true }
+        composeTestRule.waitForIdle()
+        composeTestRule.runOnIdle { windowRotation = DeviceRotation.Rotated270 }
+        composeTestRule.waitForIdle()
+        assertThat(deliveredWindowRotations)
+            .containsExactly(DeviceRotation.Natural, DeviceRotation.Rotated90)
+            .inOrder()
+
+        composeTestRule.runOnIdle { isRecording = false }
+        composeTestRule.waitForIdle()
+        assertThat(deliveredWindowRotations)
+            .containsExactly(
+                DeviceRotation.Natural,
+                DeviceRotation.Rotated90,
+                DeviceRotation.Rotated270
+            )
+            .inOrder()
+    }
+
+    @Test
     fun cameraControlIconButton_rendersAndInvokesOnClick() {
         var clicked = false
 

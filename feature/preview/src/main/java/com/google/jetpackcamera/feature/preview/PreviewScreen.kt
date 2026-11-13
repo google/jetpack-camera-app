@@ -106,6 +106,7 @@ fun PreviewScreen(
         cameraController = viewModel.cameraController,
         enabled = true,
         isRecording = isRecordingInProgress.value,
+        windowRotation = windowRotation,
         onDeviceRotationChanged = { deviceRotation = it },
         onSessionStarted = viewModel::startLocationUpdates,
         onSessionStopped = viewModel::stopLocationUpdates
