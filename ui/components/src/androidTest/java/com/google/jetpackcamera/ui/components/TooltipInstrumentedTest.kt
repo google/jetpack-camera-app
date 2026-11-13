@@ -20,10 +20,11 @@ import android.view.InputDevice
 import android.view.MotionEvent
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -59,7 +60,14 @@ class TooltipInstrumentedTest {
 
         composeTestRule.setContent {
             MaterialTheme {
-                Box(modifier = Modifier.fillMaxSize().padding(32.dp)) {
+                // Center the anchor inside the safe drawing area so injected taps never land on an
+                // edge-to-edge system bar or cutout owned by System UI.
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .safeDrawingPadding(),
+                    contentAlignment = Alignment.Center
+                ) {
                     TooltipIconButton(
                         modifier = Modifier.onGloballyPositioned { coords ->
                             val pos = coords.positionOnScreen()

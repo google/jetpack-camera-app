@@ -67,8 +67,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 /**
- * Robolectric unit tests for [TooltipIconButton], [rememberJcaTooltipCaret],
- * [JcaTooltipPositionProvider], and [JcaTooltipBubbleShape].
+ * Robolectric unit tests for [TooltipIconButton], [rememberTooltipCaret],
+ * [TooltipPositionProvider], and [TooltipBubbleShape].
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @RunWith(RobolectricTestRunner::class)
@@ -146,18 +146,18 @@ class TooltipTest {
     }
 
     @Test
-    fun rememberJcaTooltipCaret_providesCaretPaddingAndBubbleShape_andKeysOnPositioning() {
+    fun rememberTooltipCaret_providesCaretPaddingAndBubbleShape_andKeysOnPositioning() {
         var positioning by mutableStateOf(TooltipAnchorPosition.Below)
         var observedPadding: PaddingValues? = null
 
         composeTestRule.setContent {
             MaterialTheme {
-                val caret = rememberJcaTooltipCaret(positioning)
+                val caret = rememberTooltipCaret(positioning)
                 observedPadding = caret.caretPadding
                 TooltipIconButton(
                     icon = { Box(modifier = Modifier.size(24.dp)) },
                     contentDescription = "Caret slot button",
-                    positionProvider = caret.positionProvider,
+                    caret = caret,
                     tooltip = {
                         RichTooltip(
                             caretShape = null,
@@ -174,10 +174,11 @@ class TooltipTest {
         }
         composeTestRule.waitForIdle()
 
-        assertThat(observedPadding?.calculateTopPadding()).isEqualTo(JcaTooltipDefaults.CaretHeight)
+        assertThat(observedPadding?.calculateTopPadding())
+            .isEqualTo(TooltipIconButtonDefaults.CaretHeight)
         assertThat(observedPadding?.calculateBottomPadding()).isEqualTo(0.dp)
 
-        // Changing positioning re-keys rememberJcaTooltipCaret and flips initial caret padding edge
+        // Changing positioning re-keys rememberTooltipCaret and flips initial caret padding edge
         composeTestRule.runOnIdle {
             positioning = TooltipAnchorPosition.Above
         }
@@ -185,7 +186,7 @@ class TooltipTest {
 
         assertThat(observedPadding?.calculateTopPadding()).isEqualTo(0.dp)
         assertThat(observedPadding?.calculateBottomPadding())
-            .isEqualTo(JcaTooltipDefaults.CaretHeight)
+            .isEqualTo(TooltipIconButtonDefaults.CaretHeight)
 
         // Opening the custom slot tooltip renders the bubble shape and body cleanly
         composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG).performTouchInput { click() }
@@ -261,7 +262,7 @@ class TooltipTest {
         var calculatedLocalCaretX = 0f
         var calculatedIsCaretOnTop = false
 
-        val provider = JcaTooltipPositionProvider(
+        val provider = TooltipPositionProvider(
             positioning = TooltipAnchorPosition.Below,
             spacing = 4.dp,
             screenMargin = 16.dp,
@@ -302,7 +303,7 @@ class TooltipTest {
     fun positionProvider_anchorInsideCornerArc_clampsCaretToMinCornerClearance() {
         var calculatedLocalCaretX = 0f
 
-        val provider = JcaTooltipPositionProvider(
+        val provider = TooltipPositionProvider(
             positioning = TooltipAnchorPosition.Below,
             spacing = 4.dp,
             screenMargin = 16.dp,
@@ -331,7 +332,7 @@ class TooltipTest {
         assertThat(calculatedLocalCaretX).isEqualTo(24f)
 
         // When bodyHeight (28 - 8 = 20) shrinks actualRadius to bodyHeight / 2 = 10,
-        // minCaretX tightens to 10 + 8 = 18 consistently with JcaTooltipBubbleShape.
+        // minCaretX tightens to 10 + 8 = 18 consistently with TooltipBubbleShape.
         val compactPosition = provider.calculatePosition(
             anchorBounds = IntRect(left = 16, top = 20, right = 40, bottom = 44),
             windowSize = windowSize,
@@ -347,7 +348,7 @@ class TooltipTest {
     fun positionProvider_spaceConstrainedBelow_flipsAbove() {
         var calculatedIsCaretOnTop = true
 
-        val provider = JcaTooltipPositionProvider(
+        val provider = TooltipPositionProvider(
             positioning = TooltipAnchorPosition.Below,
             spacing = 4.dp,
             screenMargin = 16.dp,
@@ -380,7 +381,7 @@ class TooltipTest {
         composeTestRule.setContent {
             MaterialTheme {
                 TooltipIconButton(
-                    icon = { Box(modifier = Modifier.size(JcaTooltipDefaults.IconSize)) },
+                    icon = { Box(modifier = Modifier.size(TooltipIconButtonDefaults.IconSize)) },
                     contentDescription = "Custom info action",
                     tooltipText = "Accessibility description test"
                 )
@@ -388,8 +389,8 @@ class TooltipTest {
         }
 
         composeTestRule.onNodeWithTag(TOOLTIP_ANCHOR_BUTTON_TAG)
-            .assertWidthIsAtLeast(JcaTooltipDefaults.TouchTargetSize)
-            .assertHeightIsAtLeast(JcaTooltipDefaults.TouchTargetSize)
+            .assertWidthIsAtLeast(TooltipIconButtonDefaults.TouchTargetSize)
+            .assertHeightIsAtLeast(TooltipIconButtonDefaults.TouchTargetSize)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
             .assert(
                 SemanticsMatcher.expectValue(
@@ -422,7 +423,7 @@ class TooltipTest {
         val size = Size(400f, 150f)
 
         // Shape with extreme negative caret X
-        val shapeNegative = JcaTooltipBubbleShape(
+        val shapeNegative = TooltipBubbleShape(
             localCaretXProvider = { -100f },
             isCaretOnTop = true
         )
@@ -432,7 +433,7 @@ class TooltipTest {
         assertThat(outlineNegative.bounds.height).isEqualTo(150f)
 
         // Shape with extreme positive caret X
-        val shapeOverflow = JcaTooltipBubbleShape(
+        val shapeOverflow = TooltipBubbleShape(
             localCaretXProvider = { 1000f },
             isCaretOnTop = false
         )
@@ -446,7 +447,7 @@ class TooltipTest {
     fun bubbleShape_defersCaretXProviderReadUntilCreateOutline() {
         var providerReads = 0
         var dynamicCaretX = 60f
-        val shape = JcaTooltipBubbleShape(
+        val shape = TooltipBubbleShape(
             localCaretXProvider = {
                 providerReads++
                 dynamicCaretX
@@ -464,7 +465,7 @@ class TooltipTest {
         assertThat(providerReads).isEqualTo(1)
 
         // Updating dynamicCaretX during layout before draw produces a shifted caret outline
-        // from the same JcaTooltipBubbleShape instance without recomposing
+        // from the same TooltipBubbleShape instance without recomposing
         dynamicCaretX = 140f
         val outlineAt140 =
             shape.createOutline(size, LayoutDirection.Ltr, density) as Outline.Generic
