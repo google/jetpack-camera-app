@@ -660,8 +660,38 @@ class CaptureScaffoldTest {
         assertThat(clicked).isTrue()
     }
 
+    @Test
+    fun captureScaffold_rendersTopBarLeadingContentWhenProvided() {
+        var showLeading by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                CaptureScaffold(
+                    captureUiState = { LOADING_CAPTURE_UI_STATE_SKELETON },
+                    surfaceRequest = null,
+                    topBarLeadingContent = if (showLeading) {
+                        { slotModifier ->
+                            Box(slotModifier.size(48.dp).testTag(TOP_BAR_LEADING_TAG))
+                        }
+                    } else {
+                        null
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(TOP_BAR_LEADING_TAG).assertDoesNotExist()
+
+        composeTestRule.runOnIdle { showLeading = true }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(TOP_BAR_LEADING_TAG).assertIsDisplayed()
+    }
+
     private companion object {
         const val TOP_START_BUTTON_TAG = "test_top_start_button"
+        const val TOP_BAR_LEADING_TAG = "test_top_bar_leading"
         const val ICON_BUTTON_TAG = "test_icon_button"
     }
 }

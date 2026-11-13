@@ -58,6 +58,13 @@ android {
         buildConfig = true
         compose = true
     }
+
+    testOptions {
+        unitTests {
+            isReturnDefaultValues = true
+            isIncludeAndroidResources = true
+        }
+    }
 }
 
 dependencies {
@@ -67,6 +74,22 @@ dependencies {
 
     // Compose - Material Design 3
     implementation(libs.compose.material3)
+
+    // Compose - Testing
+    androidTestImplementation(composeBom)
+    androidTestImplementation(libs.compose.junit)
+    debugImplementation(libs.compose.test.manifest)
+    // noinspection TestManifestGradleConfiguration: required for release build unit tests
+    testImplementation(libs.compose.test.manifest)
+    testImplementation(libs.compose.junit)
+
+    // Testing
+    testImplementation(libs.junit)
+    testImplementation(libs.truth)
+    androidTestImplementation(libs.truth)
+    testImplementation(libs.robolectric)
+    androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
 }
 
 // Allow references to generated code
