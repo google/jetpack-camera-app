@@ -1048,7 +1048,8 @@ fun CaptureScaffold(
                     onScaleZoom = { zoomRatio -> onScaleZoomLambda(zoomRatio) },
                     surfaceRequest = surfaceRequest,
                     onRequestWindowColorMode = onRequestWindowColorMode,
-                    focusMeteringUiState = focusMeteringState.value
+                    focusMeteringUiState = focusMeteringState.value,
+                    useLandscapeAspectRatio = true
                 )
             }
         }
