@@ -167,16 +167,16 @@ fun rememberDeviceRotation(): DeviceRotation {
  * oriented upright against gravity inside the current window:
  * - Uses shortest-path angle interpolation (`±90°`) so transitions across `0° <-> 270°` never spin
  *   `270°` the long way around.
- * - Snaps immediately by default ([animateQuarterTurns] = `false`), or when [windowRotation]
- *   changes (since the OS is already animating the window rotation), when [LocalDisableAnimations]
- *   is `true`, or on a `180°` half-turn flip (`90° <-> 270°`). When [animateQuarterTurns] is
- *   `true`, `90°` quarter-turns animate smoothly while `180°` flips still snap immediately.
+ * - Animates `90°` quarter-turns smoothly by default ([animateQuarterTurns] = `true`), while
+ *   snapping immediately on a `180°` half-turn flip (`90° <-> 270°`), when [windowRotation] changes
+ *   (since the OS is already animating the window rotation), when [LocalDisableAnimations] is
+ *   `true`, or when [animateQuarterTurns] is `false`.
  */
 @Composable
 fun rememberGravityRotationState(
     deviceRotation: DeviceRotation = LocalDeviceRotation.current,
     windowRotation: DeviceRotation = LocalWindowRotation.current,
-    animateQuarterTurns: Boolean = false
+    animateQuarterTurns: Boolean = true
 ): State<Float> {
     val targetClockwiseDegrees = deviceRotation.toGravityRotationDegrees(windowRotation)
     var continuousTarget by remember { mutableFloatStateOf(targetClockwiseDegrees.toFloat()) }
