@@ -303,7 +303,7 @@ internal suspend fun runSingleCameraSession(
                             captureMode = sessionSettings.captureMode,
                             effect = effect,
                             captureResults = captureResults,
-                            windowRotation = sessionSettings.windowRotation
+                            windowRotation = currentTransientSettings.windowRotation
                         )
                     }.apply {
                         attachPreviewSurfaceProvider(useCaseGroup = this)
@@ -334,6 +334,7 @@ internal suspend fun runSingleCameraSession(
                         }
 
                         applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
+                        applyWindowRotation(currentTransientSettings.windowRotation, useCaseGroup)
 
                         if (videoCaptureUseCase != null) {
                             val resolutionInfo = videoCaptureUseCase.resolutionInfo
@@ -614,6 +615,16 @@ suspend fun processTransientSettingEvents(
             }
         }
 
+        if (prevTransientSettings.windowRotation != newTransientSettings.windowRotation) {
+            Log.d(
+                TAG,
+                "Updating window rotation from " +
+                    "${prevTransientSettings.windowRotation} -> " +
+                    "${newTransientSettings.windowRotation}"
+            )
+            applyWindowRotation(newTransientSettings.windowRotation, useCaseGroup)
+        }
+
         // setzoomratio when the primary zoom value changes.
         if (prevTransientSettings.primaryLensFacing == newTransientSettings.primaryLensFacing &&
             prevTransientSettings.zoomRatios[prevTransientSettings.primaryLensFacing] !=
@@ -741,9 +752,8 @@ fun CameraSessionContext.applyDeviceRotation(
     useCaseGroup.useCases.forEach {
         when (it) {
             is Preview -> {
-                // Preview's target rotation, ViewPort, and StreamSharing OutConfigs track
-                // PerpetualSessionSettings.windowRotation via session rebind rather than physical
-                // device gravity rotation.
+                // Preview's target rotation tracks TransientSessionSettings.windowRotation via
+                // applyWindowRotation rather than physical device gravity rotation.
             }
 
             is ImageCapture -> {
@@ -753,6 +763,27 @@ fun CameraSessionContext.applyDeviceRotation(
             is VideoCapture<*> -> {
                 it.targetRotation = targetRotation
             }
+        }
+    }
+}
+
+/**
+ * Updates [Preview.setTargetRotation] in place when [TransientSessionSettings.windowRotation]
+ * changes, without rebinding the camera session.
+ *
+ * Depends on CameraX fixes `aosp/4408335`, `aosp/4408336`, and `aosp/4408337`, which dynamically
+ * recalculate [ViewPort] and StreamSharing crop/rotation when [Preview.setTargetRotation] is
+ * updated on a bound use case.
+ */
+@InternalCameraApi
+fun applyWindowRotation(
+    windowRotation: DeviceRotation,
+    useCaseGroup: UseCaseGroup
+) {
+    val targetRotation = windowRotation.toUiSurfaceRotation()
+    useCaseGroup.useCases.forEach { useCase ->
+        if (useCase is Preview) {
+            useCase.targetRotation = targetRotation
         }
     }
 }
@@ -770,7 +801,7 @@ fun createUseCaseGroup(
     effect: CameraEffect? = null,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null,
     previewMirrorMode: Int = CX_SINGLE_CAMERA_PREVIEW_MIRROR_MODE,
-    windowRotation: DeviceRotation = sessionSettings?.windowRotation ?: DeviceRotation.Natural
+    windowRotation: DeviceRotation = initialTransientSettings.windowRotation
 ): UseCaseGroup {
     val previewUseCase =
         createPreviewUseCase(
@@ -803,12 +834,13 @@ fun createUseCaseGroup(
             "Setting initial device rotation to ${initialTransientSettings.deviceRotation}, " +
                 "window rotation to $windowRotation"
         )
+        // TODO(#592): Plumb windowRotation into PR #592's getViewPortAspectRatio /
+        //  isPreviewLandscape once #592 merges into main.
         setViewPort(
-            createSensorAlignedViewPort(
-                cameraInfo = cameraInfo,
-                aspectRatio = aspectRatio,
-                targetRotation = previewUseCase.targetRotation
-            )
+            ViewPort.Builder(
+                Rational(aspectRatio.numerator, aspectRatio.denominator),
+                previewUseCase.targetRotation
+            ).build()
         )
         addUseCase(previewUseCase)
 
@@ -821,45 +853,10 @@ fun createUseCaseGroup(
 }
 
 /**
- * Builds a [ViewPort] aligned with [targetRotation] whose aspect-ratio [Rational] matches the
- * camera sensor's upright orientation at [targetRotation].
- */
-internal fun createSensorAlignedViewPort(
-    cameraInfo: CameraInfo,
-    aspectRatio: AspectRatio,
-    targetRotation: Int
-): ViewPort = ViewPort.Builder(
-    resolveViewPortAspectRatio(
-        cameraInfo = cameraInfo,
-        aspectRatio = aspectRatio,
-        targetRotation = targetRotation
-    ),
-    targetRotation
-).build()
-
-/**
  * Applies [windowRotation] as the target rotation of this [Preview.Builder].
  */
 internal fun Preview.Builder.applyWindowRotation(windowRotation: DeviceRotation): Preview.Builder =
     setTargetRotation(windowRotation.toUiSurfaceRotation())
-
-/**
- * Resolves the [ViewPort] aspect-ratio [Rational] in upright target-rotation coordinates using
- * [CameraInfo.getSensorRotationDegrees] so landscape sessions on landscape sensors frame `4:3` /
- * `16:9` rather than cropping a portrait strip.
- */
-internal fun resolveViewPortAspectRatio(
-    cameraInfo: CameraInfo,
-    aspectRatio: AspectRatio,
-    targetRotation: Int
-): Rational {
-    val sensorRotationDegrees = cameraInfo.getSensorRotationDegrees(targetRotation)
-    return if (sensorRotationDegrees % 180 == 0) {
-        Rational(aspectRatio.denominator, aspectRatio.numerator)
-    } else {
-        Rational(aspectRatio.numerator, aspectRatio.denominator)
-    }
-}
 
 /**
  * Maps a given resolution [Size] to its corresponding [VideoQuality] based on the short edge.

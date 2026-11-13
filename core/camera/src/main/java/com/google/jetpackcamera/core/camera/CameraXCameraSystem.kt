@@ -610,7 +610,8 @@ class CameraXCameraSystem(
                 flashMode = currentCameraSettings.flashMode,
                 primaryLensFacing = currentCameraSettings.cameraLensFacing,
                 zoomRatios = currentCameraSettings.defaultZoomRatios,
-                testPattern = currentCameraSettings.debugSettings.testPattern
+                testPattern = currentCameraSettings.debugSettings.testPattern,
+                windowRotation = windowRotation
             )
 
             val activeSubMode =
@@ -623,8 +624,7 @@ class CameraXCameraSystem(
                     subModeKey = activeSubMode.key,
                     aspectRatio = currentCameraSettings.aspectRatio,
                     captureMode = currentCameraSettings.captureMode,
-                    mirrorMode = currentCameraSettings.mirrorMode,
-                    windowRotation = windowRotation
+                    mirrorMode = currentCameraSettings.mirrorMode
                 )
             } else {
                 val cameraConstraints =
@@ -665,8 +665,7 @@ class CameraXCameraSystem(
                     mirrorMode = currentCameraSettings.mirrorMode,
                     imageFormat = currentCameraSettings.imageFormat,
                     lowLightBoostPriority = currentCameraSettings.lowLightBoostPriority,
-                    activeCaptureSubMode = activeSubMode?.key,
-                    windowRotation = windowRotation
+                    activeCaptureSubMode = activeSubMode?.key
                 )
             }
         }
