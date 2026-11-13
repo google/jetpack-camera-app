@@ -62,6 +62,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -73,6 +74,10 @@ import com.google.jetpackcamera.model.DeviceRotation
 // merges into main.
 internal const val QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG = "card_quick_settings_overlay"
 
+/**
+ * Posture-specific padding, vertical alignment, and Quick Settings card sizing configuration for
+ * [SideRailCaptureScaffold].
+ */
 @Immutable
 internal data class SideRailPostureConfig(
     val activeLayoutName: String,
@@ -88,6 +93,9 @@ internal data class SideRailPostureConfig(
     val clearRailsForQuickSettings: Boolean = true
 )
 
+/**
+ * Shared dimension, clearance, and posture-preset constants for side-rail capture layouts.
+ */
 internal object SideRailTokens {
     val QuickSettingsRailClearanceGap = 12.dp
     val TopOverlayRailClearanceGap = 12.dp
@@ -321,51 +329,39 @@ internal fun SideRailCaptureScaffold(
                 if (controlsVisible) {
                     CompositionLocalProvider(LocalLayoutDirection provides railContainerDirection) {
                         Box(modifier = Modifier.fillMaxSize()) {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.CenterStart)
-                                    .fillMaxHeight()
-                                    .onSizeChanged { startRailWidthPx = it.width }
-                                    .suppressBackgroundForModal(isModalOpen)
+                            CompositionLocalProvider(
+                                LocalLayoutDirection provides localeDirection
                             ) {
-                                CompositionLocalProvider(
-                                    LocalLayoutDirection provides localeDirection
-                                ) {
-                                    StartSideRail(
-                                        slots = slots,
-                                        modifier = Modifier.fillMaxHeight(),
-                                        isCompactHeight = config.isCompactHeight,
-                                        topPadding = config.railTopPadding,
-                                        bottomPadding = config.railBottomPadding,
-                                        horizontalPadding = config.railHorizontalPadding,
-                                        minSectionGap = config.railMinSectionGap,
-                                        centerVerticalFraction = config.centerVerticalFraction
-                                    )
-                                }
-                            }
+                                StartSideRail(
+                                    slots = slots,
+                                    modifier = Modifier
+                                        .align(Alignment.CenterStart)
+                                        .fillMaxHeight()
+                                        .onSizeChanged { startRailWidthPx = it.width }
+                                        .suppressBackgroundForModal(isModalOpen),
+                                    isCompactHeight = config.isCompactHeight,
+                                    topPadding = config.railTopPadding,
+                                    bottomPadding = config.railBottomPadding,
+                                    horizontalPadding = config.railHorizontalPadding,
+                                    minSectionGap = config.railMinSectionGap,
+                                    centerVerticalFraction = config.centerVerticalFraction
+                                )
 
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.CenterEnd)
-                                    .fillMaxHeight()
-                                    .onSizeChanged { endRailWidthPx = it.width }
-                                    .suppressBackgroundForModal(isModalOpen)
-                            ) {
-                                CompositionLocalProvider(
-                                    LocalLayoutDirection provides localeDirection
-                                ) {
-                                    EndSideRail(
-                                        slots = slots,
-                                        modifier = Modifier.fillMaxHeight(),
-                                        isCompactHeight = config.isCompactHeight,
-                                        showElapsedTimeInRail = false,
-                                        topPadding = config.railTopPadding,
-                                        bottomPadding = config.railBottomPadding,
-                                        horizontalPadding = config.railHorizontalPadding,
-                                        minSectionGap = config.railMinSectionGap,
-                                        centerVerticalFraction = config.centerVerticalFraction
-                                    )
-                                }
+                                EndSideRail(
+                                    slots = slots,
+                                    modifier = Modifier
+                                        .align(Alignment.CenterEnd)
+                                        .fillMaxHeight()
+                                        .onSizeChanged { endRailWidthPx = it.width }
+                                        .suppressBackgroundForModal(isModalOpen),
+                                    isCompactHeight = config.isCompactHeight,
+                                    showElapsedTimeInRail = false,
+                                    topPadding = config.railTopPadding,
+                                    bottomPadding = config.railBottomPadding,
+                                    horizontalPadding = config.railHorizontalPadding,
+                                    minSectionGap = config.railMinSectionGap,
+                                    centerVerticalFraction = config.centerVerticalFraction
+                                )
                             }
                         }
                     }
@@ -548,7 +544,10 @@ private fun QuickSettingsOverlayCardPlaceholder(
                 .fillMaxSize()
                 .background(SideRailTokens.QuickSettingsScrimColor)
                 .testTag(QUICK_SETTINGS_SCRIM)
-                .semantics { contentDescription = dismissLabel }
+                .semantics {
+                    contentDescription = dismissLabel
+                    traversalIndex = 1f
+                }
                 .clickable(
                     role = Role.Button,
                     interactionSource = remember { MutableInteractionSource() },

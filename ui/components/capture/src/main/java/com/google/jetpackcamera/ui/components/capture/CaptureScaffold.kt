@@ -1234,9 +1234,16 @@ fun CaptureScaffold(
         )
     }
 
+    val isErrorDialogShowing by remember {
+        derivedStateOf {
+            cameraErrorState.value is CameraErrorUiState.Showing && errorDialog != null
+        }
+    }
+
     CaptureScaffoldLayout(
         modifier = modifier,
         state = state,
+        isErrorDialogShowing = isErrorDialogShowing,
         onDismissQuickSettings = onDismissQuickSettings,
         viewfinder = viewfinderLambda,
         captureButton = { slotModifier ->
