@@ -99,8 +99,8 @@ internal fun QuickSettingsContent(
 
     // Note: QUICK_SETTINGS_BOTTOM_SHEET is temporarily retained on QuickSettingsContent so existing
     // downstream tests find Quick Settings across both BottomSheetScaffold and
-    // QuickSettingsOverlayCard. Future cleanup will reserve QUICK_SETTINGS_BOTTOM_SHEET for the
-    // bottom sheet, QUICK_SETTINGS_OVERLAY_CARD_TAG for the floating card, and introduce a shared
+    // QuickSettingsSideSheet. Future cleanup will reserve QUICK_SETTINGS_BOTTOM_SHEET for the
+    // bottom sheet, QUICK_SETTINGS_SIDE_SHEET_TAG for the side sheet, and introduce a shared
     // QUICK_SETTINGS_CONTENT_TAG here.
     Column(
         modifier = modifier

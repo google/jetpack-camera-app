@@ -103,7 +103,7 @@ class CaptureScaffoldState(
     val snackbarHostState: SnackbarHostState = SnackbarHostState()
 ) {
     /**
-     * Whether the Quick Settings surface (bottom sheet or floating overlay card) is currently open.
+     * Whether the Quick Settings surface (bottom sheet or side sheet) is currently open.
      */
     var isQuickSettingsOpen: Boolean by mutableStateOf(isInitiallyExpanded)
         private set

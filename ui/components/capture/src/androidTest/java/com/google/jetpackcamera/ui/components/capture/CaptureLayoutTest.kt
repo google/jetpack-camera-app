@@ -46,7 +46,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
 import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsOverlayCard
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsSideSheet
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
 import com.google.jetpackcamera.ui.uistate.capture.testing.sampleQuickSettingsUiState
 import org.junit.Before
@@ -210,7 +210,7 @@ class CaptureLayoutTest {
     }
 
     @Test
-    fun quickSettingsOverlayCard_lightTheme_passesAccessibilityChecks() {
+    fun quickSettingsSideSheet_lightTheme_passesAccessibilityChecks() {
         composeTestRule.setContent {
             MaterialTheme(colorScheme = lightColorScheme()) {
                 Box(
@@ -218,7 +218,7 @@ class CaptureLayoutTest {
                         .fillMaxSize()
                         .background(Color.Black)
                 ) {
-                    QuickSettingsOverlayCard(
+                    QuickSettingsSideSheet(
                         isOpen = true,
                         onDismissRequest = {},
                         quickSettingsUiState = sampleQuickSettingsUiState(),
@@ -228,13 +228,13 @@ class CaptureLayoutTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertIsDisplayed()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 
     @Test
-    fun quickSettingsOverlayCard_darkTheme_passesAccessibilityChecks() {
+    fun quickSettingsSideSheet_darkTheme_passesAccessibilityChecks() {
         composeTestRule.setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
                 Box(
@@ -242,7 +242,7 @@ class CaptureLayoutTest {
                         .fillMaxSize()
                         .background(Color.Black)
                 ) {
-                    QuickSettingsOverlayCard(
+                    QuickSettingsSideSheet(
                         isOpen = true,
                         onDismissRequest = {},
                         quickSettingsUiState = sampleQuickSettingsUiState(),
@@ -252,7 +252,7 @@ class CaptureLayoutTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertIsDisplayed()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }

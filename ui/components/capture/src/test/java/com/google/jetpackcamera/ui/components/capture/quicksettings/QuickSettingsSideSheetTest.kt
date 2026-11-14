@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
 import android.content.Context
+import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
@@ -30,6 +31,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -65,6 +67,9 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
@@ -87,9 +92,10 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPT
 import com.google.jetpackcamera.ui.components.capture.CaptureScaffoldDefaults
 import com.google.jetpackcamera.ui.components.capture.CaptureScaffoldState
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
-import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_OVERLAY_CARD_TAG
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DRAG_HANDLE
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCRIM
+import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SIDE_SHEET_TAG
 import com.google.jetpackcamera.ui.components.capture.R
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_ASPECT_RATIO
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE_MODE
@@ -114,7 +120,7 @@ import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "w1280dp-h900dp")
-class QuickSettingsOverlayCardTest {
+class QuickSettingsSideSheetTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
@@ -124,7 +130,7 @@ class QuickSettingsOverlayCardTest {
     private val sampleAvailableUiState = sampleQuickSettingsUiState()
 
     @Test
-    fun quickSettingsOverlayCard_whenClosed_doesNotRenderAndDoesNotInterceptBack() {
+    fun quickSettingsSideSheet_whenClosed_doesNotRenderAndDoesNotInterceptBack() {
         var dismissCalled = false
         var outerBackHandled = false
         lateinit var backDispatcher: OnBackPressedDispatcher
@@ -133,7 +139,7 @@ class QuickSettingsOverlayCardTest {
             backDispatcher = LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
             MaterialTheme {
                 BackHandler(enabled = true) { outerBackHandled = true }
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = false,
                     onDismissRequest = { dismissCalled = true },
                     quickSettingsUiState = sampleAvailableUiState,
@@ -142,7 +148,7 @@ class QuickSettingsOverlayCardTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertDoesNotExist()
 
@@ -155,7 +161,7 @@ class QuickSettingsOverlayCardTest {
     }
 
     @Test
-    fun quickSettingsOverlayCard_whenUnavailable_doesNotRenderAndDoesNotInterceptBack() {
+    fun quickSettingsSideSheet_whenUnavailable_doesNotRenderAndDoesNotInterceptBack() {
         var dismissCalled = false
         var outerBackHandled = false
         lateinit var backDispatcher: OnBackPressedDispatcher
@@ -164,7 +170,7 @@ class QuickSettingsOverlayCardTest {
             backDispatcher = LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
             MaterialTheme {
                 BackHandler(enabled = true) { outerBackHandled = true }
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = true,
                     onDismissRequest = { dismissCalled = true },
                     quickSettingsUiState = QuickSettingsUiState.Unavailable,
@@ -173,7 +179,7 @@ class QuickSettingsOverlayCardTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertDoesNotExist()
 
@@ -186,10 +192,10 @@ class QuickSettingsOverlayCardTest {
     }
 
     @Test
-    fun quickSettingsOverlayCard_whenOpen_rendersInHierarchyAndCapsCardWidth() {
+    fun quickSettingsSideSheet_whenOpen_rendersInHierarchyAndCapsSheetWidth() {
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = true,
                     onDismissRequest = {},
                     quickSettingsUiState = sampleAvailableUiState,
@@ -203,7 +209,7 @@ class QuickSettingsOverlayCardTest {
             .assert(!isDialog())
             .assert(!isPopup())
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .assertIsDisplayed()
             .assert(!isDialog())
             .assert(!isPopup())
@@ -218,15 +224,15 @@ class QuickSettingsOverlayCardTest {
         composeTestRule.onNodeWithTag(ROW_QUICK_SETTINGS_ASPECT_RATIO).assertIsDisplayed()
         composeTestRule.onNodeWithTag(ROW_QUICK_SETTINGS_HDR).assertIsDisplayed()
 
-        val cardWidth = composeTestRule
-            .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        val sheetWidth = composeTestRule
+            .onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .getUnclippedBoundsInRoot()
             .width
-        assertThat(cardWidth).isAtMost(412.dp)
+        assertThat(sheetWidth).isAtMost(412.dp)
     }
 
     @Test
-    fun quickSettingsOverlayCard_scrimTap_dismissesAndInterceptsUnderlyingClicks() {
+    fun quickSettingsSideSheet_scrimTap_dismissesAndInterceptsUnderlyingClicks() {
         var dismissCount = 0
         var underlyingClicked = false
         val expectedDismissDescription = ApplicationProvider.getApplicationContext<Context>()
@@ -240,7 +246,7 @@ class QuickSettingsOverlayCardTest {
                             .fillMaxSize()
                             .clickable { underlyingClicked = true }
                     )
-                    QuickSettingsOverlayCard(
+                    QuickSettingsSideSheet(
                         isOpen = true,
                         onDismissRequest = { dismissCount++ },
                         quickSettingsUiState = sampleAvailableUiState,
@@ -268,7 +274,7 @@ class QuickSettingsOverlayCardTest {
     }
 
     @Test
-    fun quickSettingsOverlayCard_cardBackgroundTap_doesNotDismissOrPassThroughToScrim() {
+    fun quickSettingsSideSheet_sheetBackgroundTap_doesNotDismissOrPassThroughToScrim() {
         var dismissCount = 0
         var underlyingClicked = false
 
@@ -280,7 +286,7 @@ class QuickSettingsOverlayCardTest {
                             .fillMaxSize()
                             .clickable { underlyingClicked = true }
                     )
-                    QuickSettingsOverlayCard(
+                    QuickSettingsSideSheet(
                         isOpen = true,
                         onDismissRequest = { dismissCount++ },
                         quickSettingsUiState = sampleAvailableUiState,
@@ -292,7 +298,7 @@ class QuickSettingsOverlayCardTest {
 
         // Click inside the top and bottom vertical padding of the card surface (horizontally
         // centered so the touch clears the card's 28.dp corner radius).
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .performTouchInput {
                 click(Offset(centerX, 8f))
                 click(Offset(centerX, bottom - 8f))
@@ -303,7 +309,7 @@ class QuickSettingsOverlayCardTest {
     }
 
     @Test
-    fun quickSettingsOverlayCard_settingSelections_invokeControllerCallbacksWithoutDismissing() {
+    fun quickSettingsSideSheet_settingSelections_invokeControllerCallbacksWithoutDismissing() {
         var selectedFlash: FlashMode? = null
         var selectedCaptureMode: CaptureMode? = null
         var selectedAspectRatio: AspectRatio? = null
@@ -319,7 +325,7 @@ class QuickSettingsOverlayCardTest {
 
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = true,
                     onDismissRequest = { dismissCount++ },
                     quickSettingsUiState = sampleAvailableUiState,
@@ -346,14 +352,14 @@ class QuickSettingsOverlayCardTest {
     }
 
     @Test
-    fun quickSettingsOverlayCard_backPress_invokesOnDismissRequest() {
+    fun quickSettingsSideSheet_backPress_invokesOnDismissRequest() {
         var dismissCount = 0
         lateinit var backDispatcher: OnBackPressedDispatcher
 
         composeTestRule.setContent {
             backDispatcher = LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
             MaterialTheme {
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = true,
                     onDismissRequest = { dismissCount++ },
                     quickSettingsUiState = sampleAvailableUiState,
@@ -366,14 +372,15 @@ class QuickSettingsOverlayCardTest {
             backDispatcher.onBackPressed()
         }
 
-        assertThat(dismissCount).isEqualTo(1)
+        // The predictive back handler completes on its collecting coroutine.
+        composeTestRule.runOnIdle { assertThat(dismissCount).isEqualTo(1) }
     }
 
     @Test
-    fun quickSettingsOverlayCard_showMoreSettingsButton_defaultsToFalse() {
+    fun quickSettingsSideSheet_showMoreSettingsButton_defaultsToFalse() {
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = true,
                     onDismissRequest = {},
                     quickSettingsUiState = sampleAvailableUiState,
@@ -386,12 +393,12 @@ class QuickSettingsOverlayCardTest {
     }
 
     @Test
-    fun quickSettingsOverlayCard_showMoreSettingsButtonTrue_displaysButtonAndInvokesCallback() {
+    fun quickSettingsSideSheet_showMoreSettingsButtonTrue_displaysButtonAndInvokesCallback() {
         var navigatedToSettings = false
 
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = true,
                     onDismissRequest = {},
                     quickSettingsUiState = sampleAvailableUiState,
@@ -411,12 +418,12 @@ class QuickSettingsOverlayCardTest {
 
     @Test
     @Config(qualifiers = "w840dp-h360dp")
-    fun quickSettingsOverlayCard_compactShortViewport_scrollsToBottomMoreSettingsButton() {
+    fun quickSettingsSideSheet_compactShortViewport_scrollsToBottomMoreSettingsButton() {
         var navigatedToSettings = false
 
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = true,
                     onDismissRequest = {},
                     quickSettingsUiState = sampleAvailableUiState,
@@ -464,22 +471,22 @@ class QuickSettingsOverlayCardTest {
     }
 
     @Test
-    fun quickSettingsOverlayCard_slotOverload_clearsRailPaddingAndCapsMaxCardWidth() {
+    fun quickSettingsSideSheet_slotOverload_clearsRailPaddingAndCapsMaxSheetWidth() {
         composeTestRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 MaterialTheme {
-                    QuickSettingsOverlayCard(
+                    QuickSettingsSideSheet(
                         isOpen = true,
                         onDismissRequest = {},
                         contentAlignment = Alignment.BottomStart,
-                        cardPadding = PaddingValues(
+                        sheetPadding = PaddingValues(
                             start = 92.dp,
                             end = 104.dp,
                             top = 24.dp,
                             bottom = 28.dp
                         ),
-                        maxCardWidth = 380.dp,
-                        cardContainerDirection = LayoutDirection.Ltr
+                        maxSheetWidth = 380.dp,
+                        sheetContainerDirection = LayoutDirection.Ltr
                     ) {
                         CaptureScaffoldDefaults.QuickSettings(
                             uiState = sampleAvailableUiState,
@@ -493,8 +500,8 @@ class QuickSettingsOverlayCardTest {
         }
 
         val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
-        val cardBounds = composeTestRule
-            .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        val sheetBounds = composeTestRule
+            .onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .getUnclippedBoundsInRoot()
         val flashOffBounds = composeTestRule
             .onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_OFF)
@@ -503,15 +510,15 @@ class QuickSettingsOverlayCardTest {
             .onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO)
             .getUnclippedBoundsInRoot()
 
-        assertThat(cardBounds.left).isEqualTo(92.dp)
-        assertThat(cardBounds.width).isAtMost(380.dp)
-        assertThat(cardBounds.bottom).isEqualTo(rootBounds.bottom - 28.dp)
+        assertThat(sheetBounds.left).isEqualTo(92.dp)
+        assertThat(sheetBounds.width).isAtMost(380.dp)
+        assertThat(sheetBounds.bottom).isEqualTo(rootBounds.bottom - 28.dp)
         // Card interior still respects ambient RTL direction even when container is pinned LTR.
         assertThat(flashOffBounds.left).isGreaterThan(flashAutoBounds.left)
     }
 
     @Test
-    fun quickSettingsOverlayCard_rtlLayoutDirection_keepsCardPlacementStaticAndMirrorsRows() {
+    fun quickSettingsSideSheet_rtlLayoutDirection_keepsSheetPlacementStaticAndMirrorsRows() {
         var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
         val flashTitleText = ApplicationProvider.getApplicationContext<Context>()
             .getString(R.string.quick_settings_title_flash_mode)
@@ -519,7 +526,7 @@ class QuickSettingsOverlayCardTest {
         composeTestRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                 MaterialTheme {
-                    QuickSettingsOverlayCard(
+                    QuickSettingsSideSheet(
                         isOpen = true,
                         onDismissRequest = {},
                         quickSettingsUiState = sampleAvailableUiState,
@@ -530,8 +537,8 @@ class QuickSettingsOverlayCardTest {
         }
 
         val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
-        val cardBoundsLtr = composeTestRule
-            .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        val sheetBoundsLtr = composeTestRule
+            .onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .getUnclippedBoundsInRoot()
         val flashTitleBoundsLtr = composeTestRule
             .onNodeWithText(flashTitleText)
@@ -543,10 +550,11 @@ class QuickSettingsOverlayCardTest {
             .onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO)
             .getUnclippedBoundsInRoot()
 
-        assertThat(cardBoundsLtr.left).isEqualTo(16.dp)
-        assertThat(cardBoundsLtr.right).isLessThan(rootBounds.width / 2)
-        assertThat(cardBoundsLtr.top).isGreaterThan(rootBounds.height / 2)
-        assertThat(cardBoundsLtr.bottom).isEqualTo(rootBounds.bottom - 16.dp)
+        assertThat(sheetBoundsLtr.left).isEqualTo(16.dp)
+        assertThat(sheetBoundsLtr.right).isLessThan(rootBounds.width / 2)
+        // Vertically centered along the attached edge by default.
+        assertThat((sheetBoundsLtr.top + sheetBoundsLtr.bottom) / 2)
+            .isEqualTo((rootBounds.top + rootBounds.bottom) / 2)
         assertThat(flashTitleBoundsLtr.left).isLessThan(flashOffBoundsLtr.left)
         assertThat(flashOffBoundsLtr.left).isLessThan(flashAutoBoundsLtr.left)
 
@@ -555,8 +563,8 @@ class QuickSettingsOverlayCardTest {
         }
         composeTestRule.waitForIdle()
 
-        val cardBoundsRtl = composeTestRule
-            .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        val sheetBoundsRtl = composeTestRule
+            .onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .getUnclippedBoundsInRoot()
         val flashTitleBoundsRtl = composeTestRule
             .onNodeWithText(flashTitleText)
@@ -568,18 +576,18 @@ class QuickSettingsOverlayCardTest {
             .onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO)
             .getUnclippedBoundsInRoot()
 
-        assertThat(cardBoundsRtl.left).isEqualTo(16.dp)
-        assertThat(cardBoundsRtl.right).isLessThan(rootBounds.width / 2)
-        assertThat(cardBoundsRtl.bottom).isEqualTo(rootBounds.bottom - 16.dp)
+        assertThat(sheetBoundsRtl.left).isEqualTo(16.dp)
+        assertThat(sheetBoundsRtl.right).isLessThan(rootBounds.width / 2)
+        assertThat(sheetBoundsRtl.top).isEqualTo(sheetBoundsLtr.top)
         assertThat(flashTitleBoundsRtl.left).isGreaterThan(flashOffBoundsRtl.left)
         assertThat(flashOffBoundsRtl.left).isGreaterThan(flashAutoBoundsRtl.left)
     }
 
     @Test
-    fun quickSettingsOverlayCard_customContentAlignment_positionsCardAccordingly() {
+    fun quickSettingsSideSheet_customContentAlignment_positionsSheetAccordingly() {
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = true,
                     onDismissRequest = {},
                     quickSettingsUiState = sampleAvailableUiState,
@@ -590,18 +598,18 @@ class QuickSettingsOverlayCardTest {
         }
 
         val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
-        val cardBounds = composeTestRule
-            .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        val sheetBounds = composeTestRule
+            .onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .getUnclippedBoundsInRoot()
 
-        assertThat(cardBounds.left).isGreaterThan(rootBounds.width / 2)
-        assertThat(cardBounds.right).isEqualTo(rootBounds.right - 16.dp)
-        assertThat(cardBounds.top).isEqualTo(16.dp)
-        assertThat(cardBounds.bottom).isLessThan(rootBounds.height / 2)
+        assertThat(sheetBounds.left).isGreaterThan(rootBounds.width / 2)
+        assertThat(sheetBounds.right).isEqualTo(rootBounds.right - 16.dp)
+        assertThat(sheetBounds.top).isEqualTo(16.dp)
+        assertThat(sheetBounds.bottom).isLessThan(rootBounds.height / 2)
     }
 
     @Test
-    fun quickSettingsOverlayCard_semantics_exposesPaneTitleHeadingAndCardFirstTraversal() {
+    fun quickSettingsSideSheet_semantics_exposesPaneTitleHeadingAndSheetFirstTraversal() {
         var captureMode by mutableStateOf(CaptureMode.STANDARD)
         val context = ApplicationProvider.getApplicationContext<Context>()
         val standardTitle = context.getString(
@@ -622,7 +630,7 @@ class QuickSettingsOverlayCardTest {
                 )
             )
             MaterialTheme {
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = true,
                     onDismissRequest = {},
                     quickSettingsUiState = uiState,
@@ -631,11 +639,11 @@ class QuickSettingsOverlayCardTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .onParent()
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.IsTraversalGroup, true))
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, standardTitle))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.TraversalIndex, 0f))
 
@@ -647,14 +655,14 @@ class QuickSettingsOverlayCardTest {
 
         composeTestRule.runOnIdle { captureMode = CaptureMode.IMAGE_ONLY }
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, photoTitle))
         composeTestRule.onNodeWithText(photoTitle)
             .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
 
         composeTestRule.runOnIdle { captureMode = CaptureMode.VIDEO_ONLY }
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, videoTitle))
         composeTestRule.onNodeWithText(videoTitle)
             .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
@@ -662,12 +670,12 @@ class QuickSettingsOverlayCardTest {
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun quickSettingsOverlayCard_escapeKey_dismissesOnKeyUp() {
+    fun quickSettingsSideSheet_escapeKey_dismissesOnKeyUp() {
         var dismissCount = 0
 
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = true,
                     onDismissRequest = { dismissCount++ },
                     quickSettingsUiState = sampleAvailableUiState,
@@ -676,18 +684,18 @@ class QuickSettingsOverlayCardTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .performKeyInput { keyDown(Key.Escape) }
         assertThat(dismissCount).isEqualTo(0)
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .performKeyInput { keyUp(Key.Escape) }
         assertThat(dismissCount).isEqualTo(1)
     }
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun quickSettingsOverlayCard_emptyRows_requestsFocusCleanlyAndEscapeDismisses() {
+    fun quickSettingsSideSheet_emptyRows_requestsFocusCleanlyAndEscapeDismisses() {
         var isOpen by mutableStateOf(true)
         val emptyRowsState = QuickSettingsUiState.Available(
             aspectRatioUiState = AspectRatioUiState.Unavailable,
@@ -699,7 +707,7 @@ class QuickSettingsOverlayCardTest {
 
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = isOpen,
                     onDismissRequest = { isOpen = false },
                     quickSettingsUiState = emptyRowsState,
@@ -709,17 +717,17 @@ class QuickSettingsOverlayCardTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .assertIsDisplayed()
             .performKeyInput { pressKey(Key.Escape) }
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG).assertDoesNotExist()
         assertThat(isOpen).isFalse()
     }
 
     @Test
     @Config(qualifiers = "w1024dp-h768dp", fontScale = 2.0f)
-    fun quickSettingsOverlayCard_fontScale2x_scrollsToBottomControlsWithoutOverlap() {
+    fun quickSettingsSideSheet_fontScale2x_scrollsToBottomControlsWithoutOverlap() {
         var activeFontScale = 0f
         var navigatedToSettings = false
         val captureModeSubtitle = ApplicationProvider.getApplicationContext<Context>()
@@ -728,7 +736,7 @@ class QuickSettingsOverlayCardTest {
         composeTestRule.setContent {
             activeFontScale = LocalDensity.current.fontScale
             MaterialTheme {
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = true,
                     onDismissRequest = {},
                     quickSettingsUiState = sampleAvailableUiState,
@@ -762,7 +770,7 @@ class QuickSettingsOverlayCardTest {
     }
 
     @Test
-    fun quickSettingsOverlayCard_customModifier_preservesFullViewportAndScrimBounds() {
+    fun quickSettingsSideSheet_customModifier_preservesFullViewportAndScrimBounds() {
         var useSlotOverload by mutableStateOf(false)
         var dismissCount = 0
         var underlyingClicked = false
@@ -776,7 +784,7 @@ class QuickSettingsOverlayCardTest {
                             .clickable { underlyingClicked = true }
                     )
                     if (!useSlotOverload) {
-                        QuickSettingsOverlayCard(
+                        QuickSettingsSideSheet(
                             isOpen = true,
                             onDismissRequest = { dismissCount++ },
                             quickSettingsUiState = sampleAvailableUiState,
@@ -784,7 +792,7 @@ class QuickSettingsOverlayCardTest {
                             modifier = Modifier.testTag(BOX_QUICK_SETTINGS_CUSTOM_HOST_TAG)
                         )
                     } else {
-                        QuickSettingsOverlayCard(
+                        QuickSettingsSideSheet(
                             isOpen = true,
                             onDismissRequest = { dismissCount++ },
                             modifier = Modifier.testTag(BOX_QUICK_SETTINGS_CUSTOM_HOST_TAG)
@@ -815,13 +823,13 @@ class QuickSettingsOverlayCardTest {
             val scrimBounds = composeTestRule
                 .onNodeWithTag(QUICK_SETTINGS_SCRIM)
                 .getUnclippedBoundsInRoot()
-            val cardBounds = composeTestRule
-                .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
+            val sheetBounds = composeTestRule
+                .onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
                 .getUnclippedBoundsInRoot()
 
             assertThat(hostBounds).isEqualTo(rootBounds)
             assertThat(scrimBounds).isEqualTo(rootBounds)
-            assertThat(cardBounds.width).isAtMost(412.dp)
+            assertThat(sheetBounds.width).isAtMost(412.dp)
 
             // Tap the scrim near the top-right corner outside the floating card bounds.
             composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
@@ -836,14 +844,14 @@ class QuickSettingsOverlayCardTest {
 
     @OptIn(ExperimentalTestApi::class)
     @Test
-    fun quickSettingsOverlayCard_focusedChildConsumingEscape_doesNotDismissUntilUnhandled() {
+    fun quickSettingsSideSheet_focusedChildConsumingEscape_doesNotDismissUntilUnhandled() {
         var childConsumesEscape by mutableStateOf(true)
         var childEscapeCount = 0
         var dismissCount = 0
 
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsOverlayCard(
+                QuickSettingsSideSheet(
                     isOpen = true,
                     onDismissRequest = { dismissCount++ }
                 ) {
@@ -887,4 +895,211 @@ class QuickSettingsOverlayCardTest {
         const val BOX_QUICK_SETTINGS_CUSTOM_HOST_TAG = "box_quick_settings_custom_host"
         const val BOX_FOCUSABLE_CHILD_TAG = "box_focusable_child"
     }
+
+    @Test
+    fun quickSettingsSideSheet_swipeTowardAttachedEdge_dismissesAndRemovesSheet() {
+        var isOpen by mutableStateOf(true)
+        var dismissCount = 0
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsSideSheet(
+                    isOpen = isOpen,
+                    onDismissRequest = {
+                        dismissCount++
+                        isOpen = false
+                    },
+                    quickSettingsUiState = sampleAvailableUiState,
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
+            .performTouchInput { swipeLeft() }
+        composeTestRule.waitForIdle()
+
+        assertThat(dismissCount).isEqualTo(1)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
+    }
+
+    @Test
+    fun quickSettingsSideSheet_shortSlowDrag_settlesBackToExpanded() {
+        var dismissCount = 0
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsSideSheet(
+                    isOpen = true,
+                    onDismissRequest = { dismissCount++ },
+                    quickSettingsUiState = sampleAvailableUiState,
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
+            .performTouchInput {
+                swipe(
+                    start = center,
+                    end = Offset(centerX - width * 0.1f, centerY),
+                    durationMillis = 1_000
+                )
+            }
+        composeTestRule.waitForIdle()
+
+        assertThat(dismissCount).isEqualTo(0)
+        assertThat(
+            composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
+                .getUnclippedBoundsInRoot()
+                .left
+        ).isEqualTo(16.dp)
+    }
+
+    @Test
+    fun quickSettingsSideSheet_rightAlignment_attachesToRightEdgeAndSwipesRightToDismiss() {
+        var dismissCount = 0
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsSideSheet(
+                    isOpen = true,
+                    onDismissRequest = { dismissCount++ },
+                    quickSettingsUiState = sampleAvailableUiState,
+                    quickSettingsController = fakeQuickSettingsController,
+                    contentAlignment = AbsoluteAlignment.CenterRight
+                )
+            }
+        }
+
+        val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
+        val sheetBounds = composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
+            .getUnclippedBoundsInRoot()
+        val handleBounds = composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
+            .getUnclippedBoundsInRoot()
+        assertThat(sheetBounds.right).isEqualTo(rootBounds.right - 16.dp)
+        // The handle sits on the free (left) edge.
+        assertThat(handleBounds.left).isEqualTo(sheetBounds.left)
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
+            .performTouchInput { swipeRight() }
+        composeTestRule.waitForIdle()
+
+        assertThat(dismissCount).isEqualTo(1)
+    }
+
+    @Test
+    fun quickSettingsSideSheet_dragHandle_isOnFreeEdgeAndDismissesOnClick() {
+        var dismissCount = 0
+        val dismissLabel = ApplicationProvider.getApplicationContext<Context>()
+            .getString(R.string.quick_settings_btn_close_expanded_settings_description)
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsSideSheet(
+                    isOpen = true,
+                    onDismissRequest = { dismissCount++ },
+                    quickSettingsUiState = sampleAvailableUiState,
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        val sheetBounds = composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
+            .getUnclippedBoundsInRoot()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            .assert(
+                SemanticsMatcher("onClickLabel equals $dismissLabel") { node ->
+                    node.config.getOrNull(SemanticsActions.OnClick)?.label == dismissLabel
+                }
+            )
+            .assert(
+                SemanticsMatcher("handle on the sheet's right (free) edge") { node ->
+                    with(node.layoutInfo.density) {
+                        node.boundsInRoot.right.toDp() == sheetBounds.right
+                    }
+                }
+            )
+            .performClick()
+
+        assertThat(dismissCount).isEqualTo(1)
+    }
+
+    @Test
+    fun quickSettingsSideSheet_close_animatesOutBeforeLeavingComposition() {
+        var isOpen by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsSideSheet(
+                    isOpen = isOpen,
+                    onDismissRequest = { isOpen = false },
+                    quickSettingsUiState = sampleAvailableUiState,
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.runOnIdle { isOpen = false }
+        // Step frame by frame: the sheet slides out while staying composed.
+        var sawSlidingFrame = false
+        repeat(30) {
+            if (!sawSlidingFrame) {
+                composeTestRule.mainClock.advanceTimeByFrame()
+                val left = composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
+                    .getUnclippedBoundsInRoot()
+                    .left
+                sawSlidingFrame = left < 16.dp && left > (-412).dp
+            }
+        }
+        assertThat(sawSlidingFrame).isTrue()
+
+        composeTestRule.mainClock.autoAdvance = true
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun quickSettingsSideSheet_predictiveBackCancelled_doesNotDismiss_completed_dismisses() {
+        var dismissCount = 0
+        lateinit var backDispatcher: OnBackPressedDispatcher
+
+        composeTestRule.setContent {
+            backDispatcher = LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
+            MaterialTheme {
+                QuickSettingsSideSheet(
+                    isOpen = true,
+                    onDismissRequest = { dismissCount++ },
+                    quickSettingsUiState = sampleAvailableUiState,
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.runOnUiThread {
+            backDispatcher.dispatchOnBackStarted(backEvent(progress = 0f))
+            backDispatcher.dispatchOnBackProgressed(backEvent(progress = 0.5f))
+            backDispatcher.dispatchOnBackCancelled()
+        }
+        composeTestRule.waitForIdle()
+        assertThat(dismissCount).isEqualTo(0)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG).assertIsDisplayed()
+
+        composeTestRule.runOnUiThread {
+            backDispatcher.dispatchOnBackStarted(backEvent(progress = 0f))
+            backDispatcher.dispatchOnBackProgressed(backEvent(progress = 0.5f))
+            backDispatcher.onBackPressed()
+        }
+        composeTestRule.runOnIdle { assertThat(dismissCount).isEqualTo(1) }
+    }
+
+    private fun backEvent(progress: Float) = BackEventCompat(
+        touchX = 0f,
+        touchY = 0f,
+        progress = progress,
+        swipeEdge = BackEventCompat.EDGE_LEFT
+    )
 }

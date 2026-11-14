@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
+import androidx.compose.foundation.shape.AbsoluteRoundedCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -35,6 +36,15 @@ internal object QuickSettingsSheetDefaults {
 
     /** Shape of the compact bottom sheet: rounded top corners, flush with the bottom edge. */
     val BottomSheetShape: Shape = RoundedCornerShape(topStart = CornerRadius, topEnd = CornerRadius)
+
+    /**
+     * Shape of a side sheet flush with its attached edge: only the free-edge corners are rounded.
+     */
+    fun sideSheetShape(attachedToLeft: Boolean): Shape = if (attachedToLeft) {
+        AbsoluteRoundedCornerShape(topRight = CornerRadius, bottomRight = CornerRadius)
+    } else {
+        AbsoluteRoundedCornerShape(topLeft = CornerRadius, bottomLeft = CornerRadius)
+    }
 
     /** Black at roughly 95% opacity, independent of the app color scheme. */
     val ContainerColor: Color = Color.Black.copy(alpha = 0.95f)
