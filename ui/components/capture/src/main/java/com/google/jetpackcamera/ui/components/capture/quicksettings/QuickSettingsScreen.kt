@@ -17,13 +17,10 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -57,61 +54,27 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
 /**
- * Resolves the title string resource ID for the Quick Settings panel based on
- * [QuickSettingsUiState.Available.titleResId] or the active [CaptureMode] in
- * [quickSettingsUiState].
+ * Resolves the active [CaptureMode] for Quick Settings, falling back to [CaptureMode.IMAGE_ONLY]
+ * when the capture mode is unavailable.
+ */
+internal fun QuickSettingsUiState.Available.resolvedCaptureMode(): CaptureMode =
+    (captureModeUiState as? CaptureModeUiState.Available)?.selectedCaptureMode
+        ?: CaptureMode.IMAGE_ONLY
+
+/**
+ * Resolves the title string resource ID for the Quick Settings panel.
  *
- * @param quickSettingsUiState The current [QuickSettingsUiState.Available].
+ * @param captureMode The resolved capture mode (see [resolvedCaptureMode]).
+ * @param titleResId An explicit title override from [QuickSettingsUiState.Available.titleResId].
  * @return The string resource ID used for the panel header and accessibility pane title.
  */
 @StringRes
-internal fun quickSettingsTitleRes(quickSettingsUiState: QuickSettingsUiState.Available): Int {
-    quickSettingsUiState.titleResId?.let { return it }
-
-    val captureMode = (quickSettingsUiState.captureModeUiState as? CaptureModeUiState.Available)
-        ?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
-
-    return when (captureMode) {
+internal fun quickSettingsTitleRes(captureMode: CaptureMode, @StringRes titleResId: Int?): Int =
+    titleResId ?: when (captureMode) {
         CaptureMode.VIDEO_ONLY -> R.string.quick_settings_title_video_settings
         CaptureMode.IMAGE_ONLY -> R.string.quick_settings_title_photo_settings
         CaptureMode.STANDARD -> R.string.quick_settings_title_photo_and_video_settings
     }
-}
-
-/**
- * Agnostic content for the Quick Settings panel wrapped for a BottomSheetScaffold sheet.
- *
- * @param quickSettingsUiState The current [QuickSettingsUiState].
- * @param onNavigateToSettings Callback when the user navigates to full settings.
- * @param quickSettingsController The [QuickSettingsController] to handle setting changes.
- * @param modifier The [Modifier] to apply to the content column.
- * @param showMoreSettingsButton Whether to show the "More settings" navigation button.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun QuickSettingsScaffoldContent(
-    quickSettingsUiState: QuickSettingsUiState,
-    onNavigateToSettings: () -> Unit,
-    quickSettingsController: QuickSettingsController,
-    modifier: Modifier = Modifier,
-    showMoreSettingsButton: Boolean = true
-) {
-    if (quickSettingsUiState is QuickSettingsUiState.Available) {
-        Column(
-            modifier = modifier
-                .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
-                .padding(bottom = 24.dp)
-        ) {
-            QuickSettingsContent(
-                quickSettingsUiState = quickSettingsUiState,
-                quickSettingsController = quickSettingsController,
-                onNavigateToSettings = onNavigateToSettings,
-                showMoreSettingsButton = showMoreSettingsButton
-            )
-        }
-    }
-}
 
 /**
  * Agnostic content for the Quick Settings panel containing the title header, option rows
@@ -131,10 +94,8 @@ internal fun QuickSettingsContent(
     modifier: Modifier = Modifier,
     showMoreSettingsButton: Boolean = true
 ) {
-    val captureMode = (quickSettingsUiState.captureModeUiState as? CaptureModeUiState.Available)
-        ?.selectedCaptureMode ?: CaptureMode.IMAGE_ONLY
-
-    val titleRes = quickSettingsTitleRes(quickSettingsUiState)
+    val captureMode = quickSettingsUiState.resolvedCaptureMode()
+    val titleRes = quickSettingsTitleRes(captureMode, quickSettingsUiState.titleResId)
 
     // Note: QUICK_SETTINGS_BOTTOM_SHEET is temporarily retained on QuickSettingsContent so existing
     // downstream tests find Quick Settings across both BottomSheetScaffold and
@@ -151,8 +112,7 @@ internal fun QuickSettingsContent(
                 .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
                 .semantics { heading() },
             text = stringResource(id = titleRes),
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface
+            style = MaterialTheme.typography.titleLarge
         )
 
         // Flash Mode settings
@@ -232,44 +192,49 @@ internal class NoOpQuickSettingsController : QuickSettingsController {
 @Composable
 private fun ExpandedQuickSettingsUiPreview() {
     MaterialTheme {
-        QuickSettingsScaffoldContent(
-            quickSettingsUiState = QuickSettingsUiState.Available(
-                aspectRatioUiState = AspectRatioUiState.Available(
-                    selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
-                    availableAspectRatios = listOf(
-                        SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
-                        SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE),
-                        SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN)
-                    )
-                ),
-                captureModeUiState = CaptureModeUiState.Available(
-                    selectedCaptureMode = CaptureMode.STANDARD,
-                    availableCaptureModes = listOf(
-                        SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
-                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
-                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
-                    )
-                ),
-                flashModeUiState = FlashModeUiState.Available(
-                    selectedFlashMode = FlashMode.OFF,
-                    availableFlashModes = listOf(
-                        SingleSelectableUiState.SelectableUi(FlashMode.OFF),
-                        SingleSelectableUiState.SelectableUi(FlashMode.ON),
-                        SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
+        Surface(
+            color = QuickSettingsSheetDefaults.ContainerColor,
+            contentColor = QuickSettingsSheetDefaults.ContentColor
+        ) {
+            QuickSettingsContent(
+                quickSettingsUiState = QuickSettingsUiState.Available(
+                    aspectRatioUiState = AspectRatioUiState.Available(
+                        selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
+                        availableAspectRatios = listOf(
+                            SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
+                            SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE),
+                            SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN)
+                        )
                     ),
-                    isLowLightBoostActive = false
+                    captureModeUiState = CaptureModeUiState.Available(
+                        selectedCaptureMode = CaptureMode.STANDARD,
+                        availableCaptureModes = listOf(
+                            SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
+                            SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
+                            SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
+                        )
+                    ),
+                    flashModeUiState = FlashModeUiState.Available(
+                        selectedFlashMode = FlashMode.OFF,
+                        availableFlashModes = listOf(
+                            SingleSelectableUiState.SelectableUi(FlashMode.OFF),
+                            SingleSelectableUiState.SelectableUi(FlashMode.ON),
+                            SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
+                        ),
+                        isLowLightBoostActive = false
+                    ),
+                    flipLensUiState = FlipLensUiState.Available(
+                        selectedLensFacing = LensFacing.BACK,
+                        availableLensFacings = listOf(
+                            SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                            SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                        )
+                    ),
+                    hdrUiState = HdrUiState.Unavailable
                 ),
-                flipLensUiState = FlipLensUiState.Available(
-                    selectedLensFacing = LensFacing.BACK,
-                    availableLensFacings = listOf(
-                        SingleSelectableUiState.SelectableUi(LensFacing.BACK),
-                        SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
-                    )
-                ),
-                hdrUiState = HdrUiState.Unavailable
-            ),
-            onNavigateToSettings = {},
-            quickSettingsController = NoOpQuickSettingsController()
-        )
+                onNavigateToSettings = {},
+                quickSettingsController = NoOpQuickSettingsController()
+            )
+        }
     }
 }

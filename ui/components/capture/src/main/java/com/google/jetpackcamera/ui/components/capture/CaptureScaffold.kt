@@ -610,8 +610,10 @@ object CaptureScaffoldDefaults {
     }
 
     /**
-     * Default Quick Settings content without container-specific bottom-sheet insets so it can be
-     * hosted inside both `BottomSheetScaffold` and `QuickSettingsOverlayCard`.
+     * Default Quick Settings content without container-specific insets or padding.
+     *
+     * The hosting sheet ([CaptureScaffoldLayout]'s bottom sheet or the large-screen panel) owns
+     * the navigation bar inset and bottom padding, so this content can be hosted in either.
      */
     @Composable
     fun QuickSettings(
@@ -1315,8 +1317,7 @@ fun CaptureScaffold(
                     { cameraController?.dismissCameraError() }
                 )
             }
-        },
-        isErrorDialogShowing = blocksPreview && errorDialog != null
+        }
     )
 }
 

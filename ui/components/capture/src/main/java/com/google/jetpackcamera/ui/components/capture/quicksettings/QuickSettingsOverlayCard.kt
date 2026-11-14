@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -145,7 +146,12 @@ internal fun QuickSettingsOverlayCard(
         isOpen = true,
         onDismissRequest = onDismissRequest,
         modifier = modifier,
-        paneTitle = stringResource(quickSettingsTitleRes(quickSettingsUiState)),
+        paneTitle = stringResource(
+            quickSettingsTitleRes(
+                quickSettingsUiState.resolvedCaptureMode(),
+                quickSettingsUiState.titleResId
+            )
+        ),
         contentAlignment = contentAlignment,
         cardPadding = cardPadding,
         maxCardWidth = maxCardWidth,
@@ -185,7 +191,7 @@ internal fun QuickSettingsOverlayCard(
  * @param content Composable Quick Settings content rendered inside the scrollable card surface.
  */
 @Composable
-fun QuickSettingsOverlayCard(
+internal fun QuickSettingsOverlayCard(
     isOpen: Boolean,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
@@ -284,8 +290,10 @@ fun QuickSettingsOverlayCard(
                         traversalIndex = 0f
                     }
                     .testTag(QUICK_SETTINGS_OVERLAY_CARD_TAG),
-                shape = MaterialTheme.shapes.extraLarge,
-                color = MaterialTheme.colorScheme.surfaceContainerLow
+                shape = RoundedCornerShape(QuickSettingsSheetDefaults.CornerRadius),
+                color = QuickSettingsSheetDefaults.ContainerColor,
+                contentColor = QuickSettingsSheetDefaults.ContentColor,
+                shadowElevation = QuickSettingsSheetDefaults.ShadowElevation
             ) {
                 CompositionLocalProvider(LocalLayoutDirection provides contentLayoutDirection) {
                     Box(

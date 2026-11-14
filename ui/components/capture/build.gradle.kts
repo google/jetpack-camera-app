@@ -132,7 +132,9 @@ dependencies {
     testImplementation(project(":core:camera:testing"))
     testImplementation(project(":core:settings"))
     testImplementation(project(":ui:controller:testing"))
+    testImplementation(project(":ui:uistate:capture:testing"))
     androidTestImplementation(project(":ui:controller:testing"))
+    androidTestImplementation(project(":ui:uistate:capture:testing"))
     androidTestImplementation(libs.kotlinx.coroutines.test)
 
 }

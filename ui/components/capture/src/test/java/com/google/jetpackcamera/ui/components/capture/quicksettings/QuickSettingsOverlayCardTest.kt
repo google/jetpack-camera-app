@@ -78,7 +78,6 @@ import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
-import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO
@@ -106,6 +105,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+import com.google.jetpackcamera.ui.uistate.capture.testing.sampleQuickSettingsUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -121,45 +121,7 @@ class QuickSettingsOverlayCardTest {
 
     private val fakeQuickSettingsController = FakeQuickSettingsController()
 
-    private val sampleAvailableUiState = QuickSettingsUiState.Available(
-        aspectRatioUiState = AspectRatioUiState.Available(
-            selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
-            availableAspectRatios = listOf(
-                SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
-                SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
-                SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
-            )
-        ),
-        captureModeUiState = CaptureModeUiState.Available(
-            selectedCaptureMode = CaptureMode.STANDARD,
-            availableCaptureModes = listOf(
-                SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
-                SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
-                SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
-            )
-        ),
-        flashModeUiState = FlashModeUiState.Available(
-            selectedFlashMode = FlashMode.OFF,
-            availableFlashModes = listOf(
-                SingleSelectableUiState.SelectableUi(FlashMode.OFF),
-                SingleSelectableUiState.SelectableUi(FlashMode.ON),
-                SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
-            ),
-            isLowLightBoostActive = false
-        ),
-        flipLensUiState = FlipLensUiState.Available(
-            selectedLensFacing = LensFacing.BACK,
-            availableLensFacings = listOf(
-                SingleSelectableUiState.SelectableUi(LensFacing.BACK),
-                SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
-            )
-        ),
-        hdrUiState = HdrUiState.Available(
-            selectedImageFormat = ImageOutputFormat.JPEG,
-            selectedDynamicRange = DynamicRange.SDR,
-            isSupported = true
-        )
-    )
+    private val sampleAvailableUiState = sampleQuickSettingsUiState()
 
     @Test
     fun quickSettingsOverlayCard_whenClosed_doesNotRenderAndDoesNotInterceptBack() {
@@ -329,7 +291,7 @@ class QuickSettingsOverlayCardTest {
         }
 
         // Click inside the top and bottom vertical padding of the card surface (horizontally
-        // centered so the touch is inside MaterialTheme.shapes.extraLarge's 28.dp corner radius).
+        // centered so the touch clears the card's 28.dp corner radius).
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_TAG)
             .performTouchInput {
                 click(Offset(centerX, 8f))

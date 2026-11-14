@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,13 +44,11 @@ import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -67,7 +66,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.AlignmentLine
@@ -75,12 +77,11 @@ import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layoutId
-import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.Constraints
@@ -94,6 +95,7 @@ import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
 import com.google.jetpackcamera.ui.components.capture.layout.CameraRowIds
 import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsSheetDefaults
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
@@ -157,16 +159,25 @@ private const val PORTRAIT_ASPECT_RATIO_THRESHOLD = 16f / 9f - 0.01f
 /** Minimum bottom gesture inset floor used when solving the portrait control stack. */
 private val MIN_GESTURE_INSET = 32.dp
 
-/** Bottom padding inside the Quick Settings bottom sheet content container. */
-private val QUICK_SETTINGS_SHEET_BOTTOM_PADDING = 24.dp
-
-private fun Modifier.suppressBackgroundForModal(isModalOpen: Boolean): Modifier = if (isModalOpen) {
-    this
-        .focusProperties { canFocus = false }
-        .semantics { hideFromAccessibility() }
-} else {
-    this
-}
+/**
+ * Blocks keyboard focus from entering background camera controls while a modal surface (such as
+ * the Quick Settings sheet) is open.
+ *
+ * `focusProperties { canFocus = false }` only applies to the nearest focus targets, so focusables
+ * nested inside a `focusGroup()` could still be reached. Cancelling entry into a focus group
+ * blocks both `requestFocus()` and directional traversal into any descendant.
+ *
+ * Accessibility pruning is not needed here: the Quick Settings scrim already keeps the controls
+ * behind it out of the accessibility tree.
+ */
+private fun Modifier.suppressBackgroundFocusForModal(isModalOpen: Boolean): Modifier =
+    if (isModalOpen) {
+        this
+            .focusProperties { onEnter = { cancelFocusChange() } }
+            .focusGroup()
+    } else {
+        this
+    }
 
 /**
  * The top edge of the visible viewfinder, reported by a viewfinder that fills its slot and offsets
@@ -229,8 +240,6 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  *   tallest viewfinder to clear a persistent navigation bar, and with `false` when it no longer is
  *   or when the adaptive portrait layout leaves the composition.
  * @param errorDialog the camera error alert dialog composable.
- * @param isErrorDialogShowing whether the camera error dialog is currently open so background
- *   camera chrome can be synchronously hidden from focus and accessibility on frame 1.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -257,17 +266,14 @@ fun CaptureScaffoldLayout(
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
-    errorDialog: @Composable (Modifier) -> Unit = {},
-    isErrorDialogShowing: Boolean = false
+    errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
+    // Omitting PartiallyExpanded from enabledValues is sufficient: BottomSheetScaffold creates no
+    // PartiallyExpanded anchor and SheetState.partialExpand() fails fast when it is skipped.
     val enabledSheetValues = remember { setOf(SheetValue.Hidden, SheetValue.Expanded) }
-    val confirmSheetValueChange: (SheetValue) -> Boolean = remember {
-        { it != SheetValue.PartiallyExpanded }
-    }
     val bottomSheetState = rememberBottomSheetState(
         initialValue = if (state.isQuickSettingsOpen) SheetValue.Expanded else SheetValue.Hidden,
-        enabledValues = enabledSheetValues,
-        confirmValueChange = confirmSheetValueChange
+        enabledValues = enabledSheetValues
     )
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = bottomSheetState,
@@ -301,6 +307,26 @@ fun CaptureScaffoldLayout(
         }
     }
 
+    val isSheetVisible = state.isQuickSettingsOpen ||
+        bottomSheetState.isVisible ||
+        bottomSheetState.targetValue == SheetValue.Expanded
+    val focusManager = LocalFocusManager.current
+    val sheetFocusRequester = remember { FocusRequester() }
+    var sheetHasFocus by remember { mutableStateOf(false) }
+    // Background focus suppression only blocks focus from *entering* the background controls, so
+    // focus that is already there (for example on the Quick Settings button after a keyboard
+    // press) is moved into the sheet when it opens, and released when the sheet hides so keyboard
+    // focus is never left on an off-screen sheet.
+    LaunchedEffect(isSheetVisible) {
+        if (isSheetVisible) {
+            if (!sheetFocusRequester.requestFocus()) {
+                focusManager.clearFocus(force = true)
+            }
+        } else if (sheetHasFocus) {
+            focusManager.clearFocus(force = true)
+        }
+    }
+
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val dismissQuickSettingsLabel =
         stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
@@ -312,14 +338,17 @@ fun CaptureScaffoldLayout(
                 scaffoldState = scaffoldState,
                 sheetPeekHeight = 0.dp,
                 sheetDragHandle = null,
-                sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                sheetShape = QuickSettingsSheetDefaults.BottomSheetShape,
+                sheetContainerColor = QuickSettingsSheetDefaults.ContainerColor,
+                sheetContentColor = QuickSettingsSheetDefaults.ContentColor,
+                sheetShadowElevation = QuickSettingsSheetDefaults.ShadowElevation,
                 sheetContent = {
                     Box(
                         modifier = Modifier.fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
                         BottomSheetDefaults.DragHandle(
+                            color = QuickSettingsSheetDefaults.DragHandleColor,
                             modifier = Modifier
                                 .testTag(QUICK_SETTINGS_DRAG_HANDLE)
                                 .minimumInteractiveComponentSize()
@@ -333,9 +362,14 @@ fun CaptureScaffoldLayout(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .onFocusChanged { sheetHasFocus = it.hasFocus }
+                            .focusRequester(sheetFocusRequester)
+                            .focusGroup()
                             .verticalScroll(rememberScrollState())
                             .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
-                            .padding(bottom = QUICK_SETTINGS_SHEET_BOTTOM_PADDING)
+                            .padding(
+                                bottom = QuickSettingsSheetDefaults.BottomSheetContentBottomPadding
+                            )
                     ) {
                         quickSettingsOverlay(Modifier)
                     }
@@ -343,13 +377,6 @@ fun CaptureScaffoldLayout(
                 snackbarHost = {}
             ) {
                 BoxWithConstraints(modifier = Modifier.fillMaxSize().background(Color.Black)) {
-                    val isSheetVisible = state.isQuickSettingsOpen ||
-                        bottomSheetState.isVisible ||
-                        bottomSheetState.targetValue == SheetValue.Expanded
-                    var isErrorDialogPlaced by remember { mutableStateOf(false) }
-                    val isErrorModalActive = isErrorDialogShowing || isErrorDialogPlaced
-                    val isModalOpen = isSheetVisible || isErrorModalActive
-
                     // The adaptive portrait solver targets portrait handhelds (16:9 and taller,
                     // where a full-width 9:16 frame fits inside the window). Squarer windows
                     // (landscape, foldable inner displays, or short split-screen panes like
@@ -376,7 +403,7 @@ fun CaptureScaffoldLayout(
                             quickSettingsToggleButton = quickSettingsButton,
                             captureModeToggleSwitch = captureModeToggle,
                             controlsVisible = controlsVisible,
-                            modifier = Modifier.suppressBackgroundForModal(isModalOpen),
+                            modifier = Modifier.suppressBackgroundFocusForModal(isSheetVisible),
                             snackbarHost = { snackbarModifier ->
                                 PillSnackbarHost(
                                     snackbarHostState = state.snackbarHostState,
@@ -391,12 +418,14 @@ fun CaptureScaffoldLayout(
                                     WindowInsets.systemBarsIgnoringVisibility
                                         .union(WindowInsets.displayCutout)
                                 )
-                                .suppressBackgroundForModal(isModalOpen)
+                                .suppressBackgroundFocusForModal(isSheetVisible)
                         ) {
                             snackBar(Modifier, state.snackbarHostState)
                         }
                     } else {
-                        Column(modifier = Modifier.suppressBackgroundForModal(isModalOpen)) {
+                        Column(
+                            modifier = Modifier.suppressBackgroundFocusForModal(isSheetVisible)
+                        ) {
                             val cutoutTopInset =
                                 WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
                             val minTouchTarget =
@@ -439,7 +468,7 @@ fun CaptureScaffoldLayout(
                                     WindowInsets.systemBarsIgnoringVisibility
                                         .union(WindowInsets.displayCutout)
                                 )
-                                .suppressBackgroundForModal(isModalOpen)
+                                .suppressBackgroundFocusForModal(isSheetVisible)
                         ) {
                             if (controlsVisible) {
                                 VerticalMaterialControls(
@@ -463,12 +492,12 @@ fun CaptureScaffoldLayout(
                         }
                     }
                     OverlapAwareStyleProvider(
-                        modifier = Modifier.suppressBackgroundForModal(isModalOpen)
+                        modifier = Modifier.suppressBackgroundFocusForModal(isSheetVisible)
                     ) {
                         overlay(Modifier)
                     }
 
-                    if (isSheetVisible && !isErrorModalActive) {
+                    if (isSheetVisible) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
@@ -485,13 +514,7 @@ fun CaptureScaffoldLayout(
                                 )
                         )
                     }
-                    Box(
-                        modifier = Modifier.onSizeChanged { size ->
-                            isErrorDialogPlaced = size.width > 0 && size.height > 0
-                        }
-                    ) {
-                        errorDialog(Modifier)
-                    }
+                    errorDialog(Modifier)
                 }
             }
             // Drawn last and outside of both the inset-padded controls and the bottom sheet

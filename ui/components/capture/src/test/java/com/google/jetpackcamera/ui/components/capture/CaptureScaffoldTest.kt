@@ -19,6 +19,8 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Range
 import android.view.Surface
+import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,12 +33,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -56,13 +65,9 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
-import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DeviceRotation
-import com.google.jetpackcamera.model.DynamicRange
-import com.google.jetpackcamera.model.FlashMode
-import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.MediaDescriptor
@@ -86,6 +91,7 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+import com.google.jetpackcamera.ui.uistate.capture.testing.sampleQuickSettingsUiState
 import java.util.LinkedList
 import org.junit.Rule
 import org.junit.Test
@@ -674,6 +680,90 @@ class CaptureScaffoldTest {
     }
 
     @Test
+    fun captureScaffoldLayout_quickSettingsOpen_blocksBackgroundFocus() {
+        lateinit var scaffoldState: CaptureScaffoldState
+        lateinit var focusManager: FocusManager
+        val nestedRequester = FocusRequester()
+        val directRequester = FocusRequester()
+        val nestedTag = "nested_background_focusable"
+        val directTag = "direct_background_focusable"
+        val sheetFocusableTag = "sheet_focusable"
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                focusManager = LocalFocusManager.current
+                scaffoldState = rememberCaptureScaffoldState(isInitiallyExpanded = false)
+                CaptureScaffoldLayout(
+                    state = scaffoldState,
+                    viewfinder = { Box(Modifier.fillMaxSize()) },
+                    captureButton = { modifier ->
+                        // A focusable nested inside its own focus group, which
+                        // `focusProperties { canFocus = false }` alone would not block.
+                        Box(modifier = modifier.focusGroup()) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .testTag(nestedTag)
+                                    .focusRequester(nestedRequester)
+                                    .focusable()
+                            )
+                        }
+                    },
+                    flipCameraButton = { modifier ->
+                        Box(
+                            modifier = modifier
+                                .size(48.dp)
+                                .testTag(directTag)
+                                .focusRequester(directRequester)
+                                .focusable()
+                        )
+                    },
+                    quickSettingsOverlay = { modifier ->
+                        Box(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .testTag(sheetFocusableTag)
+                                    .focusable()
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        // Background controls are reachable while Quick Settings is closed.
+        composeTestRule.runOnIdle { nestedRequester.requestFocus() }
+        composeTestRule.onNodeWithTag(nestedTag).assertIsFocused()
+
+        // Opening Quick Settings while a background control holds focus (as after a keyboard
+        // press on the Quick Settings button) moves focus into the sheet.
+        composeTestRule.runOnIdle { scaffoldState.showQuickSettings() }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(sheetFocusableTag).assertIsFocused()
+        composeTestRule.onNodeWithTag(nestedTag).assertIsNotFocused()
+
+        composeTestRule.runOnIdle {
+            assertThat(nestedRequester.requestFocus()).isFalse()
+            assertThat(directRequester.requestFocus()).isFalse()
+        }
+        composeTestRule.onNodeWithTag(nestedTag).assertIsNotFocused()
+        composeTestRule.onNodeWithTag(directTag).assertIsNotFocused()
+
+        repeat(4) {
+            composeTestRule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+            composeTestRule.onNodeWithTag(nestedTag).assertIsNotFocused()
+            composeTestRule.onNodeWithTag(directTag).assertIsNotFocused()
+        }
+    }
+
+    @Test
     fun captureScaffoldLayout_initialHiddenAndOpen_doesNotSpuriouslyInvokeDismissCallback() {
         var dismissCount = 0
         lateinit var scaffoldState: CaptureScaffoldState
@@ -722,45 +812,7 @@ class CaptureScaffoldTest {
     fun captureScaffoldLayout_partialDownwardDrag_settlesBackToExpandedWithoutOrphanedScrim() {
         var dismissCount = 0
         lateinit var scaffoldState: CaptureScaffoldState
-        val populatedQuickSettings = QuickSettingsUiState.Available(
-            aspectRatioUiState = AspectRatioUiState.Available(
-                selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
-                availableAspectRatios = listOf(
-                    SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
-                    SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
-                    SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
-                )
-            ),
-            captureModeUiState = CaptureModeUiState.Available(
-                selectedCaptureMode = CaptureMode.STANDARD,
-                availableCaptureModes = listOf(
-                    SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
-                    SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
-                    SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
-                )
-            ),
-            flashModeUiState = FlashModeUiState.Available(
-                selectedFlashMode = FlashMode.OFF,
-                availableFlashModes = listOf(
-                    SingleSelectableUiState.SelectableUi(FlashMode.OFF),
-                    SingleSelectableUiState.SelectableUi(FlashMode.ON),
-                    SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
-                ),
-                isLowLightBoostActive = false
-            ),
-            flipLensUiState = FlipLensUiState.Available(
-                selectedLensFacing = LensFacing.BACK,
-                availableLensFacings = listOf(
-                    SingleSelectableUiState.SelectableUi(LensFacing.BACK),
-                    SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
-                )
-            ),
-            hdrUiState = HdrUiState.Available(
-                selectedImageFormat = ImageOutputFormat.JPEG,
-                selectedDynamicRange = DynamicRange.SDR,
-                isSupported = true
-            )
-        )
+        val populatedQuickSettings = sampleQuickSettingsUiState()
 
         composeTestRule.setContent {
             MaterialTheme {

@@ -38,7 +38,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
@@ -47,7 +46,6 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
-import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_IMAGE_ONLY
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_STANDARD
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_CAPTURE_MODE_OPTION_VIDEO_ONLY
@@ -56,6 +54,7 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_O
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
+import com.google.jetpackcamera.ui.components.capture.CaptureScaffoldDefaults
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
@@ -70,10 +69,9 @@ import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsControlle
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
-import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+import com.google.jetpackcamera.ui.uistate.capture.testing.sampleQuickSettingsUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -89,50 +87,17 @@ class QuickSettingsScreenTest {
 
     private val fakeQuickSettingsController = FakeQuickSettingsController()
 
-    private val sampleAvailableUiState = QuickSettingsUiState.Available(
-        aspectRatioUiState = AspectRatioUiState.Available(
-            selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
-            availableAspectRatios = listOf(
-                SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
-                SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE),
-                SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN)
-            )
-        ),
-        captureModeUiState = CaptureModeUiState.Available(
-            selectedCaptureMode = CaptureMode.STANDARD,
-            availableCaptureModes = listOf(
-                SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
-                SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY),
-                SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
-            )
-        ),
-        flashModeUiState = FlashModeUiState.Available(
-            selectedFlashMode = FlashMode.OFF,
-            availableFlashModes = listOf(
-                SingleSelectableUiState.SelectableUi(FlashMode.OFF),
-                SingleSelectableUiState.SelectableUi(FlashMode.ON),
-                SingleSelectableUiState.SelectableUi(FlashMode.AUTO)
-            ),
-            isLowLightBoostActive = false
-        ),
-        flipLensUiState = FlipLensUiState.Available(
-            selectedLensFacing = LensFacing.BACK,
-            availableLensFacings = listOf(
-                SingleSelectableUiState.SelectableUi(LensFacing.BACK),
-                SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
-            )
-        ),
-        hdrUiState = HdrUiState.Unavailable
-    )
+    private val sampleAvailableUiState =
+        sampleQuickSettingsUiState(hdrUiState = HdrUiState.Unavailable)
 
     @Test
-    fun quickSettingsScaffoldContent_unavailableState_doesNotRender() {
+    fun captureScaffoldDefaultsQuickSettings_unavailableState_doesNotRender() {
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsScaffoldContent(
-                    quickSettingsUiState = QuickSettingsUiState.Unavailable,
-                    onNavigateToSettings = {},
-                    quickSettingsController = fakeQuickSettingsController
+                CaptureScaffoldDefaults.QuickSettings(
+                    uiState = QuickSettingsUiState.Unavailable,
+                    controller = fakeQuickSettingsController,
+                    onNavigateToSettings = {}
                 )
             }
         }
@@ -141,10 +106,10 @@ class QuickSettingsScreenTest {
     }
 
     @Test
-    fun quickSettingsScaffoldContent_availableState_rendersSettings() {
+    fun quickSettingsContent_availableState_rendersSettings() {
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsScaffoldContent(
+                QuickSettingsContent(
                     quickSettingsUiState = sampleAvailableUiState,
                     onNavigateToSettings = {},
                     quickSettingsController = fakeQuickSettingsController
@@ -160,10 +125,10 @@ class QuickSettingsScreenTest {
     }
 
     @Test
-    fun quickSettingsScaffoldContent_noTitleOverride_usesCaptureModeTitle() {
+    fun quickSettingsContent_noTitleOverride_usesCaptureModeTitle() {
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsScaffoldContent(
+                QuickSettingsContent(
                     quickSettingsUiState = sampleAvailableUiState,
                     onNavigateToSettings = {},
                     quickSettingsController = fakeQuickSettingsController
@@ -179,10 +144,10 @@ class QuickSettingsScreenTest {
     }
 
     @Test
-    fun quickSettingsScaffoldContent_titleOverride_usesOverrideTitle() {
+    fun quickSettingsContent_titleOverride_usesOverrideTitle() {
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsScaffoldContent(
+                QuickSettingsContent(
                     quickSettingsUiState = sampleAvailableUiState.copy(
                         titleResId = R.string.quick_settings_title_video_settings
                     ),
@@ -200,13 +165,13 @@ class QuickSettingsScreenTest {
     }
 
     @Test
-    fun quickSettingsScaffoldContent_flashSelection_callsController() {
+    fun quickSettingsContent_flashSelection_callsController() {
         var setFlashCalledWith: FlashMode? = null
         fakeQuickSettingsController.setFlashAction = { setFlashCalledWith = it }
 
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsScaffoldContent(
+                QuickSettingsContent(
                     quickSettingsUiState = sampleAvailableUiState,
                     onNavigateToSettings = {},
                     quickSettingsController = fakeQuickSettingsController
@@ -219,12 +184,12 @@ class QuickSettingsScreenTest {
     }
 
     @Test
-    fun quickSettingsScaffoldContent_moreSettingsButton_triggersCallback() {
+    fun quickSettingsContent_moreSettingsButton_triggersCallback() {
         var onNavigateToSettingsCalled = false
 
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsScaffoldContent(
+                QuickSettingsContent(
                     quickSettingsUiState = sampleAvailableUiState,
                     onNavigateToSettings = { onNavigateToSettingsCalled = true },
                     quickSettingsController = fakeQuickSettingsController,
@@ -238,10 +203,10 @@ class QuickSettingsScreenTest {
     }
 
     @Test
-    fun quickSettingsScaffoldContent_hideMoreSettingsButton_doesNotRenderButton() {
+    fun quickSettingsContent_hideMoreSettingsButton_doesNotRenderButton() {
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsScaffoldContent(
+                QuickSettingsContent(
                     quickSettingsUiState = sampleAvailableUiState,
                     onNavigateToSettings = {},
                     quickSettingsController = fakeQuickSettingsController,
@@ -254,11 +219,11 @@ class QuickSettingsScreenTest {
     }
 
     @Test
-    fun quickSettingsContent_decouplesBottomSheetPaddingFromInnerColumn() {
+    fun quickSettingsContent_appliesNoContainerBottomPadding() {
         composeTestRule.setContent {
             MaterialTheme {
                 Box(modifier = Modifier.testTag(BOX_SCAFFOLD_WRAPPER_TAG)) {
-                    QuickSettingsScaffoldContent(
+                    QuickSettingsContent(
                         quickSettingsUiState = sampleAvailableUiState,
                         onNavigateToSettings = {},
                         quickSettingsController = fakeQuickSettingsController
@@ -276,45 +241,41 @@ class QuickSettingsScreenTest {
             .getUnclippedBoundsInRoot()
             .height
 
-        assertThat(wrapperHeight - contentHeight).isAtLeast(24.dp)
+        // The hosting sheet owns the navigation bar inset and bottom padding.
+        assertThat(wrapperHeight).isEqualTo(contentHeight)
     }
 
     @Test
     fun quickSettingsTitleRes_returnsExpectedStringResForCaptureMode() {
-        assertThat(quickSettingsTitleRes(sampleAvailableUiState))
+        assertThat(quickSettingsTitleRes(CaptureMode.STANDARD, titleResId = null))
             .isEqualTo(R.string.quick_settings_title_photo_and_video_settings)
-
-        val imageOnlyState = sampleAvailableUiState.copy(
-            captureModeUiState = CaptureModeUiState.Available(
-                selectedCaptureMode = CaptureMode.IMAGE_ONLY,
-                availableCaptureModes = listOf(
-                    SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY)
-                )
-            )
-        )
-        assertThat(quickSettingsTitleRes(imageOnlyState))
+        assertThat(quickSettingsTitleRes(CaptureMode.IMAGE_ONLY, titleResId = null))
             .isEqualTo(R.string.quick_settings_title_photo_settings)
-
-        val videoOnlyState = sampleAvailableUiState.copy(
-            captureModeUiState = CaptureModeUiState.Available(
-                selectedCaptureMode = CaptureMode.VIDEO_ONLY,
-                availableCaptureModes = listOf(
-                    SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
-                )
-            )
-        )
-        assertThat(quickSettingsTitleRes(videoOnlyState))
+        assertThat(quickSettingsTitleRes(CaptureMode.VIDEO_ONLY, titleResId = null))
             .isEqualTo(R.string.quick_settings_title_video_settings)
-
-        val unavailableCaptureModeState = sampleAvailableUiState.copy(
-            captureModeUiState = CaptureModeUiState.Unavailable
-        )
-        assertThat(quickSettingsTitleRes(unavailableCaptureModeState))
-            .isEqualTo(R.string.quick_settings_title_photo_settings)
     }
 
     @Test
-    fun quickSettingsScaffoldContent_header_hasHeadingSemanticsAcrossCaptureModes() {
+    fun quickSettingsTitleRes_titleOverride_takesPrecedenceOverCaptureMode() {
+        assertThat(
+            quickSettingsTitleRes(
+                CaptureMode.STANDARD,
+                titleResId = R.string.quick_settings_title_video_settings
+            )
+        ).isEqualTo(R.string.quick_settings_title_video_settings)
+    }
+
+    @Test
+    fun resolvedCaptureMode_unavailableCaptureMode_fallsBackToImageOnly() {
+        assertThat(sampleAvailableUiState.resolvedCaptureMode()).isEqualTo(CaptureMode.STANDARD)
+        assertThat(
+            sampleAvailableUiState.copy(captureModeUiState = CaptureModeUiState.Unavailable)
+                .resolvedCaptureMode()
+        ).isEqualTo(CaptureMode.IMAGE_ONLY)
+    }
+
+    @Test
+    fun quickSettingsContent_header_hasHeadingSemanticsAcrossCaptureModes() {
         var captureMode by mutableStateOf(CaptureMode.STANDARD)
         val context = ApplicationProvider.getApplicationContext<Context>()
         val standardTitle = context.getString(
@@ -335,7 +296,7 @@ class QuickSettingsScreenTest {
                 )
             )
             MaterialTheme {
-                QuickSettingsScaffoldContent(
+                QuickSettingsContent(
                     quickSettingsUiState = uiState,
                     onNavigateToSettings = {},
                     quickSettingsController = fakeQuickSettingsController
@@ -361,7 +322,7 @@ class QuickSettingsScreenTest {
     }
 
     @Test
-    fun quickSettingsScaffoldContent_singleSelectRows_exposeRadioButtonAndSelectableGroup() {
+    fun quickSettingsContent_singleSelectRows_exposeRadioButtonAndSelectableGroup() {
         val allRowsState = sampleAvailableUiState.copy(
             hdrUiState = HdrUiState.Available(
                 selectedImageFormat = ImageOutputFormat.JPEG,
@@ -372,7 +333,7 @@ class QuickSettingsScreenTest {
 
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsScaffoldContent(
+                QuickSettingsContent(
                     quickSettingsUiState = allRowsState,
                     onNavigateToSettings = {},
                     quickSettingsController = fakeQuickSettingsController
@@ -436,7 +397,7 @@ class QuickSettingsScreenTest {
     }
 
     @Test
-    fun quickSettingsScaffoldContent_aspectRatioSubtitle_exposesSpokenContentDescription() {
+    fun quickSettingsContent_aspectRatioSubtitle_exposesSpokenContentDescription() {
         var aspectRatio by mutableStateOf(AspectRatio.NINE_SIXTEEN)
         val context = ApplicationProvider.getApplicationContext<Context>()
 
@@ -452,7 +413,7 @@ class QuickSettingsScreenTest {
                 )
             )
             MaterialTheme {
-                QuickSettingsScaffoldContent(
+                QuickSettingsContent(
                     quickSettingsUiState = uiState,
                     onNavigateToSettings = {},
                     quickSettingsController = fakeQuickSettingsController
@@ -487,13 +448,13 @@ class QuickSettingsScreenTest {
     }
 
     @Test
-    fun quickSettingsScaffoldContent_aspectRatioSelection_callsController() {
+    fun quickSettingsContent_aspectRatioSelection_callsController() {
         val selectedRatios = mutableListOf<AspectRatio>()
         fakeQuickSettingsController.setAspectRatioAction = { selectedRatios.add(it) }
 
         composeTestRule.setContent {
             MaterialTheme {
-                QuickSettingsScaffoldContent(
+                QuickSettingsContent(
                     quickSettingsUiState = sampleAvailableUiState,
                     onNavigateToSettings = {},
                     quickSettingsController = fakeQuickSettingsController

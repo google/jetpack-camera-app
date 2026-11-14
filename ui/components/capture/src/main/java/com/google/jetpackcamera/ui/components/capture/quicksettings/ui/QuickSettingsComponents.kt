@@ -459,8 +459,7 @@ private fun SettingRow(
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                style = MaterialTheme.typography.labelMedium
             )
             Text(
                 modifier = if (stateContentDescription != null) {
@@ -470,7 +469,7 @@ private fun SettingRow(
                 },
                 text = stateSubtitle,
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
+                color = MaterialTheme.colorScheme.primaryFixed
             )
         }
 
@@ -535,9 +534,9 @@ private fun QuickSettingToggleSelectorButton(
         onCheckedChange = { _ -> onClick() },
         shapes = shapes,
         colors = ToggleButtonDefaults.colors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            containerColor = MaterialTheme.colorScheme.onSecondaryFixedVariant,
             checkedContainerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            contentColor = MaterialTheme.colorScheme.secondaryFixed,
             checkedContentColor = MaterialTheme.colorScheme.onPrimary
         ),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
