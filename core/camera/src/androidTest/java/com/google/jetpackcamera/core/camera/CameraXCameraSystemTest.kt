@@ -351,6 +351,54 @@ class CameraXCameraSystemTest {
         runSetStabilizationModeTest(StabilizationMode.OFF, CaptureMode.IMAGE_ONLY)
     }
 
+    @Test
+    fun setStabilizationMode_on_imageOnly_updatesCameraState(): Unit = runBlocking {
+        runSetStabilizationModeTest(StabilizationMode.ON, CaptureMode.IMAGE_ONLY)
+    }
+
+    @Test
+    fun setStabilizationMode_optical_imageOnly_updatesCameraState(): Unit = runBlocking {
+        runSetStabilizationModeTest(StabilizationMode.OPTICAL, CaptureMode.IMAGE_ONLY)
+    }
+
+    @Test
+    fun autoStabilization_imageOnly_doesNotUsePreviewStabilization(): Unit = runBlocking {
+        // Arrange.
+        val cameraSystem = createAndInitCameraXCameraSystem(
+            appSettings = CameraAppSettings(stabilizationMode = StabilizationMode.AUTO)
+        )
+        val supportedStabilizationModes =
+            cameraSystem.getSystemConstraints().value?.forCurrentLens(
+                DEFAULT_CAMERA_APP_SETTINGS
+            )?.supportedStabilizationModes
+        assume().withMessage("Preview stabilization not supported, skip the test.")
+            .that(supportedStabilizationModes?.contains(StabilizationMode.ON)).isTrue()
+        val expectedImageOnlyMode =
+            if (supportedStabilizationModes?.contains(StabilizationMode.OPTICAL) == true) {
+                StabilizationMode.OPTICAL
+            } else {
+                StabilizationMode.OFF
+            }
+
+        cameraSystem.startCameraAndWaitUntilRunning()
+        val stabilizationCheck: ReceiveChannel<StabilizationMode> =
+            cameraSystem.getCurrentCameraState()
+                .map { it.stabilizationMode }
+                .produceIn(this)
+
+        // Ensure AUTO resolves to preview stabilization while video can be recorded
+        stabilizationCheck.awaitValue(StabilizationMode.ON)
+
+        // Act.
+        cameraSystem.setCaptureMode(CaptureMode.IMAGE_ONLY)
+
+        // Assert.
+        stabilizationCheck.awaitValue(expectedImageOnlyMode)
+
+        // Clean-up.
+        stabilizationCheck.cancel()
+    }
+
     private suspend fun CoroutineScope.runSetStabilizationModeTest(
         stabilizationMode: StabilizationMode,
         captureMode: CaptureMode? = null

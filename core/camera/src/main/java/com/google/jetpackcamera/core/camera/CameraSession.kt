@@ -971,7 +971,13 @@ private fun createPreviewUseCase(
     }
     when (effectiveStabilizationMode) {
         StabilizationMode.ON -> setPreviewStabilizationEnabled(true)
-        StabilizationMode.OPTICAL -> setOpticalStabilizationModeEnabled(true)
+        StabilizationMode.OPTICAL -> {
+            setOpticalStabilizationModeEnabled(true)
+            // Explicitly disable preview and video stabilization. If left unset, the camera's
+            //  default applies, which can turn on video stabilization when there isn't a video
+            //  capture use case attached, such as in IMAGE_ONLY mode
+            setPreviewStabilizationEnabled(false)
+        }
         StabilizationMode.OFF -> {
             setOpticalStabilizationModeEnabled(false)
             // Setting this to false in Preview use case will disable video stabilization, even in
