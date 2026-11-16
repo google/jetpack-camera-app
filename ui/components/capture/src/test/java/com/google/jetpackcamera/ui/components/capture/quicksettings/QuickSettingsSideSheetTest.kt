@@ -24,6 +24,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
@@ -65,6 +66,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.pressKey
 import androidx.compose.ui.test.swipe
@@ -1094,6 +1096,150 @@ class QuickSettingsSideSheetTest {
             backDispatcher.onBackPressed()
         }
         composeTestRule.runOnIdle { assertThat(dismissCount).isEqualTo(1) }
+    }
+
+    @Test
+    fun quickSettingsSideSheet_sheetSurface_exposesDismissSemanticsAction() {
+        var dismissCount = 0
+        val dismissLabel = ApplicationProvider.getApplicationContext<Context>()
+            .getString(R.string.quick_settings_btn_close_expanded_settings_description)
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsSideSheet(
+                    isOpen = true,
+                    onDismissRequest = { dismissCount++ },
+                    quickSettingsUiState = sampleAvailableUiState,
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
+            .assert(
+                SemanticsMatcher("dismiss label equals $dismissLabel") { node ->
+                    node.config.getOrNull(SemanticsActions.Dismiss)?.label == dismissLabel
+                }
+            )
+            .performSemanticsAction(SemanticsActions.Dismiss)
+
+        assertThat(dismissCount).isEqualTo(1)
+    }
+
+    @Test
+    fun quickSettingsSideSheet_ignoredSwipeDismiss_removesScrimSoTapsPassThrough() {
+        var underlyingClicked = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable { underlyingClicked = true }
+                    )
+                    // The caller ignores onDismissRequest, so isOpen stays true.
+                    QuickSettingsSideSheet(
+                        isOpen = true,
+                        onDismissRequest = {},
+                        quickSettingsUiState = sampleAvailableUiState,
+                        quickSettingsController = fakeQuickSettingsController
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
+            .performTouchInput { swipeLeft() }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
+        composeTestRule.onRoot().performTouchInput { click(Offset(right - 4f, centerY)) }
+        assertThat(underlyingClicked).isTrue()
+    }
+
+    @Test
+    fun quickSettingsSideSheet_windowInsets_areAppliedOutsideSheetPadding() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsSideSheet(
+                    isOpen = true,
+                    onDismissRequest = {},
+                    quickSettingsUiState = sampleAvailableUiState,
+                    quickSettingsController = fakeQuickSettingsController,
+                    windowInsets = WindowInsets(left = 24.dp)
+                )
+            }
+        }
+
+        assertThat(
+            composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
+                .getUnclippedBoundsInRoot()
+                .left
+        ).isEqualTo(40.dp)
+    }
+
+    @Test
+    fun dampFlingTowardHidden_dampsOnlyInsideZoneAndTowardHidden() {
+        // Outside the damping zone the velocity is unchanged.
+        assertThat(
+            dampFlingTowardHidden(
+                velocity = -1000f,
+                offset = 0f,
+                hiddenOffset = -500f,
+                dampingZone = 100f,
+                velocityThreshold = 50f
+            )
+        ).isEqualTo(-1000f)
+        // Moving away from hidden (opening) is never damped.
+        assertThat(
+            dampFlingTowardHidden(
+                velocity = 1000f,
+                offset = -450f,
+                hiddenOffset = -500f,
+                dampingZone = 100f,
+                velocityThreshold = 50f
+            )
+        ).isEqualTo(1000f)
+        // Halfway through the zone toward hidden: scaled by 0.5^2.
+        assertThat(
+            dampFlingTowardHidden(
+                velocity = -40f,
+                offset = -450f,
+                hiddenOffset = -500f,
+                dampingZone = 100f,
+                velocityThreshold = 50f
+            )
+        ).isEqualTo(-10f)
+        // A fast fling keeps at least the threshold so it still settles hidden.
+        assertThat(
+            dampFlingTowardHidden(
+                velocity = -1000f,
+                offset = -495f,
+                hiddenOffset = -500f,
+                dampingZone = 100f,
+                velocityThreshold = 50f
+            )
+        ).isEqualTo(-50f)
+        // Right-attached sheets damp positive velocity the same way.
+        assertThat(
+            dampFlingTowardHidden(
+                velocity = 40f,
+                offset = 450f,
+                hiddenOffset = 500f,
+                dampingZone = 100f,
+                velocityThreshold = 50f
+            )
+        ).isEqualTo(10f)
+    }
+
+    @Test
+    fun overshootPastExpanded_measuresOnlyMovementAwayFromAttachedEdge() {
+        assertThat(overshootPastExpanded(12f, SideSheetEdge.Left)).isEqualTo(12f)
+        assertThat(overshootPastExpanded(-12f, SideSheetEdge.Left)).isEqualTo(0f)
+        assertThat(overshootPastExpanded(-12f, SideSheetEdge.Right)).isEqualTo(12f)
+        assertThat(overshootPastExpanded(12f, SideSheetEdge.Right)).isEqualTo(0f)
+        assertThat(overshootPastExpanded(Float.NaN, SideSheetEdge.Left)).isEqualTo(0f)
     }
 
     private fun backEvent(progress: Float) = BackEventCompat(

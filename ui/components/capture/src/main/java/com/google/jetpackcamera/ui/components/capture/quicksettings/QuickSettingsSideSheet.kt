@@ -34,11 +34,14 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -75,17 +78,20 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
@@ -110,6 +116,8 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
 
@@ -121,6 +129,12 @@ private object QuickSettingsSideSheetTokens {
     val DragHandleWidth = 4.dp
     val DragHandleHeight = 32.dp
     val PredictiveBackMinScale = 0.95f
+
+    /** Distance from the hidden anchor within which fling velocity toward it is damped (M3). */
+    val FlingDampingZone = 125.dp
+
+    /** Minimum velocity a damped fling keeps if it started above it (M3 sheet threshold). */
+    val FlingVelocityThreshold = 125.dp
 }
 
 /** Whether a [QuickSettingsSideSheet] is off-screen or fully shown. */
@@ -130,7 +144,7 @@ internal enum class SideSheetValue {
 }
 
 /** Horizontal edge a side sheet is attached to and slides in from. */
-private enum class SideSheetEdge {
+internal enum class SideSheetEdge {
     Left,
     Right
 }
@@ -202,8 +216,11 @@ internal class SideSheetState(initialValue: SideSheetValue = SideSheetValue.Hidd
  * @param sheetContainerDirection Layout direction used to resolve [contentAlignment] and
  *   [sheetPadding] outside the sheet surface while restoring the caller's `LocalLayoutDirection`
  *   inside the sheet content.
+ * @param windowInsets Window insets the sheet stays clear of, applied outside [sheetPadding].
+ *   Defaults to [WindowInsets.Companion.safeDrawing].
  * @param scrimColor Color drawn behind the sheet. Transparent by default so the viewfinder is not
- *   dimmed, matching the mocks; the full-screen tap-to-dismiss area is present either way.
+ *   dimmed, matching the mocks; the full-screen tap-to-dismiss area is present while the sheet is
+ *   visible or opening.
  */
 @Composable
 internal fun QuickSettingsSideSheet(
@@ -219,6 +236,7 @@ internal fun QuickSettingsSideSheet(
     maxSheetWidth: Dp = QuickSettingsSideSheetTokens.MaxSheetWidth,
     maxSheetHeight: Dp = Dp.Unspecified,
     sheetContainerDirection: LayoutDirection = LocalLayoutDirection.current,
+    windowInsets: WindowInsets = WindowInsets.safeDrawing,
     scrimColor: Color = Color.Transparent
 ) {
     // Keep the last available state so the content stays rendered during the hide animation.
@@ -245,6 +263,7 @@ internal fun QuickSettingsSideSheet(
         maxSheetWidth = maxSheetWidth,
         maxSheetHeight = maxSheetHeight,
         sheetContainerDirection = sheetContainerDirection,
+        windowInsets = windowInsets,
         scrimColor = scrimColor
     ) {
         QuickSettingsContent(
@@ -280,8 +299,11 @@ internal fun QuickSettingsSideSheet(
  * @param sheetContainerDirection Layout direction used to resolve [contentAlignment] and
  *   [sheetPadding] outside the sheet surface while restoring the caller's `LocalLayoutDirection`
  *   inside the sheet content.
+ * @param windowInsets Window insets the sheet stays clear of, applied outside [sheetPadding].
+ *   Defaults to [WindowInsets.Companion.safeDrawing].
  * @param scrimColor Color drawn behind the sheet. Transparent by default so the viewfinder is not
- *   dimmed, matching the mocks; the full-screen tap-to-dismiss area is present either way.
+ *   dimmed, matching the mocks; the full-screen tap-to-dismiss area is present while the sheet is
+ *   visible or opening.
  * @param content Composable Quick Settings content rendered inside the scrollable sheet surface.
  */
 @Composable
@@ -295,6 +317,7 @@ internal fun QuickSettingsSideSheet(
     maxSheetWidth: Dp = QuickSettingsSideSheetTokens.MaxSheetWidth,
     maxSheetHeight: Dp = Dp.Unspecified,
     sheetContainerDirection: LayoutDirection = LocalLayoutDirection.current,
+    windowInsets: WindowInsets = WindowInsets.safeDrawing,
     scrimColor: Color = Color.Transparent,
     content: @Composable () -> Unit
 ) {
@@ -365,7 +388,13 @@ internal fun QuickSettingsSideSheet(
     } else {
         sheetPadding.calculateRightPadding(sheetContainerDirection)
     }
-    val sheetShape = if (attachedEdgePadding == 0.dp) {
+    val density = LocalDensity.current
+    val attachedEdgeInsetPx = if (edge == SideSheetEdge.Left) {
+        windowInsets.getLeft(density, sheetContainerDirection)
+    } else {
+        windowInsets.getRight(density, sheetContainerDirection)
+    }
+    val sheetShape = if (attachedEdgePadding == 0.dp && attachedEdgeInsetPx == 0) {
         QuickSettingsSheetDefaults.sideSheetShape(attachedToLeft = edge == SideSheetEdge.Left)
     } else {
         RoundedCornerShape(QuickSettingsSheetDefaults.CornerRadius)
@@ -378,8 +407,23 @@ internal fun QuickSettingsSideSheet(
     val flingBehavior = remember(baseFlingBehavior, sheetState) {
         object : FlingBehavior {
             override suspend fun ScrollScope.performFling(initialVelocity: Float): Float {
+                val anchors = sheetState.anchoredDraggableState.anchors
+                val velocity = if (anchors.hasPositionFor(SideSheetValue.Hidden)) {
+                    with(density) {
+                        dampFlingTowardHidden(
+                            velocity = initialVelocity,
+                            offset = sheetState.anchoredDraggableState.requireOffset(),
+                            hiddenOffset = anchors.positionOf(SideSheetValue.Hidden),
+                            dampingZone = QuickSettingsSideSheetTokens.FlingDampingZone.toPx(),
+                            velocityThreshold =
+                            QuickSettingsSideSheetTokens.FlingVelocityThreshold.toPx()
+                        )
+                    }
+                } else {
+                    initialVelocity
+                }
                 try {
-                    return with(baseFlingBehavior) { performFling(initialVelocity) }
+                    return with(baseFlingBehavior) { performFling(velocity) }
                 } finally {
                     if (sheetState.currentValue == SideSheetValue.Hidden) {
                         currentOnDismissRequest()
@@ -415,34 +459,41 @@ internal fun QuickSettingsSideSheet(
                 .semantics { isTraversalGroup = true },
             contentAlignment = contentAlignment
         ) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .background(scrimColor)
-                    .testTag(QUICK_SETTINGS_SCRIM)
-                    .semantics {
-                        contentDescription = dismissDescription
-                        traversalIndex = 1f
-                    }
-                    .onFocusChanged { hasScrimFocus = it.hasFocus }
-                    .focusRequester(scrimFocusRequester)
-                    .clickable(
-                        role = Role.Button,
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { currentOnDismissRequest() }
-                    )
-            )
+            // Shown only while the sheet is visible or opening, so a caller that ignores a
+            // swipe-to-dismiss can't leave an invisible layer blocking taps.
+            if (isOpen && sheetState.targetValue == SideSheetValue.Expanded) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(scrimColor)
+                        .testTag(QUICK_SETTINGS_SCRIM)
+                        .semantics {
+                            contentDescription = dismissDescription
+                            traversalIndex = 1f
+                        }
+                        .onFocusChanged { hasScrimFocus = it.hasFocus }
+                        .focusRequester(scrimFocusRequester)
+                        .clickable(
+                            role = Role.Button,
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { currentOnDismissRequest() }
+                        )
+                )
+            }
 
             Surface(
                 modifier = Modifier
+                    .windowInsetsPadding(windowInsets)
                     .padding(sheetPadding)
                     .widthIn(max = maxSheetWidth)
                     .then(heightCapModifier)
                     .sideSheetAnchors(
                         state = sheetState,
                         edge = edge,
-                        attachedEdgePadding = attachedEdgePadding
+                        attachedEdgeDistancePx = {
+                            attachedEdgeInsetPx + attachedEdgePadding.roundToPx()
+                        }
                     )
                     .anchoredDraggable(
                         state = sheetState.anchoredDraggableState,
@@ -451,6 +502,19 @@ internal fun QuickSettingsSideSheet(
                         enabled = isOpen,
                         flingBehavior = flingBehavior
                     )
+                    // Stretch toward the attached edge if a springy open overshoots, so no gap
+                    // opens between the sheet and that edge (M3 sheets do the same vertically).
+                    .graphicsLayer {
+                        val overshoot = overshootPastExpanded(
+                            sheetState.anchoredDraggableState.offset,
+                            edge
+                        )
+                        scaleX = if (overshoot > 0f) (size.width + overshoot) / size.width else 1f
+                        transformOrigin = TransformOrigin(
+                            pivotFractionX = if (edge == SideSheetEdge.Left) 1f else 0f,
+                            pivotFractionY = 0.5f
+                        )
+                    }
                     .graphicsLayer {
                         val scale = lerp(
                             1f,
@@ -470,6 +534,10 @@ internal fun QuickSettingsSideSheet(
                     .semantics {
                         this.paneTitle = paneTitle
                         traversalIndex = 0f
+                        dismiss(dismissDescription) {
+                            currentOnDismissRequest()
+                            true
+                        }
                     }
                     .testTag(QUICK_SETTINGS_SIDE_SHEET_TAG),
                 shape = sheetShape,
@@ -493,6 +561,19 @@ internal fun QuickSettingsSideSheet(
                             Box(
                                 modifier = Modifier
                                     .weight(1f, fill = false)
+                                    // Undo the container's overshoot stretch for the content.
+                                    .graphicsLayer {
+                                        val overshoot = overshootPastExpanded(
+                                            sheetState.anchoredDraggableState.offset,
+                                            edge
+                                        )
+                                        val containerWidth = size.width + overshoot
+                                        scaleX = if (overshoot > 0f) {
+                                            size.width / containerWidth
+                                        } else {
+                                            1f
+                                        }
+                                    }
                                     .verticalScroll(rememberScrollState())
                                     .padding(
                                         vertical =
@@ -525,10 +606,10 @@ internal fun QuickSettingsSideSheet(
 private fun Modifier.sideSheetAnchors(
     state: SideSheetState,
     edge: SideSheetEdge,
-    attachedEdgePadding: Dp
+    attachedEdgeDistancePx: Density.() -> Int
 ): Modifier = layout { measurable, constraints ->
     val placeable = measurable.measure(constraints)
-    val hiddenDistance = placeable.width + attachedEdgePadding.roundToPx()
+    val hiddenDistance = placeable.width + attachedEdgeDistancePx()
     val hiddenOffset = if (edge == SideSheetEdge.Left) -hiddenDistance else hiddenDistance
     state.anchoredDraggableState.updateAnchors(
         DraggableAnchors {
@@ -543,6 +624,44 @@ private fun Modifier.sideSheetAnchors(
             y = 0
         )
     }
+}
+
+/**
+ * How far, in pixels, [offset] has overshot the expanded anchor (0) away from the attached
+ * [edge]; 0 when it has not.
+ */
+internal fun overshootPastExpanded(offset: Float, edge: SideSheetEdge): Float = when {
+    offset.isNaN() -> 0f
+    edge == SideSheetEdge.Left -> offset.coerceAtLeast(0f)
+    else -> (-offset).coerceAtLeast(0f)
+}
+
+/**
+ * Damps a fling toward the hidden anchor as the sheet nears it, mirroring Material 3 sheets, so a
+ * fast fling eases out of view instead of snapping. Velocity is scaled by the square of the
+ * remaining fraction of [dampingZone], but a fling that started at or above [velocityThreshold]
+ * keeps at least that much velocity so it still settles hidden.
+ *
+ * @return the velocity to fling with.
+ */
+internal fun dampFlingTowardHidden(
+    velocity: Float,
+    offset: Float,
+    hiddenOffset: Float,
+    dampingZone: Float,
+    velocityThreshold: Float
+): Float {
+    val towardHidden = hiddenOffset - offset
+    if (velocity == 0f || towardHidden == 0f || (velocity > 0f) != (towardHidden > 0f)) {
+        return velocity
+    }
+    val distance = abs(towardHidden)
+    if (distance >= dampingZone) return velocity
+    val factor = distance / dampingZone
+    val speed = abs(velocity)
+    var damped = speed * factor * factor
+    if (speed >= velocityThreshold) damped = max(damped, velocityThreshold)
+    return if (velocity > 0f) damped else -damped
 }
 
 /** Vertical drag handle drawn on the sheet's free edge; tapping it dismisses the sheet. */
