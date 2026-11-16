@@ -17,6 +17,9 @@ package com.google.jetpackcamera.ui.components.capture
 
 import android.view.KeyEvent as NativeKeyEvent
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +53,7 @@ import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
@@ -72,11 +76,12 @@ import org.robolectric.annotation.Config
 
 private const val SWITCH_TAG = "switch_test_target"
 private const val BOUNDS_TOLERANCE_DP = 0.5f
+private const val SCALE_TOLERANCE = 0.001f
 
 /**
  * Unit tests for [ToggleSwitch] and [CaptureModeToggleButton] covering tap gestures, stale-callback
  * guards, accessibility semantics, directional drag handling across LTR/RTL and
- * horizontal/vertical orientations, standard vs. compact track dimensions, adaptive toolbar
+ * horizontal/vertical orientations, standard vs. mini track dimensions, adaptive toolbar
  * compaction scaling, and drag cancel/settle behavior.
  */
 @RunWith(RobolectricTestRunner::class)
@@ -415,16 +420,16 @@ class ToggleSwitchTest {
     }
 
     @Test
-    fun bounds_standardAndCompact_horizontalAndVertical_matchExpectedDimensions() {
+    fun bounds_standardAndMini_horizontalAndVertical_matchExpectedDimensions() {
         var orientation by mutableStateOf(Orientation.Horizontal)
-        var compact by mutableStateOf(false)
+        var controlSize by mutableStateOf(ControlSize.Standard)
 
         composeTestRule.setContent {
             ToggleSwitch(
                 checked = false,
                 onCheckedChange = {},
                 orientation = orientation,
-                compact = compact,
+                controlSize = controlSize,
                 modifier = Modifier.testTag(SWITCH_TAG)
             )
         }
@@ -435,30 +440,134 @@ class ToggleSwitchTest {
         assertThat(horizontalStandardBounds.width).isEqualTo(116.dp)
         assertThat(horizontalStandardBounds.height).isEqualTo(64.dp)
 
-        // Horizontal Compact: 92 x 48
-        compact = true
+        // Horizontal Mini: 92 x 48
+        controlSize = ControlSize.Mini
         composeTestRule.waitForIdle()
-        val horizontalCompactBounds =
+        val horizontalMiniBounds =
             composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
-        assertThat(horizontalCompactBounds.width).isEqualTo(92.dp)
-        assertThat(horizontalCompactBounds.height).isEqualTo(48.dp)
+        assertThat(horizontalMiniBounds.width).isEqualTo(92.dp)
+        assertThat(horizontalMiniBounds.height).isEqualTo(48.dp)
 
         // Vertical Standard: 64 x 116
         orientation = Orientation.Vertical
-        compact = false
+        controlSize = ControlSize.Standard
         composeTestRule.waitForIdle()
         val verticalStandardBounds =
             composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
         assertThat(verticalStandardBounds.width).isEqualTo(64.dp)
         assertThat(verticalStandardBounds.height).isEqualTo(116.dp)
 
-        // Vertical Compact: 48 x 92
-        compact = true
+        // Vertical Mini: 48 x 92
+        controlSize = ControlSize.Mini
         composeTestRule.waitForIdle()
-        val verticalCompactBounds =
+        val verticalMiniBounds =
             composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
-        assertThat(verticalCompactBounds.width).isEqualTo(48.dp)
-        assertThat(verticalCompactBounds.height).isEqualTo(92.dp)
+        assertThat(verticalMiniBounds.width).isEqualTo(48.dp)
+        assertThat(verticalMiniBounds.height).isEqualTo(92.dp)
+    }
+
+    @Test
+    fun squeezedHorizontal_scalesToFitAvailableWidth_andDragStillToggles() {
+        var checked by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            Box(modifier = Modifier.widthIn(max = 100.dp)) {
+                ToggleSwitch(
+                    checked = checked,
+                    onCheckedChange = { checked = it },
+                    modifier = Modifier.testTag(SWITCH_TAG)
+                )
+            }
+        }
+
+        // Standard 116x64 scales uniformly by 100 / 116 to ~100x55, above the 48dp minimum.
+        val bounds = composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
+        assertThat(bounds.width.value).isWithin(BOUNDS_TOLERANCE_DP).of(100f)
+        assertThat(bounds.height.value).isWithin(BOUNDS_TOLERANCE_DP).of(64f * 100f / 116f)
+
+        composeTestRule.onNodeWithTag(SWITCH_TAG).performTouchInput { swipeRight() }
+        composeTestRule.waitForIdle()
+        assertThat(checked).isTrue()
+
+        composeTestRule.onNodeWithTag(SWITCH_TAG).performTouchInput { swipeLeft() }
+        composeTestRule.waitForIdle()
+        assertThat(checked).isFalse()
+    }
+
+    @Test
+    fun squeezedVerticalMini_neverShrinksBelowTouchTarget_andDragStillToggles() {
+        var checked by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            Box(modifier = Modifier.heightIn(max = 69.dp)) {
+                ToggleSwitch(
+                    checked = checked,
+                    onCheckedChange = { checked = it },
+                    orientation = Orientation.Vertical,
+                    controlSize = ControlSize.Mini,
+                    modifier = Modifier.testTag(SWITCH_TAG)
+                )
+            }
+        }
+
+        // Mini vertical 48x92 is already at the 48dp minimum, so it keeps its size and overflows
+        // the 69dp constraint instead of shrinking; the reported bounds are coerced to 48x69.
+        val bounds = composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
+        assertThat(bounds.width.value).isWithin(BOUNDS_TOLERANCE_DP).of(48f)
+        assertThat(bounds.height.value).isWithin(BOUNDS_TOLERANCE_DP).of(69f)
+
+        composeTestRule.onNodeWithTag(SWITCH_TAG).performTouchInput { swipeDown() }
+        composeTestRule.waitForIdle()
+        assertThat(checked).isTrue()
+
+        composeTestRule.onNodeWithTag(SWITCH_TAG).performTouchInput { swipeUp() }
+        composeTestRule.waitForIdle()
+        assertThat(checked).isFalse()
+    }
+
+    @Test
+    fun minimumScaleFor_keepsCrossAxisAtOrAboveTouchTarget() {
+        // Standard 64dp cross axis may shrink to 48 / 64.
+        assertThat(minimumScaleFor(64.dp)).isWithin(SCALE_TOLERANCE).of(0.75f)
+        // Mini 48dp cross axis is already at the minimum.
+        assertThat(minimumScaleFor(48.dp)).isEqualTo(1f)
+        // Explicitly undersized custom switches are never shrunk further.
+        assertThat(minimumScaleFor(32.dp)).isEqualTo(1f)
+    }
+
+    @Test
+    fun fittedSwitchScale_fitsConstraints_butNeverGoesBelowMinimumScale() {
+        val minimumScale = minimumScaleFor(64.dp)
+
+        // Unbounded or roomy constraints never enlarge the switch.
+        assertThat(fittedSwitchScale(116, 64, Constraints(), minimumScale)).isEqualTo(1f)
+        assertThat(fittedSwitchScale(116, 64, Constraints(maxWidth = 200), minimumScale))
+            .isEqualTo(1f)
+        // Narrower than requested scales uniformly by the tighter axis.
+        assertThat(fittedSwitchScale(116, 64, Constraints(maxWidth = 100), minimumScale))
+            .isWithin(SCALE_TOLERANCE).of(100f / 116f)
+        // Much narrower stops at the touch-target floor instead of shrinking indefinitely.
+        assertThat(fittedSwitchScale(116, 64, Constraints(maxWidth = 40), minimumScale))
+            .isWithin(SCALE_TOLERANCE).of(0.75f)
+        assertThat(fittedSwitchScale(64, 116, Constraints(maxHeight = 10), minimumScale))
+            .isWithin(SCALE_TOLERANCE).of(0.75f)
+    }
+
+    @Test
+    fun bounds_mediumControlSize_usesMiniTrack() {
+        composeTestRule.setContent {
+            ToggleSwitch(
+                checked = false,
+                onCheckedChange = {},
+                controlSize = ControlSize.Medium,
+                modifier = Modifier.testTag(SWITCH_TAG)
+            )
+        }
+
+        // Any size other than Standard uses the 92 x 48 mini track.
+        val bounds = composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
+        assertThat(bounds.width).isEqualTo(92.dp)
+        assertThat(bounds.height).isEqualTo(48.dp)
     }
 
     @Test
@@ -669,7 +778,7 @@ class ToggleSwitchTest {
     }
 
     @Test
-    fun captureModeToggleButton_verticalCompact_forwardsDimensionsSemanticsAndModeChange() {
+    fun captureModeToggleButton_verticalMini_forwardsDimensionsSemanticsAndModeChange() {
         var selectedMode by mutableStateOf(CaptureMode.IMAGE_ONLY)
 
         composeTestRule.setContent {
@@ -682,7 +791,7 @@ class ToggleSwitchTest {
                 onChangeCaptureMode = { selectedMode = it },
                 onToggleWhenDisabled = {},
                 orientation = Orientation.Vertical,
-                compact = true,
+                controlSize = ControlSize.Mini,
                 iconRotationDegrees = 90f
             )
         }
@@ -1044,7 +1153,7 @@ class ToggleSwitchTest {
     }
 
     @Test
-    fun toolbarCompaction_scalesStandardHorizontalSwitch_andDoesNotShrinkCompactOrVertical() {
+    fun toolbarCompaction_scalesStandardHorizontalSwitch_andDoesNotShrinkMiniOrVertical() {
         val compactBandWindow = CameraWindow(
             width = 460.dp,
             height = 920.dp,
@@ -1059,7 +1168,7 @@ class ToggleSwitchTest {
         assertThat(compactSolution.toolbarHeight.value).isWithin(BOUNDS_TOLERANCE_DP).of(46f)
 
         var orientation by mutableStateOf(Orientation.Horizontal)
-        var compact by mutableStateOf(false)
+        var controlSize by mutableStateOf(ControlSize.Standard)
 
         composeTestRule.setContent {
             CompositionLocalProvider(LocalCameraLayoutSolution provides compactSolution) {
@@ -1067,15 +1176,16 @@ class ToggleSwitchTest {
                     checked = false,
                     onCheckedChange = {},
                     orientation = orientation,
-                    compact = compact,
+                    controlSize = controlSize,
                     modifier = Modifier.testTag(SWITCH_TAG)
                 )
             }
         }
         composeTestRule.waitForIdle()
 
-        // Standard Horizontal scales proportionally with compacted toolbarHeight (46 / 64).
-        val expectedScale = 46f / 64f
+        // Standard Horizontal scales with the compacted toolbarHeight (46 / 64), stopping at the
+        // 48 / 64 touch-target floor.
+        val expectedScale = 48f / 64f
         val horizontalStandardBounds =
             composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
         assertThat(horizontalStandardBounds.width.value)
@@ -1085,30 +1195,30 @@ class ToggleSwitchTest {
             .isWithin(BOUNDS_TOLERANCE_DP)
             .of(64f * expectedScale)
 
-        // Compact Horizontal keeps 92 x 48 without double-shrinking.
-        compact = true
+        // Mini Horizontal keeps 92 x 48 without double-shrinking.
+        controlSize = ControlSize.Mini
         composeTestRule.waitForIdle()
-        val horizontalCompactBounds =
+        val horizontalMiniBounds =
             composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
-        assertThat(horizontalCompactBounds.width).isEqualTo(92.dp)
-        assertThat(horizontalCompactBounds.height).isEqualTo(48.dp)
+        assertThat(horizontalMiniBounds.width).isEqualTo(92.dp)
+        assertThat(horizontalMiniBounds.height).isEqualTo(48.dp)
 
         // Standard Vertical keeps 64 x 116 without toolbar shrinking.
         orientation = Orientation.Vertical
-        compact = false
+        controlSize = ControlSize.Standard
         composeTestRule.waitForIdle()
         val verticalStandardBounds =
             composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
         assertThat(verticalStandardBounds.width).isEqualTo(64.dp)
         assertThat(verticalStandardBounds.height).isEqualTo(116.dp)
 
-        // Compact Vertical keeps 48 x 92 without double-shrinking.
-        compact = true
+        // Mini Vertical keeps 48 x 92 without double-shrinking.
+        controlSize = ControlSize.Mini
         composeTestRule.waitForIdle()
-        val verticalCompactBounds =
+        val verticalMiniBounds =
             composeTestRule.onNodeWithTag(SWITCH_TAG).getUnclippedBoundsInRoot()
-        assertThat(verticalCompactBounds.width).isEqualTo(48.dp)
-        assertThat(verticalCompactBounds.height).isEqualTo(92.dp)
+        assertThat(verticalMiniBounds.width).isEqualTo(48.dp)
+        assertThat(verticalMiniBounds.height).isEqualTo(92.dp)
     }
 
     @Test

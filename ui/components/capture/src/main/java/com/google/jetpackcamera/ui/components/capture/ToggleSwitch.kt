@@ -36,7 +36,6 @@ import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -58,23 +57,32 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalGraphicsContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -87,11 +95,14 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.toggleableState
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 
@@ -99,14 +110,34 @@ import kotlinx.coroutines.launch
 private object ToggleSwitchTokens {
     val TrackLength: Dp = 116.dp
     val TrackThickness: Dp = 64.dp
-    val CompactTrackLength: Dp = 92.dp
-    val CompactTrackThickness: Dp = 48.dp
+    val MiniTrackLength: Dp = 92.dp
+    val MiniTrackThickness: Dp = 48.dp
+
+    /** Smallest allowed cross-axis size so the switch always meets the minimum touch target. */
+    val MinTouchTargetSize: Dp = 48.dp
     val ThumbDiameter: Dp = ButtonDefaults.MinHeight
     val IconSize: Dp = IconButtonDefaults.smallIconSize
     val DisabledIconAlpha: Float = 0.38f
     val DisabledThumbAlpha: Float = 0.12f
-    val DefaultTrackAlpha: Float = 0.16f
+    val DefaultTrackAlpha: Float = 0.2f
     val ToggleAnimationDurationMillis: Int = 300
+
+    /** Key shadow of the level 2 elevation drop shadow drawn outside the track. */
+    val KeyShadow = Shadow(
+        radius = 3.dp,
+        color = Color.Black,
+        offset = DpOffset(x = 0.dp, y = 1.dp),
+        alpha = 0.3f
+    )
+
+    /** Ambient shadow of the level 2 elevation drop shadow drawn outside the track. */
+    val AmbientShadow = Shadow(
+        radius = 8.dp,
+        color = Color.Black,
+        spread = 3.dp,
+        offset = DpOffset(x = 0.dp, y = 4.dp),
+        alpha = 0.15f
+    )
 }
 
 /**
@@ -116,6 +147,15 @@ private class SwitchDragState {
     var isDragging: Boolean = false
     var progress: Float = 0f
     var gestureId: Int = 0
+}
+
+/**
+ * Main-thread-confined holder for the uniform scale applied by [fitSwitchWithin] when incoming
+ * constraints are smaller than the requested switch size, read by drag handling without
+ * triggering recomposition.
+ */
+private class SwitchFitScale {
+    var value: Float = 1f
 }
 
 /**
@@ -147,7 +187,7 @@ private class DragCancelTrackingInteractionSource(
 
 /**
  * A custom Switch component built with Canvas, supporting horizontal and vertical orientations,
- * standard and compact track sizes, RTL mirroring, drag gestures, keyboard activation, and custom
+ * standard and mini track sizes, RTL mirroring, drag gestures, keyboard activation, and custom
  * icons for unchecked and checked states.
  *
  * When disabled, the thumb and icons are dimmed. If [onToggleWhenDisabled] is non-null, the switch
@@ -155,9 +195,19 @@ private class DragCancelTrackingInteractionSource(
  * [onToggleWhenDisabled] so callers can explain why toggling is unavailable; when `null`, the
  * switch exposes disabled semantics and is non-focusable.
  *
- * Standard horizontal switches (`orientation == Orientation.Horizontal && !compact`) scale
- * uniformly when [LocalCameraLayoutSolution] compacts the bottom toolbar; compact and vertical
- * switches preserve their explicit dimensions so they are not shrunk twice.
+ * Standard horizontal switches (`orientation == Orientation.Horizontal` with
+ * [ControlSize.Standard]) scale uniformly when [LocalCameraLayoutSolution] compacts the bottom
+ * toolbar; mini-track and vertical switches preserve their explicit dimensions so they are not
+ * shrunk twice.
+ *
+ * If the incoming layout constraints are smaller than the requested switch size on either axis,
+ * the switch scales down uniformly to fit, preserving its aspect ratio so the track, thumb, icons,
+ * and thumb travel stay proportional instead of distorting or clipping. Scaling never reduces the
+ * cross axis below the `48.dp` minimum touch target; below that, the switch keeps its minimum
+ * size and overflows the incoming constraints instead.
+ *
+ * When [showShadow] is `true`, a level 2 elevation drop shadow is drawn outside the track only, so
+ * it never shows through a translucent [trackColor].
  *
  * In [Orientation.Vertical], [startIcon] (unchecked) sits at the top and [endIcon] (checked) sits
  * at the bottom with a downward drag to check, and this top-to-bottom order is not inverted in RTL.
@@ -170,9 +220,11 @@ private class DragCancelTrackingInteractionSource(
  * @param enabled Whether the switch can change its checked state.
  * @param orientation Primary axis of the track and drag gesture ([Orientation.Horizontal] or
  *   [Orientation.Vertical]).
- * @param compact Whether to use compact track dimensions (`92x48.dp` horizontal, `48x92.dp`
- *   vertical) instead of standard dimensions (`116x64.dp` horizontal, `64x116.dp` vertical).
+ * @param controlSize Track size variant: [ControlSize.Standard] uses `116x64.dp` horizontal or
+ *   `64x116.dp` vertical; any other size uses the mini track (`92x48.dp` horizontal or `48x92.dp`
+ *   vertical).
  * @param iconRotationDegrees Clockwise rotation in degrees applied around each icon's center.
+ * @param showShadow Whether to draw the elevation drop shadow around the track.
  * @param trackColor Fill color of the pill track.
  * @param thumbColor Fill color of the circular thumb when [enabled].
  * @param disableColor Base color used to derive dimmed thumb and icon colors when disabled.
@@ -185,8 +237,8 @@ private class DragCancelTrackingInteractionSource(
  * @param endIconDescription Optional accessibility state description when checked (`true`).
  * @param unselectedIconColor Tint color for icon regions outside the thumb bounds when [enabled].
  * @param selectedIconColor Tint color for icon regions overlapping the thumb when [enabled].
- * @param switchWidth Explicit width override; defaults from [orientation] and [compact].
- * @param switchHeight Explicit height override; defaults from [orientation] and [compact].
+ * @param switchWidth Explicit width override; defaults from [orientation] and [controlSize].
+ * @param switchHeight Explicit height override; defaults from [orientation] and [controlSize].
  * @param thumbDiameter Diameter of the circular thumb.
  * @param iconSize Rendered width and height of [startIcon] and [endIcon].
  */
@@ -199,8 +251,9 @@ fun ToggleSwitch(
     onToggleWhenDisabled: (() -> Unit)? = null,
     enabled: Boolean = true,
     orientation: Orientation = Orientation.Horizontal,
-    compact: Boolean = false,
+    controlSize: ControlSize = ControlSize.Standard,
     iconRotationDegrees: Float = 0f,
+    showShadow: Boolean = true,
     trackColor: Color = Color.White.copy(alpha = ToggleSwitchTokens.DefaultTrackAlpha),
     thumbColor: Color = MaterialTheme.colorScheme.primaryFixedDim,
     disableColor: Color = Color.White,
@@ -213,24 +266,12 @@ fun ToggleSwitch(
     unselectedIconColor: Color = MaterialTheme.colorScheme.secondaryFixed,
     selectedIconColor: Color = MaterialTheme.colorScheme.onPrimaryFixed,
     switchWidth: Dp = when (orientation) {
-        Orientation.Horizontal ->
-            if (compact) ToggleSwitchTokens.CompactTrackLength else ToggleSwitchTokens.TrackLength
-        Orientation.Vertical ->
-            if (compact) {
-                ToggleSwitchTokens.CompactTrackThickness
-            } else {
-                ToggleSwitchTokens.TrackThickness
-            }
+        Orientation.Horizontal -> trackLengthFor(controlSize)
+        Orientation.Vertical -> trackThicknessFor(controlSize)
     },
     switchHeight: Dp = when (orientation) {
-        Orientation.Horizontal ->
-            if (compact) {
-                ToggleSwitchTokens.CompactTrackThickness
-            } else {
-                ToggleSwitchTokens.TrackThickness
-            }
-        Orientation.Vertical ->
-            if (compact) ToggleSwitchTokens.CompactTrackLength else ToggleSwitchTokens.TrackLength
+        Orientation.Horizontal -> trackThicknessFor(controlSize)
+        Orientation.Vertical -> trackLengthFor(controlSize)
     },
     thumbDiameter: Dp = ToggleSwitchTokens.ThumbDiameter,
     iconSize: Dp = ToggleSwitchTokens.IconSize
@@ -238,11 +279,15 @@ fun ToggleSwitch(
     // --- 1. Dimensions & Direction ---
     // Scale uniformly when the adaptive layout solver compacts the bottom toolbar row so the
     // rounded track edge stays aligned with the thumb. Apply only to standard horizontal switches
-    // so compact or vertical switches do not get shrunk twice.
+    // so mini or vertical switches do not get shrunk twice, and never shrink the cross axis below
+    // the minimum touch target.
     val layoutSolution = LocalCameraLayoutSolution.current
-    val toolbarScale = if (orientation == Orientation.Horizontal && !compact) {
+    val isToolbarScalable =
+        orientation == Orientation.Horizontal && controlSize == ControlSize.Standard
+    val toolbarScale = if (isToolbarScalable) {
         layoutSolution?.toolbarHeight?.let { toolbarHeight ->
-            (toolbarHeight / CameraLayoutDefaults.BottomToolbarHeight).coerceIn(0f, 1f)
+            (toolbarHeight / CameraLayoutDefaults.BottomToolbarHeight)
+                .coerceIn(minimumScaleFor(minOf(switchWidth, switchHeight)), 1f)
         } ?: 1f
     } else {
         1f
@@ -273,6 +318,17 @@ fun ToggleSwitch(
     val thumbProgress = remember { Animatable(if (checked) 1f else 0f) }
     val coroutineScope = rememberCoroutineScope()
     val dragState = remember { SwitchDragState() }
+    val fitScale = remember { SwitchFitScale() }
+    val shadowContext = LocalGraphicsContext.current.shadowContext
+    val shadowPainters = remember(shadowContext, showShadow) {
+        if (showShadow) {
+            listOf(ToggleSwitchTokens.AmbientShadow, ToggleSwitchTokens.KeyShadow).map { shadow ->
+                shadowContext.createDropShadowPainter(CircleShape, shadow)
+            }
+        } else {
+            emptyList()
+        }
+    }
     val dragInteractionSource = remember { DragCancelTrackingInteractionSource() }
     var dragSettleCount by remember { mutableIntStateOf(0) }
 
@@ -372,15 +428,15 @@ fun ToggleSwitch(
 
     // --- 5. Gesture & Semantics Modifiers ---
     val draggableState = rememberDraggableState { delta ->
-        val dimsSnapshot = currentDims
-        if (currentEnabled && dimsSnapshot.dragRange > 0f) {
+        val fittedDragRange = currentDims.dragRange * fitScale.value
+        if (currentEnabled && fittedDragRange > 0f) {
             if (!dragState.isDragging) {
                 dragState.isDragging = true
                 dragState.gestureId++
                 dragState.progress = thumbProgress.value
             }
             val nextProgress =
-                (dragState.progress + delta / dimsSnapshot.dragRange).coerceIn(0f, 1f)
+                (dragState.progress + delta / fittedDragRange).coerceIn(0f, 1f)
             dragState.progress = nextProgress
             coroutineScope.launch(start = CoroutineStart.UNDISPATCHED) {
                 thumbProgress.snapTo(nextProgress)
@@ -400,7 +456,12 @@ fun ToggleSwitch(
                     Modifier.minimumInteractiveComponentSize()
                 }
             )
-            .size(width = dims.switchWidthDp, height = dims.switchHeightDp)
+            .fitSwitchWithin(
+                width = dims.switchWidthDp,
+                height = dims.switchHeightDp,
+                fitScale = fitScale
+            )
+            .toggleSwitchShadow(shadowPainters)
             .clip(CircleShape)
             .indication(interactionSource, LocalIndication.current)
             .semantics {
@@ -510,68 +571,25 @@ fun ToggleSwitch(
             )
     ) {
         val progress = thumbProgress.value
-        val trackCornerRadius = CornerRadius(dims.crossAxisSizePx / 2f, dims.crossAxisSizePx / 2f)
-
-        // 1. Draw the Track
-        drawSwitchTrack(
-            color = trackColorState.value,
-            cornerRadius = trackCornerRadius
-        )
-
-        // 2. Compute Thumb & Icon Centers along the Active Axis
-        val crossCenterPx = dims.crossAxisSizePx / 2f
-        val thumbCenterX: Float
-        val thumbCenterY: Float
-        val startIconCenterX: Float
-        val startIconCenterY: Float
-        val endIconCenterX: Float
-        val endIconCenterY: Float
-
-        if (orientation == Orientation.Horizontal) {
-            if (isHorizontalRtl) {
-                startIconCenterX = dims.endCenterMainPx
-                endIconCenterX = dims.startCenterMainPx
-                thumbCenterX = dims.endCenterMainPx - dims.dragRange * progress
-            } else {
-                startIconCenterX = dims.startCenterMainPx
-                endIconCenterX = dims.endCenterMainPx
-                thumbCenterX = dims.startCenterMainPx + dims.dragRange * progress
-            }
-            thumbCenterY = crossCenterPx
-            startIconCenterY = crossCenterPx
-            endIconCenterY = crossCenterPx
+        val unscaledWidthPx = if (orientation == Orientation.Horizontal) {
+            dims.mainAxisSizePx
         } else {
-            // Vertical keeps Top -> Bottom non-inverted in both LTR and RTL.
-            thumbCenterX = crossCenterPx
-            startIconCenterX = crossCenterPx
-            endIconCenterX = crossCenterPx
-            startIconCenterY = dims.startCenterMainPx
-            endIconCenterY = dims.endCenterMainPx
-            thumbCenterY = dims.startCenterMainPx + dims.dragRange * progress
+            dims.crossAxisSizePx
         }
-
-        // 3. Draw the Thumb (under Icons)
-        drawSwitchThumb(
-            center = Offset(thumbCenterX, thumbCenterY),
-            radius = dims.thumbRadiusPx,
-            color = thumbColorState.value
-        )
-
-        // 4. Draw the Clipped Icons
-        if (startIconPainter != null || endIconPainter != null) {
-            drawClippedSwitchIcons(
-                thumbLeft = thumbCenterX - dims.thumbRadiusPx,
-                thumbTop = thumbCenterY - dims.thumbRadiusPx,
-                thumbRight = thumbCenterX + dims.thumbRadiusPx,
-                thumbBottom = thumbCenterY + dims.thumbRadiusPx,
-                iconSizePx = dims.iconSizePx,
+        // Geometry is computed at the requested size and drawn through a uniform scale so a
+        // switch squeezed by its parent stays proportional.
+        val drawScale = if (unscaledWidthPx > 0f) size.width / unscaledWidthPx else 1f
+        scale(scale = drawScale, pivot = Offset.Zero) {
+            drawSwitchContent(
+                dims = dims,
+                orientation = orientation,
+                isHorizontalRtl = isHorizontalRtl,
+                progress = progress,
+                trackColor = trackColorState.value,
+                thumbColor = thumbColorState.value,
                 iconRotationDegrees = iconRotationDegrees,
                 startIconPainter = startIconPainter,
-                startIconCenterX = startIconCenterX,
-                startIconCenterY = startIconCenterY,
                 endIconPainter = endIconPainter,
-                endIconCenterX = endIconCenterX,
-                endIconCenterY = endIconCenterY,
                 offColorFilter = offColorFilter,
                 onColorFilter = onColorFilter
             )
@@ -580,6 +598,198 @@ fun ToggleSwitch(
 }
 
 // --- Helper class and functions ---
+
+private fun trackLengthFor(controlSize: ControlSize): Dp =
+    if (controlSize == ControlSize.Standard) {
+        ToggleSwitchTokens.TrackLength
+    } else {
+        ToggleSwitchTokens.MiniTrackLength
+    }
+
+private fun trackThicknessFor(controlSize: ControlSize): Dp =
+    if (controlSize == ControlSize.Standard) {
+        ToggleSwitchTokens.TrackThickness
+    } else {
+        ToggleSwitchTokens.MiniTrackThickness
+    }
+
+/**
+ * Returns the smallest uniform scale that keeps a switch whose cross axis is [crossAxisSize] at or
+ * above [ToggleSwitchTokens.MinTouchTargetSize]. Switches already at or below the minimum (such as
+ * explicitly undersized custom switches) are never shrunk further.
+ */
+internal fun minimumScaleFor(crossAxisSize: Dp): Float =
+    if (crossAxisSize > ToggleSwitchTokens.MinTouchTargetSize) {
+        ToggleSwitchTokens.MinTouchTargetSize / crossAxisSize
+    } else {
+        1f
+    }
+
+/**
+ * Returns the uniform scale (at most `1`) that fits a switch of [requestedWidthPx] x
+ * [requestedHeightPx] within the maximum [constraints], never going below [minimumScale].
+ */
+internal fun fittedSwitchScale(
+    requestedWidthPx: Int,
+    requestedHeightPx: Int,
+    constraints: Constraints,
+    minimumScale: Float
+): Float {
+    val widthScale = if (constraints.hasBoundedWidth && requestedWidthPx > 0) {
+        constraints.maxWidth.toFloat() / requestedWidthPx
+    } else {
+        1f
+    }
+    val heightScale = if (constraints.hasBoundedHeight && requestedHeightPx > 0) {
+        constraints.maxHeight.toFloat() / requestedHeightPx
+    } else {
+        1f
+    }
+    return maxOf(minimumScale, minOf(1f, widthScale, heightScale))
+}
+
+/**
+ * Draws [shadowPainters] behind the pill track, clipped out of the track's interior so the shadow
+ * never shows through a translucent track color. Painters are drawn in list order.
+ */
+private fun Modifier.toggleSwitchShadow(shadowPainters: List<Painter>): Modifier =
+    if (shadowPainters.isEmpty()) {
+        this
+    } else {
+        drawWithCache {
+            val trackPath = Path().apply {
+                addOutline(CircleShape.createOutline(size, layoutDirection, this@drawWithCache))
+            }
+            onDrawBehind {
+                clipPath(trackPath, clipOp = ClipOp.Difference) {
+                    shadowPainters.forEach { painter -> with(painter) { draw(size) } }
+                }
+            }
+        }
+    }
+
+/**
+ * Measures the switch at its requested [width] x [height], scaling both axes uniformly when the
+ * incoming constraints are smaller so the aspect ratio is preserved. The scale never shrinks the
+ * cross axis below [ToggleSwitchTokens.MinTouchTargetSize]; at that floor the switch overflows the
+ * incoming constraints, centered. The fitted node is also centered when the incoming minimum
+ * constraints are larger than the fitted size. The applied scale is written to [fitScale] for drag
+ * handling.
+ */
+private fun Modifier.fitSwitchWithin(width: Dp, height: Dp, fitScale: SwitchFitScale): Modifier =
+    layout { measurable, constraints ->
+        val requestedWidthPx = width.roundToPx().coerceAtLeast(0)
+        val requestedHeightPx = height.roundToPx().coerceAtLeast(0)
+        val scale = fittedSwitchScale(
+            requestedWidthPx = requestedWidthPx,
+            requestedHeightPx = requestedHeightPx,
+            constraints = constraints,
+            minimumScale = minimumScaleFor(minOf(width, height))
+        )
+        fitScale.value = scale
+
+        val fittedWidthPx = (requestedWidthPx * scale).roundToInt()
+        val fittedHeightPx = (requestedHeightPx * scale).roundToInt()
+        val placeable = measurable.measure(Constraints.fixed(fittedWidthPx, fittedHeightPx))
+        val layoutWidthPx = fittedWidthPx.coerceIn(constraints.minWidth, constraints.maxWidth)
+        val layoutHeightPx = fittedHeightPx.coerceIn(constraints.minHeight, constraints.maxHeight)
+        layout(layoutWidthPx, layoutHeightPx) {
+            placeable.place(
+                x = (layoutWidthPx - fittedWidthPx) / 2,
+                y = (layoutHeightPx - fittedHeightPx) / 2
+            )
+        }
+    }
+
+/**
+ * Draws the track, thumb, and clipped icons in the switch's unscaled coordinate space.
+ */
+private fun DrawScope.drawSwitchContent(
+    dims: SwitchDimensions,
+    orientation: Orientation,
+    isHorizontalRtl: Boolean,
+    progress: Float,
+    trackColor: Color,
+    thumbColor: Color,
+    iconRotationDegrees: Float,
+    startIconPainter: Painter?,
+    endIconPainter: Painter?,
+    offColorFilter: ColorFilter,
+    onColorFilter: ColorFilter
+) {
+    val trackCornerRadius = CornerRadius(dims.crossAxisSizePx / 2f, dims.crossAxisSizePx / 2f)
+    val trackSize = if (orientation == Orientation.Horizontal) {
+        Size(dims.mainAxisSizePx, dims.crossAxisSizePx)
+    } else {
+        Size(dims.crossAxisSizePx, dims.mainAxisSizePx)
+    }
+
+    // 1. Draw the Track
+    drawSwitchTrack(
+        color = trackColor,
+        trackSize = trackSize,
+        cornerRadius = trackCornerRadius
+    )
+
+    // 2. Compute Thumb & Icon Centers along the Active Axis
+    val crossCenterPx = dims.crossAxisSizePx / 2f
+    val thumbCenterX: Float
+    val thumbCenterY: Float
+    val startIconCenterX: Float
+    val startIconCenterY: Float
+    val endIconCenterX: Float
+    val endIconCenterY: Float
+
+    if (orientation == Orientation.Horizontal) {
+        if (isHorizontalRtl) {
+            startIconCenterX = dims.endCenterMainPx
+            endIconCenterX = dims.startCenterMainPx
+            thumbCenterX = dims.endCenterMainPx - dims.dragRange * progress
+        } else {
+            startIconCenterX = dims.startCenterMainPx
+            endIconCenterX = dims.endCenterMainPx
+            thumbCenterX = dims.startCenterMainPx + dims.dragRange * progress
+        }
+        thumbCenterY = crossCenterPx
+        startIconCenterY = crossCenterPx
+        endIconCenterY = crossCenterPx
+    } else {
+        // Vertical keeps Top -> Bottom non-inverted in both LTR and RTL.
+        thumbCenterX = crossCenterPx
+        startIconCenterX = crossCenterPx
+        endIconCenterX = crossCenterPx
+        startIconCenterY = dims.startCenterMainPx
+        endIconCenterY = dims.endCenterMainPx
+        thumbCenterY = dims.startCenterMainPx + dims.dragRange * progress
+    }
+
+    // 3. Draw the Thumb (under Icons)
+    drawSwitchThumb(
+        center = Offset(thumbCenterX, thumbCenterY),
+        radius = dims.thumbRadiusPx,
+        color = thumbColor
+    )
+
+    // 4. Draw the Clipped Icons
+    if (startIconPainter != null || endIconPainter != null) {
+        drawClippedSwitchIcons(
+            thumbLeft = thumbCenterX - dims.thumbRadiusPx,
+            thumbTop = thumbCenterY - dims.thumbRadiusPx,
+            thumbRight = thumbCenterX + dims.thumbRadiusPx,
+            thumbBottom = thumbCenterY + dims.thumbRadiusPx,
+            iconSizePx = dims.iconSizePx,
+            iconRotationDegrees = iconRotationDegrees,
+            startIconPainter = startIconPainter,
+            startIconCenterX = startIconCenterX,
+            startIconCenterY = startIconCenterY,
+            endIconPainter = endIconPainter,
+            endIconCenterX = endIconCenterX,
+            endIconCenterY = endIconCenterY,
+            offColorFilter = offColorFilter,
+            onColorFilter = onColorFilter
+        )
+    }
+}
 
 private suspend fun Animatable<Float, AnimationVector1D>.syncToTarget(
     target: Float,
@@ -660,13 +870,13 @@ private fun rememberSwitchDimensions(
 }
 
 /**
- * Draws the switch track (the background).
+ * Draws the switch track (the background) at [trackSize].
  */
-private fun DrawScope.drawSwitchTrack(color: Color, cornerRadius: CornerRadius) {
+private fun DrawScope.drawSwitchTrack(color: Color, trackSize: Size, cornerRadius: CornerRadius) {
     drawRoundRect(
         color = color,
         topLeft = Offset.Zero,
-        size = size,
+        size = trackSize,
         cornerRadius = cornerRadius
     )
 }
@@ -887,18 +1097,18 @@ private fun ToggleSwitchRtlImageCapturePreview() {
 }
 
 @Preview(
-    name = "Horizontal Compact - Image Capture Mode",
+    name = "Horizontal Mini - Image Capture Mode",
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
-private fun ToggleSwitchHorizontalCompactPreview() {
+private fun ToggleSwitchHorizontalMiniPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ToggleSwitch(
             startIcon = R.drawable.ic_camera_alt_filled,
             endIcon = R.drawable.ic_videocam_outline,
             checked = false,
             onCheckedChange = {},
-            compact = true
+            controlSize = ControlSize.Mini
         )
     }
 }
@@ -917,9 +1127,9 @@ private fun ToggleSwitchVerticalStandardPreview() {
     }
 }
 
-@Preview(name = "Vertical Compact (48x92)", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Vertical Mini (48x92)", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun ToggleSwitchVerticalCompactPreview() {
+private fun ToggleSwitchVerticalMiniPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         ToggleSwitch(
             startIcon = R.drawable.ic_camera_alt_outline,
@@ -927,7 +1137,7 @@ private fun ToggleSwitchVerticalCompactPreview() {
             checked = true,
             onCheckedChange = {},
             orientation = Orientation.Vertical,
-            compact = true
+            controlSize = ControlSize.Mini
         )
     }
 }

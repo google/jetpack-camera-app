@@ -648,7 +648,8 @@ fun AmplitudeToggleButton(
  *   toggle is inert and non-focusable.
  * @param modifier the modifier for this component.
  * @param orientation the primary axis of the toggle track and drag gesture.
- * @param compact whether to render the compact track dimensions (`92x48.dp` or `48x92.dp`).
+ * @param controlSize the track size variant; any size other than [ControlSize.Standard] uses the
+ *   mini track (`92x48.dp` or `48x92.dp`).
  * @param iconRotationDegrees clockwise rotation in degrees applied around each icon's center.
  */
 // TODO: Confirm final vertical ordering with UX.
@@ -659,7 +660,7 @@ fun CaptureModeToggleButton(
     onToggleWhenDisabled: ((DisableRationale) -> Unit)? = null,
     modifier: Modifier = Modifier,
     orientation: Orientation = Orientation.Horizontal,
-    compact: Boolean = false,
+    controlSize: ControlSize = ControlSize.Standard,
     iconRotationDegrees: Float = 0f
 ) {
     // Captures image (start/top), else captures video (end/bottom).
@@ -717,7 +718,7 @@ fun CaptureModeToggleButton(
         },
         enabled = enabled,
         orientation = orientation,
-        compact = compact,
+        controlSize = controlSize,
         iconRotationDegrees = iconRotationDegrees,
         startIcon = if (uiState.selectedCaptureMode ==
             CaptureMode.IMAGE_ONLY
@@ -1759,7 +1760,7 @@ private fun FlipCameraButtonPreview() {
  * [CaptureMode.VIDEO_ONLY].
  * @param enabled whether video capture is selectable. When `false`, the toggle is shown disabled.
  * @param orientation the primary axis of the toggle track and drag gesture.
- * @param compact whether to render the compact track dimensions.
+ * @param controlSize the track size variant.
  * @param iconRotationDegrees clockwise rotation in degrees applied around each icon's center.
  * @param darkTheme whether to wrap the preview in a dark Material 3 color scheme.
  */
@@ -1768,7 +1769,7 @@ internal fun PreviewCaptureModeToggleButton(
     selectedCaptureMode: CaptureMode,
     enabled: Boolean = true,
     orientation: Orientation = Orientation.Horizontal,
-    compact: Boolean = false,
+    controlSize: ControlSize = ControlSize.Standard,
     iconRotationDegrees: Float = 0f,
     darkTheme: Boolean = true
 ) {
@@ -1797,7 +1798,7 @@ internal fun PreviewCaptureModeToggleButton(
                 onChangeCaptureMode = {},
                 onToggleWhenDisabled = {},
                 orientation = orientation,
-                compact = compact,
+                controlSize = controlSize,
                 iconRotationDegrees = iconRotationDegrees
             )
         }
@@ -1858,13 +1859,13 @@ private fun CaptureModeToggleVerticalStandardPreview() {
     )
 }
 
-@Preview(name = "Vertical Compact (48x92)")
+@Preview(name = "Vertical Mini (48x92)")
 @Composable
-private fun CaptureModeToggleVerticalCompactPreview() {
+private fun CaptureModeToggleVerticalMiniPreview() {
     PreviewCaptureModeToggleButton(
         selectedCaptureMode = CaptureMode.VIDEO_ONLY,
         orientation = Orientation.Vertical,
-        compact = true
+        controlSize = ControlSize.Mini
     )
 }
 

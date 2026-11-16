@@ -361,9 +361,9 @@ class CaptureScreenComponentsTest {
     }
 
     @Test
-    fun toggleSwitch_horizontalAndVertical_standardAndCompact_passesAccessibilityChecks() {
+    fun toggleSwitch_horizontalAndVertical_standardAndMini_passesAccessibilityChecks() {
         var orientation by mutableStateOf(Orientation.Horizontal)
-        var compact by mutableStateOf(false)
+        var controlSize by mutableStateOf(ControlSize.Standard)
         var checked by mutableStateOf(false)
 
         composeTestRule.setContent {
@@ -372,7 +372,7 @@ class CaptureScreenComponentsTest {
                     checked = checked,
                     onCheckedChange = { checked = it },
                     orientation = orientation,
-                    compact = compact,
+                    controlSize = controlSize,
                     startIcon = R.drawable.ic_camera_alt_filled,
                     endIcon = R.drawable.ic_videocam_outline,
                     contentDescription = stringResource(
@@ -396,21 +396,21 @@ class CaptureScreenComponentsTest {
         composeTestRule.onNodeWithTag(SWITCH_TEST_TAG).assertIsDisplayed()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
 
-        // Horizontal Compact (checked)
-        compact = true
+        // Horizontal Mini (checked)
+        controlSize = ControlSize.Mini
         checked = true
         composeTestRule.waitForIdle()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
 
         // Vertical Standard
         orientation = Orientation.Vertical
-        compact = false
+        controlSize = ControlSize.Standard
         checked = false
         composeTestRule.waitForIdle()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
 
-        // Vertical Compact (checked)
-        compact = true
+        // Vertical Mini (checked)
+        controlSize = ControlSize.Mini
         checked = true
         composeTestRule.waitForIdle()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
