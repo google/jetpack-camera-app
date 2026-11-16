@@ -23,44 +23,30 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Shared container styling for every Quick Settings sheet, so the compact bottom sheet and the
- * large-screen panel cannot drift apart.
- *
- * The sheet is always dark regardless of the app theme, matching the camera design mocks. Rows
- * inside the sheet use theme-independent `*Fixed` color roles, and text inherits [ContentColor],
- * so contrast holds in both light and dark themes.
+ * Container styling shared by the Quick Settings bottom and side sheets. The sheet is always dark
+ * (per the mocks), so rows use theme-independent `*Fixed` roles and text inherits [ContentColor].
  */
 internal object QuickSettingsSheetDefaults {
-    /** Corner radius of the sheet's free edges. */
     val CornerRadius: Dp = 28.dp
 
-    /** Shape of the compact bottom sheet: rounded top corners, flush with the bottom edge. */
     val BottomSheetShape: Shape = RoundedCornerShape(topStart = CornerRadius, topEnd = CornerRadius)
 
-    /**
-     * Shape of a side sheet: the attached side is flat and only the free-edge corners are rounded.
-     */
+    /** Side sheet shape: flat on the attached side, rounded on the free edge. */
     fun sideSheetShape(attachedToLeft: Boolean): Shape = if (attachedToLeft) {
         AbsoluteRoundedCornerShape(topRight = CornerRadius, bottomRight = CornerRadius)
     } else {
         AbsoluteRoundedCornerShape(topLeft = CornerRadius, bottomLeft = CornerRadius)
     }
 
-    /** Black at 92% opacity (per the mocks), independent of the app color scheme. */
     val ContainerColor: Color = Color.Black.copy(alpha = 0.92f)
 
-    /** Default color for text and icons drawn directly on [ContainerColor]. */
     val ContentColor: Color = Color.White
 
-    /** Drag handle tint on [ContainerColor]. */
     val DragHandleColor: Color = ContentColor.copy(alpha = 0.4f)
 
-    /**
-     * Material 3 level-3 shadow elevation, matching the mocks' drop shadow (0/1/3/0 at 30% plus
-     * 0/4/8/3 at 15%).
-     */
+    /** Material 3 level-3 elevation, matching the mocks' drop shadow. */
     val ShadowElevation: Dp = 6.dp
 
-    /** Bottom padding below the compact bottom sheet's content, above the navigation bar inset. */
+    /** Below the bottom sheet's content, above the navigation bar inset. */
     val BottomSheetContentBottomPadding: Dp = 24.dp
 }

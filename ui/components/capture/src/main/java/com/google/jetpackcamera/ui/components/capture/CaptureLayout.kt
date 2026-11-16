@@ -160,15 +160,8 @@ private const val PORTRAIT_ASPECT_RATIO_THRESHOLD = 16f / 9f - 0.01f
 private val MIN_GESTURE_INSET = 32.dp
 
 /**
- * Blocks keyboard focus from entering background camera controls while a modal surface (such as
- * the Quick Settings sheet) is open.
- *
- * `focusProperties { canFocus = false }` only applies to the nearest focus targets, so focusables
- * nested inside a `focusGroup()` could still be reached. Cancelling entry into a focus group
- * blocks both `requestFocus()` and directional traversal into any descendant.
- *
- * Accessibility pruning is not needed here: the Quick Settings scrim already keeps the controls
- * behind it out of the accessibility tree.
+ * While a modal sheet is open, stops keyboard focus from entering the background controls,
+ * including focusables nested in their own focus groups (which `canFocus = false` would miss).
  */
 private fun Modifier.suppressBackgroundFocusForModal(isModalOpen: Boolean): Modifier =
     if (isModalOpen) {
@@ -313,10 +306,8 @@ fun CaptureScaffoldLayout(
     val focusManager = LocalFocusManager.current
     val sheetFocusRequester = remember { FocusRequester() }
     var sheetHasFocus by remember { mutableStateOf(false) }
-    // Background focus suppression only blocks focus from *entering* the background controls, so
-    // focus that is already there (for example on the Quick Settings button after a keyboard
-    // press) is moved into the sheet when it opens, and released when the sheet hides so keyboard
-    // focus is never left on an off-screen sheet.
+    // Suppression only blocks focus from entering the background, so move focus already there
+    // into the sheet on open, and release it on hide so it isn't left on an off-screen sheet.
     LaunchedEffect(isSheetVisible) {
         if (isSheetVisible) {
             if (!sheetFocusRequester.requestFocus()) {

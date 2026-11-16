@@ -77,7 +77,6 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
-import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.node.ModifierNodeElement
 import androidx.compose.ui.node.PointerInputModifierNode
@@ -132,10 +131,8 @@ private object QuickSettingsSideSheetTokens {
     val DragHandleHeight = 32.dp
     val PredictiveBackMinScale = 0.95f
 
-    /** Distance from the hidden anchor within which fling velocity toward it is damped (M3). */
+    // Fling damping near the hidden anchor; same values as Material 3 sheets.
     val FlingDampingZone = 125.dp
-
-    /** Minimum velocity a damped fling keeps if it started above it (M3 sheet threshold). */
     val FlingVelocityThreshold = 125.dp
 }
 
@@ -151,78 +148,37 @@ internal enum class SideSheetEdge {
     Right
 }
 
-/**
- * State of a [QuickSettingsSideSheet]: a thin wrapper over a horizontal [AnchoredDraggableState],
- * the same drag primitive Material 3 sheets are built on, so the sheet can be dragged, flung and
- * animated between [SideSheetValue.Hidden] and [SideSheetValue.Expanded].
- */
+/** Drag state of a [QuickSettingsSideSheet], backed by a horizontal [AnchoredDraggableState]. */
 @Stable
 internal class SideSheetState(initialValue: SideSheetValue = SideSheetValue.Hidden) {
     internal val anchoredDraggableState = AnchoredDraggableState(initialValue)
 
-    /** The settled value, or the value being animated away from. */
     val currentValue: SideSheetValue get() = anchoredDraggableState.currentValue
 
-    /** The value the sheet is settling or animating toward. */
     val targetValue: SideSheetValue get() = anchoredDraggableState.targetValue
 
-    /** Whether any part of the sheet is on screen, including during show and hide animations. */
+    /** Whether the sheet is on screen, including while animating. */
     val isVisible: Boolean
         get() = currentValue != SideSheetValue.Hidden || targetValue != SideSheetValue.Hidden
 
     internal val hasAnchors: Boolean get() = anchoredDraggableState.anchors.size > 0
 
-    /** Animates the sheet onto the screen. */
     suspend fun show(animationSpec: AnimationSpec<Float>) {
         anchoredDraggableState.animateTo(SideSheetValue.Expanded, animationSpec)
     }
 
-    /** Animates the sheet off the screen toward its attached edge. */
     suspend fun hide(animationSpec: AnimationSpec<Float>) {
         anchoredDraggableState.animateTo(SideSheetValue.Hidden, animationSpec)
     }
 }
 
 /**
- * In-hierarchy side sheet for Quick Settings on adaptive medium and expanded layouts.
+ * [QuickSettingsSideSheet] hosting [QuickSettingsContent]. Renders nothing unless
+ * [quickSettingsUiState] is [QuickSettingsUiState.Available]; the pane title follows the capture
+ * mode. Other parameters match the slot overload.
  *
- * The sheet attaches to a horizontal edge (the physical left by default, matching the start-side
- * rail of the large-screen mocks), slides in from that edge when opened, and can be dismissed by
- * swiping it back toward that edge, by its drag handle, by tapping outside it, by system back
- * (with predictive back) or by a hardware [Key.Escape] press.
- *
- * Renders nothing when [isOpen] is `false` (after the hide animation finishes) or
- * [quickSettingsUiState] is not [QuickSettingsUiState.Available]. While open, it displays
- * [QuickSettingsContent] inside a vertically scrollable [Surface] tagged with
- * [QUICK_SETTINGS_SIDE_SHEET_TAG] (while [QuickSettingsContent] retains
- * `QUICK_SETTINGS_BOTTOM_SHEET` until a shared `QUICK_SETTINGS_CONTENT_TAG` is split out).
- *
- * @param isOpen Whether the Quick Settings side sheet is open.
- * @param onDismissRequest Callback invoked when the user swipes the sheet away, taps its drag
- *   handle or the area outside it, or presses back or escape. Callers should set [isOpen] to
- *   `false` in response.
- * @param quickSettingsUiState The current [QuickSettingsUiState].
- * @param quickSettingsController The [QuickSettingsController] to handle setting changes.
- * @param modifier The [Modifier] applied to the full-size overlay container.
- * @param onNavigateToSettings Callback invoked when the "More settings" button is clicked.
- * @param showMoreSettingsButton Whether to display the "More settings" navigation button inside
- *   the sheet. Defaults to `false` for adaptive layouts that surface settings in persistent chrome.
- * @param contentAlignment Alignment of the sheet within the overlay container. Its horizontal
- *   component also picks the edge the sheet attaches to and slides from. Defaults to
- *   [AbsoluteAlignment.CenterLeft] so the sheet stays on the physical left across LTR and RTL
- *   while interior controls mirror for RTL.
- * @param sheetPadding Padding around the sheet surface (used by side-rail layouts to clear
- *   measured start and end rail widths without shifting the full-screen tap-outside area).
- * @param maxSheetWidth Maximum width cap applied to the sheet surface.
- * @param maxSheetHeight Optional maximum height cap applied to the sheet surface.
- * @param sheetContainerDirection Layout direction used to resolve [contentAlignment] and
- *   [sheetPadding] outside the sheet surface while restoring the caller's `LocalLayoutDirection`
- *   inside the sheet content.
- * @param windowInsets Window insets the sheet stays clear of, applied outside [sheetPadding].
- *   Defaults to [WindowInsets.Companion.safeDrawing].
- * @param scrimColor Color drawn behind the sheet. Transparent by default so the viewfinder is not
- *   dimmed, matching the mocks; the full-screen tap-to-dismiss area is present while the sheet is
- *   visible or opening.
+ * @param showMoreSettingsButton Whether to show the "More settings" button. Off by default for
+ *   layouts that surface settings elsewhere.
  */
 @Composable
 internal fun QuickSettingsSideSheet(
@@ -278,35 +234,21 @@ internal fun QuickSettingsSideSheet(
 }
 
 /**
- * Slot-based overload of [QuickSettingsSideSheet] hosting arbitrary Quick Settings [content]
- * (such as `CaptureScaffoldDefaults.QuickSettings`) inside the in-hierarchy side sheet, its
- * tap-outside area, focus group, drag, and escape/back handlers.
+ * In-hierarchy Quick Settings sheet attached to a side edge for medium and expanded layouts.
  *
- * Renders nothing while [isOpen] is `false` and the hide animation has finished.
+ * It slides in from its edge and is dismissed by swiping back toward it, the drag handle, the
+ * Dismiss accessibility action, back (with predictive back), Escape, or a tap outside. A tap
+ * outside is not consumed, so the control underneath also responds. Host it in a `Box` over the
+ * content it covers. Leaves composition once the hide animation finishes.
  *
- * @param isOpen Whether the Quick Settings side sheet is open.
- * @param onDismissRequest Callback invoked when the user swipes the sheet away, taps its drag
- *   handle or the area outside it, or presses back or escape. Callers should set [isOpen] to
- *   `false` in response.
- * @param modifier The [Modifier] applied to the full-size overlay container.
- * @param paneTitle Accessibility pane title announced for the sheet surface.
- * @param contentAlignment Alignment of the sheet within the overlay container. Its horizontal
- *   component also picks the edge the sheet attaches to and slides from. Defaults to
- *   [AbsoluteAlignment.CenterLeft] so the sheet stays on the physical left across LTR and RTL
- *   while interior controls mirror for RTL.
- * @param sheetPadding Padding around the sheet surface (used by side-rail layouts to clear
- *   measured start and end rail widths without shifting the full-screen tap-outside area).
- * @param maxSheetWidth Maximum width cap applied to the sheet surface.
- * @param maxSheetHeight Optional maximum height cap applied to the sheet surface.
- * @param sheetContainerDirection Layout direction used to resolve [contentAlignment] and
- *   [sheetPadding] outside the sheet surface while restoring the caller's `LocalLayoutDirection`
- *   inside the sheet content.
- * @param windowInsets Window insets the sheet stays clear of, applied outside [sheetPadding].
- *   Defaults to [WindowInsets.Companion.safeDrawing].
- * @param scrimColor Color drawn behind the sheet. Transparent by default so the viewfinder is not
- *   dimmed, matching the mocks; the full-screen tap-to-dismiss area is present while the sheet is
- *   visible or opening.
- * @param content Composable Quick Settings content rendered inside the scrollable sheet surface.
+ * @param onDismissRequest Called when the user dismisses the sheet; set [isOpen] to `false`.
+ * @param contentAlignment Where the sheet sits; its horizontal side is also the edge it attaches
+ *   to. Defaults to the physical left in both LTR and RTL.
+ * @param sheetPadding Space around the sheet, e.g. to clear side rails.
+ * @param sheetContainerDirection Direction used to resolve [contentAlignment] and [sheetPadding];
+ *   the content keeps the caller's direction.
+ * @param windowInsets Insets the sheet stays clear of, outside [sheetPadding].
+ * @param scrimColor Color behind the sheet; transparent so the viewfinder is not dimmed.
  */
 @Composable
 internal fun QuickSettingsSideSheet(
@@ -438,11 +380,8 @@ internal fun QuickSettingsSideSheet(
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides sheetContainerDirection) {
-        // Tapping outside the sheet dismisses it without consuming the touch, so the control
-        // underneath still responds (for example, the shutter captures and Quick Settings closes).
-        // Pointer sharing only reaches layout siblings, so this layer is emitted next to the
-        // caller's content rather than inside the sheet's container: host the sheet in a Box.
-        // Present only while the sheet is visible or opening.
+        // Emitted beside the caller's content, not inside the sheet's container, because pointer
+        // sharing only reaches layout siblings. Absent once the sheet starts hiding.
         if (isOpen && sheetState.targetValue == SideSheetValue.Expanded) {
             Box(
                 modifier = Modifier
@@ -586,13 +525,7 @@ internal fun QuickSettingsSideSheet(
     }
 }
 
-/**
- * Measures the sheet, updates its horizontal anchors (expanded in place, hidden just past the
- * attached edge) and places it at the current drag offset.
- *
- * Offsets are physical pixels, so the sheet is placed with [Placeable.PlacementScope.place]
- * rather than mirrored for RTL.
- */
+/** Sets anchors from the measured width and places the sheet at the drag offset (physical px). */
 private fun Modifier.sideSheetAnchors(
     state: SideSheetState,
     edge: SideSheetEdge,
@@ -616,10 +549,7 @@ private fun Modifier.sideSheetAnchors(
     }
 }
 
-/**
- * Calls [onDismiss] when a gesture starts on this node, without consuming the pointer, and lets
- * the layouts beneath it receive the same events.
- */
+/** Calls [onDismiss] on the first pointer down without consuming it, sharing it with siblings. */
 private fun Modifier.dismissOnOutsideTouch(onDismiss: () -> Unit): Modifier =
     this then DismissOnOutsideTouchElement(onDismiss)
 
@@ -653,10 +583,7 @@ private class DismissOnOutsideTouchNode(var onDismiss: () -> Unit) :
     override fun sharePointerInputWithSiblings(): Boolean = true
 }
 
-/**
- * How far, in pixels, [offset] has overshot the expanded anchor (0) away from the attached
- * [edge]; 0 when it has not.
- */
+/** Pixels [offset] has moved past the expanded anchor away from [edge], or 0. */
 internal fun overshootPastExpanded(offset: Float, edge: SideSheetEdge): Float = when {
     offset.isNaN() -> 0f
     edge == SideSheetEdge.Left -> offset.coerceAtLeast(0f)
@@ -664,12 +591,8 @@ internal fun overshootPastExpanded(offset: Float, edge: SideSheetEdge): Float = 
 }
 
 /**
- * Damps a fling toward the hidden anchor as the sheet nears it, mirroring Material 3 sheets, so a
- * fast fling eases out of view instead of snapping. Velocity is scaled by the square of the
- * remaining fraction of [dampingZone], but a fling that started at or above [velocityThreshold]
- * keeps at least that much velocity so it still settles hidden.
- *
- * @return the velocity to fling with.
+ * Damps a fling toward the hidden anchor inside [dampingZone], as Material 3 sheets do, keeping at
+ * least [velocityThreshold] for flings that started above it.
  */
 internal fun dampFlingTowardHidden(
     velocity: Float,
