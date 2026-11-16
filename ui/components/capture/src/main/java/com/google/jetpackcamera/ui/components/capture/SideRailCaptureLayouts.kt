@@ -78,6 +78,10 @@ internal const val QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG = "card_quick_set
 /**
  * Posture-specific padding, vertical alignment, and Quick Settings card sizing configuration for
  * [SideRailCaptureScaffold].
+ *
+ * [showQuickSettingsCard] is `false` when the hosting layout presents Quick Settings itself, such
+ * as the bottom sheet used by [CompactShortLayout]; the floating card is meant for tablet and
+ * foldable sizes.
  */
 @Immutable
 internal data class SideRailPostureConfig(
@@ -91,7 +95,8 @@ internal data class SideRailPostureConfig(
     val hudVerticalPadding: Dp,
     val quickSettingsCardMaxWidth: Dp,
     val quickSettingsCardMaxHeight: Dp = Dp.Unspecified,
-    val clearRailsForQuickSettings: Boolean = true
+    val clearRailsForQuickSettings: Boolean = true,
+    val showQuickSettingsCard: Boolean = true
 )
 
 /**
@@ -478,7 +483,7 @@ internal fun SideRailCaptureScaffold(
             }
 
             QuickSettingsOverlayCardPlaceholder(
-                isOpen = isQuickSettingsVisible,
+                isOpen = isQuickSettingsVisible && config.showQuickSettingsCard,
                 onDismiss = handleDismissQuickSettings,
                 cardPadding = quickSettingsCardPadding,
                 maxCardWidth = config.quickSettingsCardMaxWidth,

@@ -16,9 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -42,21 +40,12 @@ import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.minimumInteractiveComponentSize
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -76,12 +65,8 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -108,8 +93,6 @@ val LocalActiveCaptureLayout: ProvidableCompositionLocal<String> =
  * Dimension and spacing constants used by [CompactPortraitLayout].
  */
 internal object CompactPortraitTokens {
-    val SheetPeekHeight = 0.dp
-    val SheetTopCornerRadius = 28.dp
     val DefaultMinTouchTarget = 48.dp
     val ZeroInset = 0.dp
 
@@ -197,8 +180,8 @@ internal fun Modifier.suppressBackgroundForModal(isModalOpen: Boolean): Modifier
  * Compact capture layout driven by a [CaptureSlots] slot table.
  *
  * Hosts the camera viewfinder, top status/indicator bar, bottom control stack, and an in-hierarchy
- * [BottomSheetScaffold] for Quick Settings controlled by [state] without spawning secondary
- * windows. Tags its root container with [COMPACT_CONTROLS_TAG], provides
+ * [QuickSettingsBottomSheetScaffold] for Quick Settings controlled by [state] without spawning
+ * secondary windows. Tags its root container with [COMPACT_CONTROLS_TAG], provides
  * [LocalActiveCaptureLayout] = `"CompactPortraitLayout"`, and scopes [LocalCaptureRtlPolicy]
  * (`mirrorCompactBottomBar`) exclusively to the horizontal capture and bottom-toolbar rows while
  * restoring the active locale's `LayoutDirection` inside every child slot.
@@ -221,7 +204,7 @@ internal fun Modifier.suppressBackgroundForModal(isModalOpen: Boolean): Modifier
  * @param screenFlashOverlay Full-bleed screen flash composable drawn above all chrome and system
  *   bar areas.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun CompactPortraitLayout(
     slots: CaptureSlots,
@@ -250,37 +233,9 @@ internal fun CompactPortraitLayout(
     val viewfinderTopEndContent = slots.viewfinderTopEndContent
     val topBarTrailingContent = slots.topBarTrailingContent
     val errorDialog = slots.errorDialog
-    val bottomSheetState = rememberBottomSheetState(
-        initialValue = if (state.isQuickSettingsOpen) SheetValue.Expanded else SheetValue.Hidden,
-        confirmValueChange = { targetValue ->
-            if (targetValue == SheetValue.Hidden) {
-                state.dismissQuickSettings()
-            } else if (targetValue == SheetValue.Expanded) {
-                state.showQuickSettings()
-            }
-            true
-        }
-    )
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = bottomSheetState,
-        snackbarHostState = state.snackbarHostState
-    )
-    LaunchedEffect(state.isQuickSettingsOpen) {
-        if (state.isQuickSettingsOpen) {
-            if (bottomSheetState.targetValue != SheetValue.Expanded) {
-                bottomSheetState.expand()
-            }
-        } else {
-            if (bottomSheetState.isVisible || bottomSheetState.targetValue != SheetValue.Hidden) {
-                bottomSheetState.hide()
-            }
-        }
-    }
 
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val localeDirection = LocalLayoutDirection.current
-    val dismissQuickSettingsLabel =
-        stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
     val handleDismissQuickSettings = {
         state.dismissQuickSettings()
         onDismissQuickSettings()
@@ -295,27 +250,10 @@ internal fun CompactPortraitLayout(
                 .fillMaxSize()
                 .testTag(COMPACT_CONTROLS_TAG)
         ) {
-            BottomSheetScaffold(
+            QuickSettingsBottomSheetScaffold(
                 modifier = Modifier.fillMaxSize(),
-                scaffoldState = scaffoldState,
-                sheetPeekHeight = CompactPortraitTokens.SheetPeekHeight,
-                sheetDragHandle = {
-                    BottomSheetDefaults.DragHandle(
-                        modifier = Modifier
-                            .testTag(QUICK_SETTINGS_DRAG_HANDLE)
-                            .minimumInteractiveComponentSize()
-                            .clickable(
-                                role = Role.Button,
-                                onClickLabel = dismissQuickSettingsLabel,
-                                onClick = handleDismissQuickSettings
-                            )
-                    )
-                },
-                sheetShape = RoundedCornerShape(
-                    topStart = CompactPortraitTokens.SheetTopCornerRadius,
-                    topEnd = CompactPortraitTokens.SheetTopCornerRadius
-                ),
-                sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                state = state,
+                onDismissQuickSettings = onDismissQuickSettings,
                 sheetContent = {
                     CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
                         OverlapAwareCaptureSlot(
@@ -324,17 +262,13 @@ internal fun CompactPortraitLayout(
                             content = slots.quickSettingsOverlay
                         )
                     }
-                },
-                snackbarHost = {}
-            ) {
+                }
+            ) { isSheetVisible ->
                 BoxWithConstraints(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(Color.Black)
                 ) {
-                    val isSheetVisible = state.isQuickSettingsOpen ||
-                        bottomSheetState.isVisible ||
-                        bottomSheetState.targetValue == SheetValue.Expanded
                     var isErrorDialogPlaced by remember { mutableStateOf(false) }
                     val isErrorModalActive = isErrorDialogShowing || isErrorDialogPlaced
                     val isModalOpen = isSheetVisible || isErrorModalActive
@@ -454,21 +388,7 @@ internal fun CompactPortraitLayout(
                     }
 
                     if (isSheetVisible && !isErrorModalActive) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .testTag(QUICK_SETTINGS_SCRIM)
-                                .semantics {
-                                    contentDescription = dismissQuickSettingsLabel
-                                    traversalIndex = 1f
-                                }
-                                .clickable(
-                                    role = Role.Button,
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                    onClick = handleDismissQuickSettings
-                                )
-                        )
+                        QuickSettingsSheetScrim(onDismiss = handleDismissQuickSettings)
                     }
 
                     CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
