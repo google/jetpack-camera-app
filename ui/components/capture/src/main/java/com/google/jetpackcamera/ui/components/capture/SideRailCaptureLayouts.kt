@@ -82,6 +82,10 @@ internal const val QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG = "card_quick_set
  * [showQuickSettingsCard] is `false` when the hosting layout presents Quick Settings itself, such
  * as the bottom sheet used by [CompactShortLayout]; the floating card is meant for tablet and
  * foldable sizes.
+ *
+ * [controlSize] overrides the [ControlSize] requested for rail and HUD controls; when `null` it is
+ * derived from [isCompactHeight] (see [resolvedControlSize]). [railWidth] fixes each rail's width
+ * so controls stay on a stable column anchored to the window edges.
  */
 @Immutable
 internal data class SideRailPostureConfig(
@@ -96,8 +100,17 @@ internal data class SideRailPostureConfig(
     val quickSettingsCardMaxWidth: Dp,
     val quickSettingsCardMaxHeight: Dp = Dp.Unspecified,
     val clearRailsForQuickSettings: Boolean = true,
-    val showQuickSettingsCard: Boolean = true
-)
+    val showQuickSettingsCard: Boolean = true,
+    val controlSize: ControlSize? = null,
+    val railWidth: Dp = Dp.Unspecified
+) {
+    /**
+     * The [ControlSize] requested for rail and HUD controls: [controlSize] when set, otherwise
+     * [ControlSize.Mini] for compact-height windows and [ControlSize.Standard] elsewhere.
+     */
+    val resolvedControlSize: ControlSize
+        get() = controlSize ?: if (isCompactHeight) ControlSize.Mini else ControlSize.Standard
+}
 
 /**
  * Shared dimension, clearance, and posture-preset constants for side-rail capture layouts.
@@ -119,7 +132,14 @@ internal object SideRailTokens {
         centerVerticalFraction = 0.50f,
         hudVerticalPadding = 16.dp,
         quickSettingsCardMaxWidth = 380.dp,
-        clearRailsForQuickSettings = true
+        clearRailsForQuickSettings = true,
+        controlSize = ControlSize.Medium,
+        // Fixed rail width keeps the rails anchored to the window edges regardless of how wide the
+        // black bars beside the viewfinder get. 96dp clears a 3:4 viewfinder on ~852x883dp
+        // foldables.
+        // TODO: Explore deriving this from the 3:4 viewfinder clearance, similar to how
+        // CameraLayoutSolver sizes the compact control bands, instead of using a fixed value.
+        railWidth = 96.dp
     )
 
     val TabletLandscapeConfig = SideRailPostureConfig(
@@ -274,7 +294,7 @@ internal fun SideRailCaptureScaffold(
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val density = LocalDensity.current
-    val controlSize = if (config.isCompactHeight) ControlSize.Mini else ControlSize.Standard
+    val controlSize = config.resolvedControlSize
     val localeDirection = LocalLayoutDirection.current
     val rtlPolicy = LocalCaptureRtlPolicy.current
     val railContainerDirection = if (rtlPolicy.mirrorSideRails) {
@@ -345,6 +365,8 @@ internal fun SideRailCaptureScaffold(
                                         .onSizeChanged { startRailWidthPx = it.width }
                                         .suppressBackgroundForModal(isModalOpen),
                                     isCompactHeight = config.isCompactHeight,
+                                    controlSize = controlSize,
+                                    railWidth = config.railWidth,
                                     topPadding = config.railTopPadding,
                                     bottomPadding = config.railBottomPadding,
                                     horizontalPadding = config.railHorizontalPadding,
@@ -360,6 +382,8 @@ internal fun SideRailCaptureScaffold(
                                         .onSizeChanged { endRailWidthPx = it.width }
                                         .suppressBackgroundForModal(isModalOpen),
                                     isCompactHeight = config.isCompactHeight,
+                                    controlSize = controlSize,
+                                    railWidth = config.railWidth,
                                     showElapsedTimeInRail = false,
                                     topPadding = config.railTopPadding,
                                     bottomPadding = config.railBottomPadding,
