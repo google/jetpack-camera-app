@@ -42,12 +42,6 @@ const val CAPTURE_MODE_UNSUPPORTED_TAG = "CaptureModeUnsupportedTag"
 const val STREAM_CONFIG_UNSUPPORTED_TAG = "StreamConfigUnsupportedTag"
 const val FLASH_LLB_UNSUPPORTED_TAG = "FlashLlbUnsupportedTag"
 const val HDR_UNSUPPORTED_TAG = "HdrUnsupportedTag"
-const val CONCURRENT_CAMERA_ENABLED_TAG = "ConcurrentCameraEnabledTag"
-const val CONCURRENT_CAMERA_STREAM_CONFIG_TAG = "ConcurrentCameraStreamConfigTag"
-const val STABILIZATION_ACTIVE_TAG = "StabilizationActiveTag"
-const val FIXED_FPS_ACTIVE_TAG = "FixedFpsActiveTag"
-const val FLASH_LLB_ACTIVE_TAG = "FlashLlbActiveTag"
-const val HDR_ACTIVE_TAG = "HdrActiveTag"
 const val ULTRA_HDR_ENABLED_TAG = "UltraHdrEnabledTag"
 const val CAPTURE_SUB_MODE_ACTIVE_TAG = "CaptureSubModeActiveTag"
 
@@ -59,7 +53,6 @@ const val BTN_SWITCH_SETTING_MIRROR_FRONT_CAMERA_TAG = "btn_switch_setting_mirro
 const val DIALOG_LOCATION_PERMISSION_RATIONALE_TAG = "dialog_location_permission_rationale_tag"
 const val BTN_LOCATION_PERMISSION_DIALOG_CONFIRM_TAG = "btn_location_permission_dialog_confirm_tag"
 const val BTN_LOCATION_PERMISSION_DIALOG_CANCEL_TAG = "btn_location_permission_dialog_cancel_tag"
-const val BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG = "btn_switch_setting_concurrent_camera_tag"
 const val TEXT_SETTING_APP_VERSION_TAG = "text_setting_app_version_tag"
 
 // Flash Mode

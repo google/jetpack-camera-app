@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:kotlin.OptIn(InternalCameraApi::class)
+
 package com.google.jetpackcamera.core.camera
 
 import android.Manifest
@@ -47,7 +49,6 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraState as CXCameraState
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
-import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.TorchState
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
@@ -140,7 +141,6 @@ context(CameraSessionContext)
 @ExperimentalCamera2Interop
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
-    cameraConstraints: CameraConstraints?,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture, LensFacing) -> Unit = { _, _ -> }
 ) = coroutineScope {
@@ -250,6 +250,8 @@ internal suspend fun runSingleCameraSession(
                     }
                     val camera2Info = Camera2CameraInfo.from(cameraInfo)
                     val cameraId = camera2Info.cameraId
+                    val cameraConstraints =
+                        perLensConstraints[currentTransientSettings.primaryLensFacing]
 
                     var cameraEffect: CameraEffect? = null
                     val captureResults = MutableStateFlow<TotalCaptureResult?>(null)
@@ -303,7 +305,7 @@ internal suspend fun runSingleCameraSession(
                             captureResults = captureResults
                         )
                     }.apply {
-                        attachPreviewSurfaceProvider(surfaceRequests)
+                        attachPreviewSurfaceProvider(useCaseGroup = this)
                         getImageCapture()?.let { imageCapture ->
                             onImageCaptureCreated(imageCapture, cameraInfo.appLensFacing)
                         }
@@ -314,18 +316,7 @@ internal suspend fun runSingleCameraSession(
                         useCaseGroup
                     ) { camera ->
                         Log.d(TAG, "Camera session started")
-                        val isPreviewLandscape = useCaseGroup.getPreview()?.let { preview ->
-                            isSensorOutputLandscape(
-                                sensorRotationDegrees =
-                                camera.cameraInfo.getSensorRotationDegrees(
-                                    preview.targetRotation
-                                ),
-                                sensorRect = camera.cameraInfo.sensorRect
-                            )
-                        }
-                        currentCameraState.update { old ->
-                            old.copy(isPreviewLandscape = isPreviewLandscape)
-                        }
+                        updatePreviewOrientation(camera.cameraInfo, useCaseGroup)
 
                         launch {
                             processFocusMeteringEvents(
@@ -532,8 +523,9 @@ private fun CameraSessionContext.reportCaptureSubModeBindFailure(
 }
 
 context(CameraSessionContext)
+@InternalCameraApi
 @OptIn(ExperimentalCamera2Interop::class)
-internal suspend fun processTransientSettingEvents(
+suspend fun processTransientSettingEvents(
     camera: Camera,
     cameraConstraints: CameraConstraints?,
     useCaseGroup: UseCaseGroup,
@@ -741,7 +733,11 @@ private suspend fun updateCamera2RequestOptions(
     }
 }
 
-internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: UseCaseGroup) {
+@InternalCameraApi
+fun CameraSessionContext.applyDeviceRotation(
+    deviceRotation: DeviceRotation,
+    useCaseGroup: UseCaseGroup
+) {
     val targetRotation = deviceRotation.toUiSurfaceRotation()
     useCaseGroup.useCases.forEach {
         when (it) {
@@ -765,7 +761,8 @@ internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: U
 }
 
 context(CameraSessionContext)
-internal fun createUseCaseGroup(
+@InternalCameraApi
+fun createUseCaseGroup(
     cameraInfo: CameraInfo,
     initialTransientSettings: TransientSessionSettings,
     stabilizationMode: StabilizationMode,
@@ -827,6 +824,26 @@ internal fun createUseCaseGroup(
 
         effect?.let { addEffect(it) }
     }.build()
+}
+
+/**
+ * Updates [CameraState.isPreviewLandscape] to match the [Preview] output orientation of
+ * [cameraInfo] in [useCaseGroup].
+ */
+@InternalCameraApi
+fun CameraSessionContext.updatePreviewOrientation(
+    cameraInfo: CameraInfo,
+    useCaseGroup: UseCaseGroup
+) {
+    val isPreviewLandscape = useCaseGroup.getPreview()?.let { preview ->
+        isSensorOutputLandscape(
+            sensorRotationDegrees = cameraInfo.getSensorRotationDegrees(preview.targetRotation),
+            sensorRect = cameraInfo.sensorRect
+        )
+    }
+    currentCameraState.update { old ->
+        old.copy(isPreviewLandscape = isPreviewLandscape)
+    }
 }
 
 /**
@@ -915,7 +932,8 @@ private fun createImageUseCase(
     return builder.build()
 }
 
-internal fun createVideoUseCase(
+@InternalCameraApi
+fun CameraSessionContext.createVideoUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     targetFrameRate: Int,
@@ -1030,16 +1048,15 @@ private fun createPreviewUseCase(
 }.build()
 
 /**
- * Routes surface requests from this group's [Preview] use case to [surfaceRequests].
+ * Routes surface requests from the [Preview] use case in [useCaseGroup] to [surfaceRequests].
  *
  * Use cases may be constructed off the main thread, but [Preview.setSurfaceProvider] must be
  * called on the main thread, so this is applied separately before the group is bound.
  */
+@InternalCameraApi
 @MainThread
-internal fun UseCaseGroup.attachPreviewSurfaceProvider(
-    surfaceRequests: MutableStateFlow<SurfaceRequest?>
-) {
-    useCases.filterIsInstance<Preview>().forEach { preview ->
+fun CameraSessionContext.attachPreviewSurfaceProvider(useCaseGroup: UseCaseGroup) {
+    useCaseGroup.useCases.filterIsInstance<Preview>().forEach { preview ->
         preview.surfaceProvider = Preview.SurfaceProvider { surfaceRequest ->
             surfaceRequests.update { surfaceRequest }
         }
@@ -1519,10 +1536,11 @@ private suspend fun runVideoRecording(
 }
 
 context(CameraSessionContext)
-internal suspend fun processVideoControlEvents(
+@InternalCameraApi
+suspend fun processVideoControlEvents(
     videoCapture: VideoCapture<Recorder>?,
     captureTypeSuffix: String
-) = coroutineScope {
+): Unit = coroutineScope {
     for (event in videoCaptureControlEvents) {
         when (event) {
             is VideoCaptureControlEvent.StartRecordingEvent -> {
@@ -1742,3 +1760,11 @@ internal fun CXCameraState.StateError.toCameraError(context: Context): CameraErr
         CXCameraState.ERROR_CAMERA_REMOVED -> CameraError.CameraRemoved
         else -> CameraError.FatalCameraError
     }
+
+/**
+ * Maps a CameraX [CXCameraState.StateError] to a domain-specific [CameraError] using this
+ * session's [Context].
+ */
+@InternalCameraApi
+fun CameraSessionContext.mapCameraStateError(error: CXCameraState.StateError): CameraError =
+    error.toCameraError(context)
