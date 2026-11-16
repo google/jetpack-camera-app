@@ -44,7 +44,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -394,11 +393,9 @@ internal fun QuickSettingsSideSheet(
     } else {
         windowInsets.getRight(density, sheetContainerDirection)
     }
-    val sheetShape = if (attachedEdgePadding == 0.dp && attachedEdgeInsetPx == 0) {
+    // The attached side stays flat and only the free-edge corners are rounded, per the mocks.
+    val sheetShape =
         QuickSettingsSheetDefaults.sideSheetShape(attachedToLeft = edge == SideSheetEdge.Left)
-    } else {
-        RoundedCornerShape(QuickSettingsSheetDefaults.CornerRadius)
-    }
 
     val baseFlingBehavior = AnchoredDraggableDefaults.flingBehavior(
         state = sheetState.anchoredDraggableState,

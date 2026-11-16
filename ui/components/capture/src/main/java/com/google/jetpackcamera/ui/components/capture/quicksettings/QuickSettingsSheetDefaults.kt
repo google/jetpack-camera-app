@@ -38,7 +38,7 @@ internal object QuickSettingsSheetDefaults {
     val BottomSheetShape: Shape = RoundedCornerShape(topStart = CornerRadius, topEnd = CornerRadius)
 
     /**
-     * Shape of a side sheet flush with its attached edge: only the free-edge corners are rounded.
+     * Shape of a side sheet: the attached side is flat and only the free-edge corners are rounded.
      */
     fun sideSheetShape(attachedToLeft: Boolean): Shape = if (attachedToLeft) {
         AbsoluteRoundedCornerShape(topRight = CornerRadius, bottomRight = CornerRadius)
@@ -46,8 +46,8 @@ internal object QuickSettingsSheetDefaults {
         AbsoluteRoundedCornerShape(topLeft = CornerRadius, bottomLeft = CornerRadius)
     }
 
-    /** Black at roughly 95% opacity, independent of the app color scheme. */
-    val ContainerColor: Color = Color.Black.copy(alpha = 0.95f)
+    /** Black at 92% opacity (per the mocks), independent of the app color scheme. */
+    val ContainerColor: Color = Color.Black.copy(alpha = 0.92f)
 
     /** Default color for text and icons drawn directly on [ContainerColor]. */
     val ContentColor: Color = Color.White
@@ -55,7 +55,10 @@ internal object QuickSettingsSheetDefaults {
     /** Drag handle tint on [ContainerColor]. */
     val DragHandleColor: Color = ContentColor.copy(alpha = 0.4f)
 
-    /** Material 3 level-3 shadow elevation. */
+    /**
+     * Material 3 level-3 shadow elevation, matching the mocks' drop shadow (0/1/3/0 at 30% plus
+     * 0/4/8/3 at 15%).
+     */
     val ShadowElevation: Dp = 6.dp
 
     /** Bottom padding below the compact bottom sheet's content, above the navigation bar inset. */
