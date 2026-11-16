@@ -196,6 +196,9 @@ internal fun Modifier.suppressBackgroundForModal(isModalOpen: Boolean): Modifier
  *   capture chrome.
  * @param includeStatusBarsInTopBar Whether live visible `WindowInsets.statusBars` top padding is
  *   included in the top indicator bar so multi-window status bars never overlap status indicators.
+ * @param isSlim Whether the window is classified as a slim compact posture
+ *   ([com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutMode.COMPACT_SLIM]), in
+ *   which case the lower controls row requests mini control sizes so they fit the narrow width.
  * @param onDismissQuickSettings Callback invoked when Quick Settings is dismissed via the drag
  *   handle or scrim.
  * @param onRequiresImmersiveChange Callback notified when the portrait layout solver requires or
@@ -214,6 +217,7 @@ internal fun CompactPortraitLayout(
     controlsVisible: Boolean = true,
     isErrorDialogShowing: Boolean = false,
     includeStatusBarsInTopBar: Boolean = true,
+    isSlim: Boolean = false,
     onDismissQuickSettings: () -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
@@ -281,6 +285,7 @@ internal fun CompactPortraitLayout(
                             windowWidth = maxWidth,
                             windowHeight = maxHeight,
                             includeStatusBarsInTopBar = includeStatusBarsInTopBar,
+                            isSlim = isSlim,
                             controlsVisible = controlsVisible,
                             modifier = Modifier.suppressBackgroundForModal(isModalOpen),
                             viewfinder = viewfinder,
@@ -355,6 +360,7 @@ internal fun CompactPortraitLayout(
                         ) {
                             if (controlsVisible) {
                                 VerticalMaterialControls(
+                                    isSlim = isSlim,
                                     captureButton = captureButton,
                                     imageWell = imageWell,
                                     flipCameraButton = flipCameraButton,
@@ -605,6 +611,8 @@ private fun CompactBottomToolbar(
 /**
  * Constraint-solved portrait handheld layout placing the viewfinder and bottom control bands via
  * [CameraLayoutSolver].
+ *
+ * When [isSlim] is `true`, the lower controls row requests mini control sizes.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -628,6 +636,7 @@ internal fun AdaptivePortraitCaptureLayout(
     controlsVisible: Boolean,
     modifier: Modifier = Modifier,
     includeStatusBarsInTopBar: Boolean = true,
+    isSlim: Boolean = false,
     snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     val localeDirection = LocalLayoutDirection.current
@@ -755,7 +764,7 @@ internal fun AdaptivePortraitCaptureLayout(
                     CompactBottomToolbar(
                         bottomBarDirection = bottomBarDirection,
                         localeDirection = localeDirection,
-                        controlSize = ControlSize.Standard,
+                        controlSize = if (isSlim) ControlSize.Mini else ControlSize.Standard,
                         quickSettingsToggleButton = quickSettingsToggleButton,
                         captureModeToggleSwitch = captureModeToggleSwitch,
                         modifier = Modifier.layoutId(CaptureSlotId.BottomToolbar)
@@ -885,11 +894,15 @@ internal fun AdaptivePortraitCaptureLayout(
 /**
  * Compressed-capable vertical bottom control stack used for non-handheld compact panes (such as
  * squarer split-screen windows narrower than `600.dp`).
+ *
+ * The lower controls row requests mini control sizes on short screens or when [isSlim] is
+ * `true`.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun VerticalMaterialControls(
     modifier: Modifier = Modifier,
+    isSlim: Boolean = false,
     captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     imageWell: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
@@ -917,6 +930,8 @@ internal fun VerticalMaterialControls(
             .calculateBottomPadding()
         val isShortScreen = maxHeight < CompactPortraitTokens.ShortScreenThreshold
         val controlSize = if (isShortScreen) ControlSize.Mini else ControlSize.Standard
+        val toolbarControlSize =
+            if (isShortScreen || isSlim) ControlSize.Mini else ControlSize.Standard
         val maxBottomPad = max(
             CompactPortraitTokens.TargetBottomClearance - navBarBottom,
             CompactPortraitTokens.MinNavMargin
@@ -986,7 +1001,7 @@ internal fun VerticalMaterialControls(
                 CompactBottomToolbar(
                     bottomBarDirection = bottomBarDirection,
                     localeDirection = localeDirection,
-                    controlSize = controlSize,
+                    controlSize = toolbarControlSize,
                     quickSettingsToggleButton = quickSettingsToggleButton,
                     captureModeToggleSwitch = captureModeToggleSwitch,
                     modifier = Modifier.height(CompactPortraitTokens.LowerSectionHeight)

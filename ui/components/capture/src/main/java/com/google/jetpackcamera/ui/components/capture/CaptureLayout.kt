@@ -225,6 +225,7 @@ internal fun CaptureScaffoldLayout(
                         controlsVisible = controlsVisible,
                         isErrorDialogShowing = isErrorDialogShowing,
                         includeStatusBarsInTopBar = !isFullScreenCompactPhone,
+                        isSlim = layoutMode == CameraLayoutMode.COMPACT_SLIM,
                         onDismissQuickSettings = onDismissQuickSettings,
                         onRequiresImmersiveChange = onRequiresImmersiveChange,
                         overlay = overlay,
