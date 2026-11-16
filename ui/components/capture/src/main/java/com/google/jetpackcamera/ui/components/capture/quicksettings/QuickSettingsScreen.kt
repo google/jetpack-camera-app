@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -56,6 +58,9 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 /**
  * Agnostic content for the Quick Settings panel wrapped for a BottomSheetScaffold sheet.
  *
+ * The content scrolls vertically so every row stays reachable when the sheet is taller than the
+ * window, such as on short compact windows.
+ *
  * @param quickSettingsUiState The current [QuickSettingsUiState].
  * @param onNavigateToSettings Callback when the user navigates to full settings.
  * @param quickSettingsController The [QuickSettingsController] to handle setting changes.
@@ -75,6 +80,7 @@ fun QuickSettingsScaffoldContent(
         Column(
             modifier = modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
                 .padding(bottom = 24.dp)
                 .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
