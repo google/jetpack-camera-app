@@ -114,7 +114,7 @@ internal fun CompactShortLayout(
             (maxHeight - verticalInsets).coerceAtLeast(CompactShortTokens.ZeroSize)
 
         val railSlotMaxWidth = min(
-            CaptureSlotTokens.ModeToggleCompactWidth,
+            CaptureSlotTokens.ModeToggleMiniWidth,
             (availableWidth * CompactShortTokens.RAIL_WIDTH_FRACTION)
                 .coerceAtLeast(CompactShortTokens.MinRailSlotWidthFloor)
         )
@@ -177,11 +177,11 @@ private fun CaptureSlots.withCondensedSizeCaps(
         .coerceAtLeast(CompactShortTokens.ZeroSize)
 
     val indicatorMaxHeight = min(
-        CaptureSlotTokens.IndicatorCompactMainAxisSize,
+        CaptureSlotTokens.IndicatorMiniMainAxisSize,
         innerRailHeight * CompactShortTokens.INDICATOR_MAX_HEIGHT_FRACTION
     )
     val zoomMaxHeight = min(
-        CaptureSlotTokens.ZoomCompactMainAxisSize,
+        CaptureSlotTokens.ZoomMiniMainAxisSize,
         innerRailHeight * CompactShortTokens.ZOOM_MAX_HEIGHT_FRACTION
     )
     val quickSettingsButtonMaxSize = min(
@@ -193,20 +193,20 @@ private fun CaptureSlots.withCondensedSizeCaps(
     )
     val shutterMaxDiameter = min(
         min(
-            CaptureSlotTokens.ShutterCompactDiameter,
+            CaptureSlotTokens.ShutterMiniDiameter,
             innerRailHeight * CompactShortTokens.SHUTTER_DIAMETER_FRACTION
         ),
         railSlotMaxWidth
     )
     val secondaryActionMaxSize = min(
         min(
-            CaptureSlotTokens.SecondaryActionCompactSize,
+            CaptureSlotTokens.SecondaryActionMiniSize,
             innerRailHeight * CompactShortTokens.SECONDARY_ACTION_FRACTION
         ),
         railSlotMaxWidth
     )
     val modeToggleMaxHeight = min(
-        CaptureSlotTokens.ModeToggleCompactHeight,
+        CaptureSlotTokens.ModeToggleMiniHeight,
         innerRailHeight * CompactShortTokens.MODE_TOGGLE_HEIGHT_FRACTION
     )
 

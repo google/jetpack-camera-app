@@ -269,6 +269,7 @@ internal fun SideRailCaptureScaffold(
 ) {
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val density = LocalDensity.current
+    val controlSize = if (config.isCompactHeight) ControlSize.Mini else ControlSize.Standard
     val localeDirection = LocalLayoutDirection.current
     val rtlPolicy = LocalCaptureRtlPolicy.current
     val railContainerDirection = if (rtlPolicy.mirrorSideRails) {
@@ -381,7 +382,7 @@ internal fun SideRailCaptureScaffold(
                                 .padding(top = config.hudVerticalPadding)
                                 .suppressBackgroundForModal(isModalOpen),
                             orientation = Orientation.Horizontal,
-                            isCompact = config.isCompactHeight,
+                            controlSize = controlSize,
                             content = slots.topStartContent
                         )
 
@@ -391,7 +392,7 @@ internal fun SideRailCaptureScaffold(
                                 .padding(top = config.hudVerticalPadding)
                                 .suppressBackgroundForModal(isModalOpen),
                             orientation = Orientation.Horizontal,
-                            isCompact = config.isCompactHeight,
+                            controlSize = controlSize,
                             content = slots.viewfinderTopEndContent
                         )
                     }
@@ -407,7 +408,7 @@ internal fun SideRailCaptureScaffold(
                             PillSnackbarHost(snackbarHostState = state.snackbarHostState)
                             OverlapAwareCaptureSlot(
                                 orientation = Orientation.Horizontal,
-                                isCompact = config.isCompactHeight,
+                                controlSize = controlSize,
                                 content = slots.elapsedTimeDisplay
                             )
                         }
@@ -418,7 +419,7 @@ internal fun SideRailCaptureScaffold(
                                 .padding(bottom = config.hudVerticalPadding)
                                 .suppressBackgroundForModal(isModalOpen),
                             orientation = Orientation.Horizontal,
-                            isCompact = config.isCompactHeight,
+                            controlSize = controlSize,
                             content = slots.captureModeCarousel
                         )
                     } else {
@@ -448,7 +449,7 @@ internal fun SideRailCaptureScaffold(
                 OverlapAwareCaptureSlot(
                     modifier = Modifier.suppressBackgroundForModal(isModalOpen),
                     orientation = Orientation.Horizontal,
-                    isCompact = config.isCompactHeight,
+                    controlSize = controlSize,
                     content = overlay
                 )
             }
@@ -488,7 +489,7 @@ internal fun SideRailCaptureScaffold(
                 OverlapAwareCaptureSlot(
                     modifier = cardContentModifier,
                     orientation = Orientation.Vertical,
-                    isCompact = config.isCompactHeight,
+                    controlSize = controlSize,
                     content = slots.quickSettingsOverlay
                 )
             }

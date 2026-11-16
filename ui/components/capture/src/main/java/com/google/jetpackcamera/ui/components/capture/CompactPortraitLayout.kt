@@ -320,7 +320,7 @@ internal fun CompactPortraitLayout(
                     CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
                         OverlapAwareCaptureSlot(
                             orientation = Orientation.Vertical,
-                            isCompact = false,
+                            controlSize = ControlSize.Standard,
                             content = slots.quickSettingsOverlay
                         )
                     }
@@ -545,7 +545,7 @@ private fun CompactTopBarBox(
 private fun CompactCaptureRow(
     bottomBarDirection: LayoutDirection,
     localeDirection: LayoutDirection,
-    isCompact: Boolean,
+    controlSize: ControlSize,
     imageWell: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     flipCameraButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
@@ -569,7 +569,7 @@ private fun CompactCaptureRow(
                     CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
                         OverlapAwareStyleProvider(
                             orientation = Orientation.Horizontal,
-                            isCompact = isCompact
+                            controlSize = controlSize
                         ) {
                             imageWell(Modifier)
                         }
@@ -580,7 +580,7 @@ private fun CompactCaptureRow(
             CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
                 OverlapAwareStyleProvider(
                     orientation = Orientation.Horizontal,
-                    isCompact = isCompact
+                    controlSize = controlSize
                 ) {
                     captureButton(Modifier)
                 }
@@ -595,7 +595,7 @@ private fun CompactCaptureRow(
                 CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
                     OverlapAwareStyleProvider(
                         orientation = Orientation.Horizontal,
-                        isCompact = isCompact
+                        controlSize = controlSize
                     ) {
                         flipCameraButton(Modifier)
                     }
@@ -609,7 +609,7 @@ private fun CompactCaptureRow(
 private fun CompactBottomToolbar(
     bottomBarDirection: LayoutDirection,
     localeDirection: LayoutDirection,
-    isCompact: Boolean,
+    controlSize: ControlSize,
     quickSettingsToggleButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     captureModeToggleSwitch: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     modifier: Modifier = Modifier
@@ -629,7 +629,7 @@ private fun CompactBottomToolbar(
                 CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
                     OverlapAwareStyleProvider(
                         orientation = Orientation.Horizontal,
-                        isCompact = isCompact
+                        controlSize = controlSize
                     ) {
                         quickSettingsToggleButton(Modifier)
                     }
@@ -643,7 +643,7 @@ private fun CompactBottomToolbar(
                 CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
                     OverlapAwareStyleProvider(
                         orientation = Orientation.Horizontal,
-                        isCompact = isCompact
+                        controlSize = controlSize
                     ) {
                         captureModeToggleSwitch(Modifier)
                     }
@@ -790,7 +790,7 @@ internal fun AdaptivePortraitCaptureLayout(
                     CompactCaptureRow(
                         bottomBarDirection = bottomBarDirection,
                         localeDirection = localeDirection,
-                        isCompact = false,
+                        controlSize = ControlSize.Standard,
                         imageWell = imageWell,
                         captureButton = captureButton,
                         flipCameraButton = flipCameraButton,
@@ -811,7 +811,7 @@ internal fun AdaptivePortraitCaptureLayout(
                     CompactBottomToolbar(
                         bottomBarDirection = bottomBarDirection,
                         localeDirection = localeDirection,
-                        isCompact = false,
+                        controlSize = ControlSize.Standard,
                         quickSettingsToggleButton = quickSettingsToggleButton,
                         captureModeToggleSwitch = captureModeToggleSwitch,
                         modifier = Modifier.layoutId(CaptureSlotId.BottomToolbar)
@@ -972,6 +972,7 @@ internal fun VerticalMaterialControls(
             .asPaddingValues()
             .calculateBottomPadding()
         val isShortScreen = maxHeight < CompactPortraitTokens.ShortScreenThreshold
+        val controlSize = if (isShortScreen) ControlSize.Mini else ControlSize.Standard
         val maxBottomPad = max(
             CompactPortraitTokens.TargetBottomClearance - navBarBottom,
             CompactPortraitTokens.MinNavMargin
@@ -998,14 +999,14 @@ internal fun VerticalMaterialControls(
 
                 OverlapAwareStyleProvider(
                     orientation = Orientation.Horizontal,
-                    isCompact = isShortScreen
+                    controlSize = controlSize
                 ) {
                     elapsedTimeDisplay(Modifier)
                 }
 
                 OverlapAwareStyleProvider(
                     orientation = Orientation.Horizontal,
-                    isCompact = isShortScreen
+                    controlSize = controlSize
                 ) {
                     zoomControls(Modifier)
                 }
@@ -1016,7 +1017,7 @@ internal fun VerticalMaterialControls(
                     CompactCaptureRow(
                         bottomBarDirection = bottomBarDirection,
                         localeDirection = localeDirection,
-                        isCompact = isShortScreen,
+                        controlSize = controlSize,
                         imageWell = imageWell,
                         captureButton = captureButton,
                         flipCameraButton = flipCameraButton,
@@ -1032,7 +1033,7 @@ internal fun VerticalMaterialControls(
                 ) {
                     OverlapAwareStyleProvider(
                         orientation = Orientation.Horizontal,
-                        isCompact = isShortScreen
+                        controlSize = controlSize
                     ) {
                         captureModeCarousel(Modifier)
                     }
@@ -1041,7 +1042,7 @@ internal fun VerticalMaterialControls(
                 CompactBottomToolbar(
                     bottomBarDirection = bottomBarDirection,
                     localeDirection = localeDirection,
-                    isCompact = isShortScreen,
+                    controlSize = controlSize,
                     quickSettingsToggleButton = quickSettingsToggleButton,
                     captureModeToggleSwitch = captureModeToggleSwitch,
                     modifier = Modifier.height(CompactPortraitTokens.LowerSectionHeight)
