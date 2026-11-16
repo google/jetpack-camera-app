@@ -17,31 +17,18 @@ package com.google.jetpackcamera.ui.components.capture
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -55,33 +42,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 
-// TODO(#648): Replace with QUICK_SETTINGS_OVERLAY_CARD_TAG from QuickSettingsOverlayCard once #648
-// merges into main.
-internal const val QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG = "card_quick_settings_overlay"
-
 /**
- * Posture-specific padding, vertical alignment, and Quick Settings card sizing configuration for
+ * Posture-specific padding, vertical alignment, and control sizing configuration for
  * [SideRailCaptureScaffold].
- *
- * [showQuickSettingsCard] is `false` when the hosting layout presents Quick Settings itself, such
- * as the bottom sheet used by [CompactShortLayout]; the floating card is meant for tablet and
- * foldable sizes.
  *
  * [controlSize] overrides the [ControlSize] requested for rail and HUD controls; when `null` it is
  * derived from [isCompactHeight] (see [resolvedControlSize]). [railWidth] fixes each rail's width
@@ -97,10 +69,6 @@ internal data class SideRailPostureConfig(
     val railMinSectionGap: Dp,
     val centerVerticalFraction: Float,
     val hudVerticalPadding: Dp,
-    val quickSettingsCardMaxWidth: Dp,
-    val quickSettingsCardMaxHeight: Dp = Dp.Unspecified,
-    val clearRailsForQuickSettings: Boolean = true,
-    val showQuickSettingsCard: Boolean = true,
     val controlSize: ControlSize? = null,
     val railWidth: Dp = Dp.Unspecified
 ) {
@@ -116,11 +84,7 @@ internal data class SideRailPostureConfig(
  * Shared dimension, clearance, and posture-preset constants for side-rail capture layouts.
  */
 internal object SideRailTokens {
-    val QuickSettingsRailClearanceGap = 12.dp
     val TopOverlayRailClearanceGap = 12.dp
-    val QuickSettingsScrimColor = Color.Black.copy(alpha = 0.32f)
-    val QuickSettingsCardCornerRadius = 28.dp
-    val QuickSettingsCardTonalElevation = 3.dp
 
     val FoldableConfig = SideRailPostureConfig(
         activeLayoutName = "FoldableLayout",
@@ -131,8 +95,6 @@ internal object SideRailTokens {
         railMinSectionGap = 12.dp,
         centerVerticalFraction = 0.50f,
         hudVerticalPadding = 16.dp,
-        quickSettingsCardMaxWidth = 380.dp,
-        clearRailsForQuickSettings = true,
         controlSize = ControlSize.Medium,
         // Fixed rail width keeps the rails anchored to the window edges regardless of how wide the
         // black bars beside the viewfinder get. 96dp clears a 3:4 viewfinder on ~852x883dp
@@ -150,9 +112,7 @@ internal object SideRailTokens {
         railHorizontalPadding = 20.dp,
         railMinSectionGap = 16.dp,
         centerVerticalFraction = 0.50f,
-        hudVerticalPadding = 20.dp,
-        quickSettingsCardMaxWidth = 412.dp,
-        clearRailsForQuickSettings = true
+        hudVerticalPadding = 20.dp
     )
 
     val TabletPortraitConfig = SideRailPostureConfig(
@@ -163,17 +123,14 @@ internal object SideRailTokens {
         railHorizontalPadding = 24.dp,
         railMinSectionGap = 16.dp,
         centerVerticalFraction = 0.70f,
-        hudVerticalPadding = 24.dp,
-        quickSettingsCardMaxWidth = 412.dp,
-        clearRailsForQuickSettings = true
+        hudVerticalPadding = 24.dp
     )
 }
 
 /**
  * Unfolded book-style foldable capture layout (`~673x841dp` to `~852x883dp`) anchoring balanced
  * vertical control rails (`centerVerticalFraction = 0.50f`) to the start and end edges over a
- * full-bleed camera viewfinder, with a rail-cleared floating Quick Settings card (`maxCardWidth =
- * 380.dp`).
+ * full-bleed camera viewfinder. Quick Settings opens in the [SideRailCaptureScaffold] bottom sheet.
  *
  * Provides [LocalActiveCaptureLayout] = `"FoldableLayout"`.
  */
@@ -206,8 +163,8 @@ internal fun FoldableLayout(
 /**
  * Landscape tablet capture layout (`~1280x800dp`) anchoring generous vertical control rails
  * (`centerVerticalFraction = 0.50f`, `20.dp` horizontal padding, `16.dp` section gap) to the start
- * and end edges over a full-bleed viewfinder, with a rail-cleared floating Quick Settings card
- * (`maxCardWidth = 412.dp`).
+ * and end edges over a full-bleed viewfinder. Quick Settings opens in the [SideRailCaptureScaffold]
+ * bottom sheet.
  *
  * Provides [LocalActiveCaptureLayout] = `"TabletLandscapeLayout"`.
  */
@@ -240,8 +197,8 @@ internal fun TabletLandscapeLayout(
 /**
  * Portrait tablet capture layout (`~800x1280dp`) shifting the zoom controls and shutter cluster
  * into the lower ergonomic thumb zone (`centerVerticalFraction = 0.70f`, `bottomPadding = 48.dp`,
- * `horizontalPadding = 24.dp`) over a full-bleed viewfinder, with a rail-cleared floating Quick
- * Settings card (`maxCardWidth = 412.dp`).
+ * `horizontalPadding = 24.dp`) over a full-bleed viewfinder. Quick Settings opens in the
+ * [SideRailCaptureScaffold] bottom sheet.
  *
  * Provides [LocalActiveCaptureLayout] = `"TabletPortraitLayout"`.
  */
@@ -275,9 +232,10 @@ internal fun TabletPortraitLayout(
  * Shared full-bleed viewfinder and dual-rail capture scaffold backing [FoldableLayout],
  * [TabletLandscapeLayout], [TabletPortraitLayout], and [CompactShortLayout].
  *
- * Dynamically measures [StartSideRail] and [EndSideRail] widths via [onSizeChanged] so the floating
- * Quick Settings card clears both side rails (`start = startRailWidth + 12.dp`,
- * `end = endRailWidth + 12.dp`) while keeping its scrim edge-to-edge across the window.
+ * Quick Settings opens in an in-hierarchy [QuickSettingsBottomSheetScaffold]. A back press or a tap
+ * on the scrim above the sheet dismisses it and invokes [onDismissQuickSettings]. Dynamically
+ * measures [StartSideRail] and [EndSideRail] widths via [onSizeChanged] so the top HUD overlays
+ * clear both rails.
  */
 @Composable
 internal fun SideRailCaptureScaffold(
@@ -320,294 +278,206 @@ internal fun SideRailCaptureScaffold(
         state.dismissQuickSettings()
         onDismissQuickSettings()
     }
+    BackHandler(enabled = isQuickSettingsVisible, onBack = handleDismissQuickSettings)
 
     val liveSafeInsets = WindowInsets.systemBars.union(WindowInsets.displayCutout)
-    val safePadding = liveSafeInsets.asPaddingValues()
 
     CompositionLocalProvider(
         LocalOverlapTargetBounds provides overlapTargetBounds,
         LocalActiveCaptureLayout provides config.activeLayoutName
     ) {
-        Box(
-            modifier = modifier
-                .fillMaxSize()
-                .background(Color.Black)
-        ) {
-            // Full-bleed centered viewfinder flush from top to bottom of the window.
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .suppressBackgroundForModal(isModalOpen),
-                contentAlignment = Alignment.Center
-            ) {
+        // TODO(#648): Replace the bottom sheet with QuickSettingsOverlayCard once #648 lands.
+        // The card should cover the side rails (not clear them), anchored to the left edge:
+        // vertically centered on foldables and landscape tablets; on portrait tablets, level with
+        // the lower controls.
+        QuickSettingsBottomSheetScaffold(
+            modifier = modifier.fillMaxSize(),
+            state = state,
+            onDismissQuickSettings = onDismissQuickSettings,
+            sheetContent = {
                 CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                    viewfinder(Modifier.fillMaxSize())
+                    OverlapAwareCaptureSlot(
+                        orientation = Orientation.Vertical,
+                        controlSize = ControlSize.Standard,
+                        content = slots.quickSettingsOverlay
+                    )
                 }
             }
-
-            // Overlaid foreground chrome padded by live visible systemBars and displayCutout.
+        ) { isSheetVisible ->
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .windowInsetsPadding(liveSafeInsets)
+                    .background(Color.Black)
             ) {
-                if (controlsVisible) {
-                    CompositionLocalProvider(LocalLayoutDirection provides railContainerDirection) {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            CompositionLocalProvider(
-                                LocalLayoutDirection provides localeDirection
-                            ) {
-                                StartSideRail(
-                                    slots = slots,
-                                    modifier = Modifier
-                                        .align(Alignment.CenterStart)
-                                        .fillMaxHeight()
-                                        .onSizeChanged { startRailWidthPx = it.width }
-                                        .suppressBackgroundForModal(isModalOpen),
-                                    isCompactHeight = config.isCompactHeight,
-                                    controlSize = controlSize,
-                                    railWidth = config.railWidth,
-                                    topPadding = config.railTopPadding,
-                                    bottomPadding = config.railBottomPadding,
-                                    horizontalPadding = config.railHorizontalPadding,
-                                    minSectionGap = config.railMinSectionGap,
-                                    centerVerticalFraction = config.centerVerticalFraction
-                                )
-
-                                EndSideRail(
-                                    slots = slots,
-                                    modifier = Modifier
-                                        .align(Alignment.CenterEnd)
-                                        .fillMaxHeight()
-                                        .onSizeChanged { endRailWidthPx = it.width }
-                                        .suppressBackgroundForModal(isModalOpen),
-                                    isCompactHeight = config.isCompactHeight,
-                                    controlSize = controlSize,
-                                    railWidth = config.railWidth,
-                                    showElapsedTimeInRail = false,
-                                    topPadding = config.railTopPadding,
-                                    bottomPadding = config.railBottomPadding,
-                                    horizontalPadding = config.railHorizontalPadding,
-                                    minSectionGap = config.railMinSectionGap,
-                                    centerVerticalFraction = config.centerVerticalFraction
-                                )
-                            }
-                        }
-                    }
-                }
-
-                val topOverlayClearance = max(startRailWidthDp, endRailWidthDp) +
-                    SideRailTokens.TopOverlayRailClearanceGap
-
-                CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = topOverlayClearance)
-                    ) {
-                        OverlapAwareCaptureSlot(
-                            modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .padding(top = config.hudVerticalPadding)
-                                .suppressBackgroundForModal(isModalOpen),
-                            orientation = Orientation.Horizontal,
-                            controlSize = controlSize,
-                            content = slots.topStartContent
-                        )
-
-                        OverlapAwareCaptureSlot(
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(top = config.hudVerticalPadding)
-                                .suppressBackgroundForModal(isModalOpen),
-                            orientation = Orientation.Horizontal,
-                            controlSize = controlSize,
-                            content = slots.viewfinderTopEndContent
-                        )
-                    }
-
-                    if (controlsVisible) {
-                        Column(
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = config.hudVerticalPadding)
-                                .suppressBackgroundForModal(isModalOpen),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            PillSnackbarHost(snackbarHostState = state.snackbarHostState)
-                            OverlapAwareCaptureSlot(
-                                orientation = Orientation.Horizontal,
-                                controlSize = controlSize,
-                                content = slots.elapsedTimeDisplay
-                            )
-                        }
-
-                        OverlapAwareCaptureSlot(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = config.hudVerticalPadding)
-                                .suppressBackgroundForModal(isModalOpen),
-                            orientation = Orientation.Horizontal,
-                            controlSize = controlSize,
-                            content = slots.captureModeCarousel
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = config.hudVerticalPadding)
-                                .suppressBackgroundForModal(isModalOpen)
-                        ) {
-                            PillSnackbarHost(snackbarHostState = state.snackbarHostState)
-                        }
-                    }
-                }
-
+                // Full-bleed centered viewfinder flush from top to bottom of the window.
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .suppressBackgroundForModal(isModalOpen)
+                        .suppressBackgroundForModal(isModalOpen),
+                    contentAlignment = Alignment.Center
                 ) {
                     CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                        slots.snackBar(Modifier, state.snackbarHostState)
+                        viewfinder(Modifier.fillMaxSize())
                     }
                 }
-            }
 
-            CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                OverlapAwareCaptureSlot(
-                    modifier = Modifier.suppressBackgroundForModal(isModalOpen),
-                    orientation = Orientation.Horizontal,
-                    controlSize = controlSize,
-                    content = overlay
-                )
-            }
-
-            val safeStart = safePadding.calculateStartPadding(railContainerDirection)
-            val safeEnd = safePadding.calculateEndPadding(railContainerDirection)
-            val safeTop = safePadding.calculateTopPadding()
-            val safeBottom = safePadding.calculateBottomPadding()
-
-            val quickSettingsCardPadding = if (config.clearRailsForQuickSettings) {
-                PaddingValues(
-                    start = safeStart + startRailWidthDp +
-                        SideRailTokens.QuickSettingsRailClearanceGap,
-                    end = safeEnd + endRailWidthDp +
-                        SideRailTokens.QuickSettingsRailClearanceGap,
-                    top = safeTop + config.railTopPadding,
-                    bottom = safeBottom + config.railBottomPadding
-                )
-            } else {
-                PaddingValues(
-                    start = safeStart + config.hudVerticalPadding,
-                    end = safeEnd + config.hudVerticalPadding,
-                    top = safeTop + config.hudVerticalPadding,
-                    bottom = safeBottom + config.hudVerticalPadding
-                )
-            }
-
-            QuickSettingsOverlayCardPlaceholder(
-                isOpen = isQuickSettingsVisible && config.showQuickSettingsCard,
-                onDismiss = handleDismissQuickSettings,
-                cardPadding = quickSettingsCardPadding,
-                maxCardWidth = config.quickSettingsCardMaxWidth,
-                maxCardHeight = config.quickSettingsCardMaxHeight,
-                cardContainerDirection = railContainerDirection,
-                localeDirection = localeDirection
-            ) { cardContentModifier ->
-                OverlapAwareCaptureSlot(
-                    modifier = cardContentModifier,
-                    orientation = Orientation.Vertical,
-                    controlSize = controlSize,
-                    content = slots.quickSettingsOverlay
-                )
-            }
-
-            CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                // Overlaid foreground chrome padded by live visible systemBars and displayCutout.
                 Box(
-                    modifier = Modifier.onSizeChanged { size ->
-                        isErrorDialogPlaced = size.width > 0 && size.height > 0
-                    }
-                ) {
-                    slots.errorDialog(Modifier)
-                }
-            }
-
-            // Drawn last and outside all inset-padded containers so screen flash covers the
-            // entire window, including system bar and display cutout areas.
-            screenFlashOverlay(Modifier)
-        }
-    }
-}
-
-// TODO(#648): Replace with QuickSettingsOverlayCard once #648 merges into main.
-@Composable
-private fun QuickSettingsOverlayCardPlaceholder(
-    isOpen: Boolean,
-    onDismiss: () -> Unit,
-    cardPadding: PaddingValues,
-    maxCardWidth: Dp,
-    maxCardHeight: Dp,
-    cardContainerDirection: LayoutDirection,
-    localeDirection: LayoutDirection,
-    content: @Composable (Modifier) -> Unit
-) {
-    if (!isOpen) return
-
-    val dismissLabel =
-        stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
-    BackHandler(enabled = true, onBack = onDismiss)
-
-    Box(modifier = Modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(SideRailTokens.QuickSettingsScrimColor)
-                .testTag(QUICK_SETTINGS_SCRIM)
-                .semantics {
-                    contentDescription = dismissLabel
-                    traversalIndex = 1f
-                }
-                .clickable(
-                    role = Role.Button,
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClickLabel = dismissLabel,
-                    onClick = onDismiss
-                )
-        )
-
-        val heightModifier = if (maxCardHeight != Dp.Unspecified) {
-            Modifier.heightIn(max = maxCardHeight)
-        } else {
-            Modifier
-        }
-
-        CompositionLocalProvider(LocalLayoutDirection provides cardContainerDirection) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(cardPadding),
-                contentAlignment = Alignment.BottomStart
-            ) {
-                Surface(
                     modifier = Modifier
-                        .testTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-                        .widthIn(max = maxCardWidth)
-                        .then(heightModifier)
-                        .pointerInput(Unit) {
-                            detectTapGestures { /* Consume taps on card surface */ }
-                        },
-                    shape = RoundedCornerShape(SideRailTokens.QuickSettingsCardCornerRadius),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                    tonalElevation = SideRailTokens.QuickSettingsCardTonalElevation
+                        .fillMaxSize()
+                        .windowInsetsPadding(liveSafeInsets)
                 ) {
+                    if (controlsVisible) {
+                        CompositionLocalProvider(
+                            LocalLayoutDirection provides railContainerDirection
+                        ) {
+                            Box(modifier = Modifier.fillMaxSize()) {
+                                CompositionLocalProvider(
+                                    LocalLayoutDirection provides localeDirection
+                                ) {
+                                    StartSideRail(
+                                        slots = slots,
+                                        modifier = Modifier
+                                            .align(Alignment.CenterStart)
+                                            .fillMaxHeight()
+                                            .onSizeChanged { startRailWidthPx = it.width }
+                                            .suppressBackgroundForModal(isModalOpen),
+                                        isCompactHeight = config.isCompactHeight,
+                                        controlSize = controlSize,
+                                        railWidth = config.railWidth,
+                                        topPadding = config.railTopPadding,
+                                        bottomPadding = config.railBottomPadding,
+                                        horizontalPadding = config.railHorizontalPadding,
+                                        minSectionGap = config.railMinSectionGap,
+                                        centerVerticalFraction = config.centerVerticalFraction
+                                    )
+
+                                    EndSideRail(
+                                        slots = slots,
+                                        modifier = Modifier
+                                            .align(Alignment.CenterEnd)
+                                            .fillMaxHeight()
+                                            .onSizeChanged { endRailWidthPx = it.width }
+                                            .suppressBackgroundForModal(isModalOpen),
+                                        isCompactHeight = config.isCompactHeight,
+                                        controlSize = controlSize,
+                                        railWidth = config.railWidth,
+                                        showElapsedTimeInRail = false,
+                                        topPadding = config.railTopPadding,
+                                        bottomPadding = config.railBottomPadding,
+                                        horizontalPadding = config.railHorizontalPadding,
+                                        minSectionGap = config.railMinSectionGap,
+                                        centerVerticalFraction = config.centerVerticalFraction
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    val topOverlayClearance = max(startRailWidthDp, endRailWidthDp) +
+                        SideRailTokens.TopOverlayRailClearanceGap
+
                     CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                        Box(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                            content(Modifier)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = topOverlayClearance)
+                        ) {
+                            OverlapAwareCaptureSlot(
+                                modifier = Modifier
+                                    .align(Alignment.TopStart)
+                                    .padding(top = config.hudVerticalPadding)
+                                    .suppressBackgroundForModal(isModalOpen),
+                                orientation = Orientation.Horizontal,
+                                controlSize = controlSize,
+                                content = slots.topStartContent
+                            )
+
+                            OverlapAwareCaptureSlot(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(top = config.hudVerticalPadding)
+                                    .suppressBackgroundForModal(isModalOpen),
+                                orientation = Orientation.Horizontal,
+                                controlSize = controlSize,
+                                content = slots.viewfinderTopEndContent
+                            )
+                        }
+
+                        if (controlsVisible) {
+                            Column(
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .padding(top = config.hudVerticalPadding)
+                                    .suppressBackgroundForModal(isModalOpen),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                PillSnackbarHost(snackbarHostState = state.snackbarHostState)
+                                OverlapAwareCaptureSlot(
+                                    orientation = Orientation.Horizontal,
+                                    controlSize = controlSize,
+                                    content = slots.elapsedTimeDisplay
+                                )
+                            }
+
+                            OverlapAwareCaptureSlot(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = config.hudVerticalPadding)
+                                    .suppressBackgroundForModal(isModalOpen),
+                                orientation = Orientation.Horizontal,
+                                controlSize = controlSize,
+                                content = slots.captureModeCarousel
+                            )
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopCenter)
+                                    .padding(top = config.hudVerticalPadding)
+                                    .suppressBackgroundForModal(isModalOpen)
+                            ) {
+                                PillSnackbarHost(snackbarHostState = state.snackbarHostState)
+                            }
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .suppressBackgroundForModal(isModalOpen)
+                    ) {
+                        CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                            slots.snackBar(Modifier, state.snackbarHostState)
                         }
                     }
                 }
+
+                CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                    OverlapAwareCaptureSlot(
+                        modifier = Modifier.suppressBackgroundForModal(isModalOpen),
+                        orientation = Orientation.Horizontal,
+                        controlSize = controlSize,
+                        content = overlay
+                    )
+                }
+
+                if (isSheetVisible && !isErrorModalActive) {
+                    QuickSettingsSheetScrim(onDismiss = handleDismissQuickSettings)
+                }
+
+                CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                    Box(
+                        modifier = Modifier.onSizeChanged { size ->
+                            isErrorDialogPlaced = size.width > 0 && size.height > 0
+                        }
+                    ) {
+                        slots.errorDialog(Modifier)
+                    }
+                }
+
+                // Drawn last and outside all inset-padded containers so screen flash covers the
+                // entire window, including system bar and display cutout areas.
+                screenFlashOverlay(Modifier)
             }
         }
     }

@@ -55,8 +55,7 @@ private object QuickSettingsBottomSheetTokens {
  * [CaptureScaffoldState.isQuickSettingsOpen] in both directions without spawning a secondary
  * window.
  *
- * Used by compact layouts; tablet and foldable side-rail layouts present Quick Settings as a
- * floating card instead.
+ * Used by the compact and side-rail capture layouts.
  *
  * @param state Mode-agnostic [CaptureScaffoldState] owning Quick Settings visibility and the
  *   snackbar host.
