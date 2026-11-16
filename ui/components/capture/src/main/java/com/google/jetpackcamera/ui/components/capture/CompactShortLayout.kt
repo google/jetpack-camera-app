@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -69,9 +68,9 @@ private object CompactShortTokens {
  * [BoxWithConstraints], wraps [slots] with proportional `Modifier.sizeIn` caps so controls never
  * clip or overlap vertically, provides [LocalActiveCaptureLayout] = `"CompactShortLayout"`, and
  * delegates to [SideRailCaptureScaffold] with `isCompactHeight = true`, condensed `8.dp` chrome
- * padding, and scoped [LocalCaptureRtlPolicy] (`mirrorSideRails`). Quick Settings opens in an
- * in-hierarchy [QuickSettingsBottomSheetScaffold] rather than the floating card used on tablet and
- * foldable sizes. The image well and zoom bar are hidden because they cannot fit legibly.
+ * padding, and scoped [LocalCaptureRtlPolicy] (`mirrorSideRails`). Quick Settings opens in the
+ * [SideRailCaptureScaffold] bottom sheet, as on the other side-rail layouts. The image well and
+ * zoom bar are hidden because they cannot fit legibly.
  *
  * @param slots [CaptureSlots] supplying the side-rail controls, HUD overlays, Quick Settings
  *   content, snackbar, and error dialog.
@@ -82,8 +81,8 @@ private object CompactShortTokens {
  * @param controlsVisible Whether the camera control slots should be composed and visible.
  * @param isErrorDialogShowing Whether a modal camera error dialog is currently visible above the
  *   capture chrome.
- * @param onDismissQuickSettings Callback invoked when Quick Settings is dismissed via scrim tap or
- *   the bottom sheet drag handle.
+ * @param onDismissQuickSettings Callback invoked when Quick Settings is dismissed via back press,
+ *   scrim tap, or the bottom sheet drag handle.
  * @param overlay Optional overlay composable drawn above the viewfinder and controls.
  * @param screenFlashOverlay Full-bleed screen flash composable drawn above all chrome and system
  *   bar areas.
@@ -102,74 +101,51 @@ internal fun CompactShortLayout(
 ) {
     val localeDirection = LocalLayoutDirection.current
     val safePadding = WindowInsets.systemBars.union(WindowInsets.displayCutout).asPaddingValues()
-    val handleDismissQuickSettings = {
-        state.dismissQuickSettings()
-        onDismissQuickSettings()
-    }
 
-    QuickSettingsBottomSheetScaffold(
-        modifier = modifier.fillMaxSize(),
-        state = state,
-        onDismissQuickSettings = onDismissQuickSettings,
-        sheetContent = {
-            CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                OverlapAwareCaptureSlot(
-                    orientation = Orientation.Vertical,
-                    controlSize = ControlSize.Standard,
-                    content = slots.quickSettingsOverlay
-                )
-            }
-        }
-    ) { isSheetVisible ->
-        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            val horizontalInsets = safePadding.calculateLeftPadding(localeDirection) +
-                safePadding.calculateRightPadding(localeDirection)
-            val verticalInsets = safePadding.calculateTopPadding() +
-                safePadding.calculateBottomPadding()
-            val availableWidth =
-                (maxWidth - horizontalInsets).coerceAtLeast(CompactShortTokens.ZeroSize)
-            val availableHeight =
-                (maxHeight - verticalInsets).coerceAtLeast(CompactShortTokens.ZeroSize)
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val horizontalInsets = safePadding.calculateLeftPadding(localeDirection) +
+            safePadding.calculateRightPadding(localeDirection)
+        val verticalInsets = safePadding.calculateTopPadding() +
+            safePadding.calculateBottomPadding()
+        val availableWidth =
+            (maxWidth - horizontalInsets).coerceAtLeast(CompactShortTokens.ZeroSize)
+        val availableHeight =
+            (maxHeight - verticalInsets).coerceAtLeast(CompactShortTokens.ZeroSize)
 
-            val railSlotMaxWidth = min(
-                CaptureSlotTokens.ModeToggleMiniWidth,
-                (availableWidth * CompactShortTokens.RAIL_WIDTH_FRACTION)
-                    .coerceAtLeast(CompactShortTokens.MinRailSlotWidthFloor)
+        val railSlotMaxWidth = min(
+            CaptureSlotTokens.ModeToggleMiniWidth,
+            (availableWidth * CompactShortTokens.RAIL_WIDTH_FRACTION)
+                .coerceAtLeast(CompactShortTokens.MinRailSlotWidthFloor)
+        )
+        val estimatedRailFootprint =
+            railSlotMaxWidth + CompactShortTokens.RailHorizontalPaddingTotal
+        val condensedSlots = remember(slots, availableWidth, availableHeight) {
+            slots.withCondensedSizeCaps(
+                availableWidth = availableWidth,
+                availableHeight = availableHeight,
+                railSlotMaxWidth = railSlotMaxWidth,
+                estimatedRailFootprint = estimatedRailFootprint
             )
-            val estimatedRailFootprint =
-                railSlotMaxWidth + CompactShortTokens.RailHorizontalPaddingTotal
-            val condensedSlots = remember(slots, availableWidth, availableHeight) {
-                slots.withCondensedSizeCaps(
-                    availableWidth = availableWidth,
-                    availableHeight = availableHeight,
-                    railSlotMaxWidth = railSlotMaxWidth,
-                    estimatedRailFootprint = estimatedRailFootprint
-                )
-            }
-
-            SideRailCaptureScaffold(
-                slots = condensedSlots,
-                viewfinder = viewfinder,
-                modifier = Modifier.fillMaxSize(),
-                state = state,
-                config = CompactShortConfig,
-                controlsVisible = controlsVisible,
-                isErrorDialogShowing = isErrorDialogShowing,
-                onDismissQuickSettings = onDismissQuickSettings,
-                overlay = overlay,
-                screenFlashOverlay = screenFlashOverlay
-            )
-
-            if (isSheetVisible && !isErrorDialogShowing) {
-                QuickSettingsSheetScrim(onDismiss = handleDismissQuickSettings)
-            }
         }
+
+        SideRailCaptureScaffold(
+            slots = condensedSlots,
+            viewfinder = viewfinder,
+            modifier = Modifier.fillMaxSize(),
+            state = state,
+            config = CompactShortConfig,
+            controlsVisible = controlsVisible,
+            isErrorDialogShowing = isErrorDialogShowing,
+            onDismissQuickSettings = onDismissQuickSettings,
+            overlay = overlay,
+            screenFlashOverlay = screenFlashOverlay
+        )
     }
 }
 
 /**
- * Side-rail configuration for [CompactShortLayout]. Quick Settings is presented by the layout's
- * bottom sheet, so the scaffold's floating card is disabled.
+ * Side-rail configuration for [CompactShortLayout]: condensed chrome padding and compact-height
+ * controls.
  */
 private val CompactShortConfig = SideRailPostureConfig(
     activeLayoutName = "CompactShortLayout",
@@ -179,9 +155,7 @@ private val CompactShortConfig = SideRailPostureConfig(
     railHorizontalPadding = CompactShortTokens.CondensedChromePadding,
     railMinSectionGap = CompactShortTokens.CondensedMinSectionGap,
     centerVerticalFraction = 0.50f,
-    hudVerticalPadding = CompactShortTokens.CondensedChromePadding,
-    quickSettingsCardMaxWidth = CompactShortTokens.ZeroSize,
-    showQuickSettingsCard = false
+    hudVerticalPadding = CompactShortTokens.CondensedChromePadding
 )
 
 private fun CaptureSlots.withCondensedSizeCaps(

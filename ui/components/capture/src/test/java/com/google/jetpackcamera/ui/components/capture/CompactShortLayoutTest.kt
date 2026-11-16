@@ -276,7 +276,7 @@ class CompactShortLayoutTest {
     }
 
     @Test
-    fun compactShortLayout_quickSettings_opensBottomSheetInsteadOfCard() {
+    fun compactShortLayout_quickSettings_opensBottomSheet() {
         val state = CaptureScaffoldState(isInitiallyExpanded = true)
         composeTestRule.setContent {
             MaterialTheme {
@@ -289,11 +289,6 @@ class CompactShortLayoutTest {
         }
         composeTestRule.waitForIdle()
 
-        // The floating card is reserved for tablet and foldable sizes.
-        assertThat(
-            composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-                .fetchSemanticsNodes()
-        ).isEmpty()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
             .assertIsDisplayed()
             .assert(!isPopup())

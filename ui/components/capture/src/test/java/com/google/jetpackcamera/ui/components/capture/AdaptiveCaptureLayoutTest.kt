@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -426,18 +427,16 @@ class AdaptiveCaptureLayoutTest {
         composeTestRule.waitForIdle()
         assertThat(selectedCaptureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
 
-        composeTestRule
-            .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-            .assertDoesNotExist()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertDoesNotExist()
+        // The hidden sheet keeps QuickSettingsContent composed off-screen until it is opened.
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsNotDisplayed()
 
-        // Clicking real ToggleQuickSettingsButton opens QuickSettingsContent inside the card shell.
+        // Clicking real ToggleQuickSettingsButton opens QuickSettingsContent in the bottom sheet.
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).performClick()
         composeTestRule.waitForIdle()
 
         assertThat(state.isQuickSettingsOpen).isTrue()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).assertIsDisplayed()
         assertThat(
             composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_BOTTOM_SHEET).fetchSemanticsNodes()
         ).hasSize(1)
@@ -504,17 +503,12 @@ class AdaptiveCaptureLayoutTest {
             CameraLayoutMode.COMPACT_SHORT,
             "CompactShortLayout"
         )
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-            .assertDoesNotExist()
 
-        // COMPACT_SHORT presents Quick Settings in the bottom sheet; the floating card is reserved
-        // for tablet and foldable sizes.
+        // COMPACT_SHORT presents Quick Settings in the bottom sheet.
         composeTestRule.runOnIdle { state.showQuickSettings() }
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).assertIsDisplayed()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-            .assertDoesNotExist()
     }
 
     @Config(qualifiers = "sw320dp-w320dp-h340dp-mdpi")
