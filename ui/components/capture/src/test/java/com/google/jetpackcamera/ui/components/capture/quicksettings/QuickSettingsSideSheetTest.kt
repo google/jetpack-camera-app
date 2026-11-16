@@ -51,7 +51,6 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
-import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
@@ -234,11 +233,9 @@ class QuickSettingsSideSheetTest {
     }
 
     @Test
-    fun quickSettingsSideSheet_scrimTap_dismissesAndInterceptsUnderlyingClicks() {
+    fun quickSettingsSideSheet_outsideTap_dismissesAndPassesThroughToUnderlyingControl() {
         var dismissCount = 0
         var underlyingClicked = false
-        val expectedDismissDescription = ApplicationProvider.getApplicationContext<Context>()
-            .getString(R.string.quick_settings_btn_close_expanded_settings_description)
 
         composeTestRule.setContent {
             MaterialTheme {
@@ -258,21 +255,56 @@ class QuickSettingsSideSheetTest {
             }
         }
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
-            .assertContentDescriptionEquals(expectedDismissDescription)
-            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
-            .assert(SemanticsMatcher.expectValue(SemanticsProperties.TraversalIndex, 1f))
-            .assert(
-                SemanticsMatcher("onClickLabel is null to avoid duplicate speech") { node ->
-                    node.config.getOrNull(SemanticsActions.OnClick)?.label == null
-                }
-            )
-            .performTouchInput {
-                click(Offset(4f, 4f))
-            }
+        // The underlying control is a sibling of the whole sheet composable, as the camera
+        // controls are in CaptureScaffoldLayout, not a sibling of the scrim itself.
+        composeTestRule.onRoot().performTouchInput { click(Offset(right - 4f, 4f)) }
 
         assertThat(dismissCount).isEqualTo(1)
-        assertThat(underlyingClicked).isFalse()
+        assertThat(underlyingClicked).isTrue()
+    }
+
+    @Test
+    fun quickSettingsSideSheet_secondFingerOutside_doesNotDismissAgain() {
+        var dismissCount = 0
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsSideSheet(
+                    isOpen = true,
+                    onDismissRequest = { dismissCount++ },
+                    quickSettingsUiState = sampleAvailableUiState,
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onRoot().performTouchInput {
+            down(pointerId = 0, position = Offset(right - 40f, 40f))
+            down(pointerId = 1, position = Offset(right - 40f, 140f))
+            up(pointerId = 1)
+            up(pointerId = 0)
+        }
+
+        assertThat(dismissCount).isEqualTo(1)
+    }
+
+    @Test
+    fun quickSettingsSideSheet_scrim_hasNoButtonSemanticsSoTalkBackCanReachControls() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                QuickSettingsSideSheet(
+                    isOpen = true,
+                    onDismissRequest = {},
+                    quickSettingsUiState = sampleAvailableUiState,
+                    quickSettingsController = fakeQuickSettingsController
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
+            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.ContentDescription))
     }
 
     @Test
@@ -649,9 +681,6 @@ class QuickSettingsSideSheetTest {
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.PaneTitle, standardTitle))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.TraversalIndex, 0f))
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
-            .assert(SemanticsMatcher.expectValue(SemanticsProperties.TraversalIndex, 1f))
-
         composeTestRule.onNodeWithText(standardTitle)
             .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.Heading))
 
@@ -833,15 +862,12 @@ class QuickSettingsSideSheetTest {
             assertThat(scrimBounds).isEqualTo(rootBounds)
             assertThat(sheetBounds.width).isAtMost(412.dp)
 
-            // Tap the scrim near the top-right corner outside the floating card bounds.
-            composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
-                .performTouchInput {
-                    click(Offset(width - 8f, 8f))
-                }
+            // Tap near the top-right corner, outside the sheet.
+            composeTestRule.onRoot().performTouchInput { click(Offset(right - 8f, 8f)) }
         }
 
         assertThat(dismissCount).isEqualTo(2)
-        assertThat(underlyingClicked).isFalse()
+        assertThat(underlyingClicked).isTrue()
     }
 
     @OptIn(ExperimentalTestApi::class)

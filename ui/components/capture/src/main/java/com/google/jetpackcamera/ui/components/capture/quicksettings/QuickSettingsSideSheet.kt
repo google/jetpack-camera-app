@@ -30,7 +30,6 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -75,15 +74,19 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.node.ModifierNodeElement
+import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.paneTitle
@@ -365,12 +368,10 @@ internal fun QuickSettingsSideSheet(
     val inputModeManager = LocalInputModeManager.current
     val overlayFocusRequester = remember { FocusRequester() }
     val sheetFocusRequester = remember { FocusRequester() }
-    val scrimFocusRequester = remember { FocusRequester() }
     var hasSheetFocus by remember { mutableStateOf(false) }
-    var hasScrimFocus by remember { mutableStateOf(false) }
 
     LaunchedEffect(inputModeManager.inputMode) {
-        if (!sheetFocusRequester.requestFocus() && !scrimFocusRequester.requestFocus()) {
+        if (!sheetFocusRequester.requestFocus()) {
             overlayFocusRequester.requestFocus()
         }
     }
@@ -437,6 +438,21 @@ internal fun QuickSettingsSideSheet(
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides sheetContainerDirection) {
+        // Tapping outside the sheet dismisses it without consuming the touch, so the control
+        // underneath still responds (for example, the shutter captures and Quick Settings closes).
+        // Pointer sharing only reaches layout siblings, so this layer is emitted next to the
+        // caller's content rather than inside the sheet's container: host the sheet in a Box.
+        // Present only while the sheet is visible or opening.
+        if (isOpen && sheetState.targetValue == SideSheetValue.Expanded) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(scrimColor)
+                    .testTag(QUICK_SETTINGS_SCRIM)
+                    .dismissOnOutsideTouch { currentOnDismissRequest() }
+            )
+        }
+
         Box(
             modifier = modifier
                 .fillMaxSize()
@@ -451,34 +467,11 @@ internal fun QuickSettingsSideSheet(
                     }
                 }
                 .focusRequester(overlayFocusRequester)
-                .focusProperties { canFocus = !hasSheetFocus && !hasScrimFocus }
+                .focusProperties { canFocus = !hasSheetFocus }
                 .focusTarget()
                 .semantics { isTraversalGroup = true },
             contentAlignment = contentAlignment
         ) {
-            // Shown only while the sheet is visible or opening, so a caller that ignores a
-            // swipe-to-dismiss can't leave an invisible layer blocking taps.
-            if (isOpen && sheetState.targetValue == SideSheetValue.Expanded) {
-                Box(
-                    modifier = Modifier
-                        .matchParentSize()
-                        .background(scrimColor)
-                        .testTag(QUICK_SETTINGS_SCRIM)
-                        .semantics {
-                            contentDescription = dismissDescription
-                            traversalIndex = 1f
-                        }
-                        .onFocusChanged { hasScrimFocus = it.hasFocus }
-                        .focusRequester(scrimFocusRequester)
-                        .clickable(
-                            role = Role.Button,
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            onClick = { currentOnDismissRequest() }
-                        )
-                )
-            }
-
             Surface(
                 modifier = Modifier
                     .windowInsetsPadding(windowInsets)
@@ -621,6 +614,43 @@ private fun Modifier.sideSheetAnchors(
             y = 0
         )
     }
+}
+
+/**
+ * Calls [onDismiss] when a gesture starts on this node, without consuming the pointer, and lets
+ * the layouts beneath it receive the same events.
+ */
+private fun Modifier.dismissOnOutsideTouch(onDismiss: () -> Unit): Modifier =
+    this then DismissOnOutsideTouchElement(onDismiss)
+
+private data class DismissOnOutsideTouchElement(val onDismiss: () -> Unit) :
+    ModifierNodeElement<DismissOnOutsideTouchNode>() {
+    override fun create() = DismissOnOutsideTouchNode(onDismiss)
+
+    override fun update(node: DismissOnOutsideTouchNode) {
+        node.onDismiss = onDismiss
+    }
+}
+
+private class DismissOnOutsideTouchNode(var onDismiss: () -> Unit) :
+    Modifier.Node(),
+    PointerInputModifierNode {
+    override fun onPointerEvent(
+        pointerEvent: PointerEvent,
+        pass: PointerEventPass,
+        bounds: IntSize
+    ) {
+        // Only the first finger of a gesture dismisses; later fingers (e.g. pinch) do not.
+        if (pass == PointerEventPass.Initial &&
+            pointerEvent.changes.all { it.changedToDownIgnoreConsumed() }
+        ) {
+            onDismiss()
+        }
+    }
+
+    override fun onCancelPointerInput() = Unit
+
+    override fun sharePointerInputWithSiblings(): Boolean = true
 }
 
 /**
