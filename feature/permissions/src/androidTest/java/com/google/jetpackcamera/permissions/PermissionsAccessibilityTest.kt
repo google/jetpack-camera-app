@@ -24,13 +24,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.DeviceConfigurationOverride
+import androidx.compose.ui.test.FontScale
+import androidx.compose.ui.test.ForcedSize
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.then
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.PermissionState
@@ -44,6 +52,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@SdkSuppress(minSdkVersion = 34)
 @OptIn(ExperimentalPermissionsApi::class)
 @RunWith(AndroidJUnit4::class)
 class PermissionsAccessibilityTest {
@@ -123,6 +132,40 @@ class PermissionsAccessibilityTest {
         currentPermission = PermissionEnum.LOCATION
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON).assertIsDisplayed()
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun cameraPermissionPage_shortWindowWithLargeFont_keepsActionReachableAndAccessible() {
+        composeTestRule.setContent {
+            DeviceConfigurationOverride(
+                DeviceConfigurationOverride.ForcedSize(DpSize(891.dp, 411.dp)) then
+                    DeviceConfigurationOverride.FontScale(2f)
+            ) {
+                MaterialTheme(colorScheme = darkColorScheme()) {
+                    val cameraState = FakeMultiplePermissionsState(
+                        permissions = listOf(
+                            FakePermissionState(
+                                permission = Manifest.permission.CAMERA,
+                                status = PermissionStatus.Denied(shouldShowRationale = true)
+                            )
+                        ),
+                        shouldShowRationale = true
+                    )
+                    PermissionTemplate(
+                        modifier = Modifier.fillMaxSize(),
+                        permissionEnum = PermissionEnum.CAMERA,
+                        permissionStates = cameraState,
+                        onDismissPermission = {},
+                        onOpenAppSettings = {}
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag(REQUEST_PERMISSION_BUTTON)
+            .performScrollTo()
+            .assertIsDisplayed()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 }

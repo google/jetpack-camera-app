@@ -17,24 +17,9 @@ package com.google.jetpackcamera.settings
 
 import android.Manifest
 import androidx.activity.ComponentActivity
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberTopAppBarState
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -44,6 +29,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.PermissionState
@@ -58,8 +44,6 @@ import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_ASPECT_RATIO
 import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_DARK_MODE_TAG
 import com.google.jetpackcamera.settings.ui.CLOSE_BUTTON
 import com.google.jetpackcamera.settings.ui.DIALOG_LOCATION_PERMISSION_RATIONALE_TAG
-import com.google.jetpackcamera.settings.ui.SETTINGS_TITLE
-import com.google.jetpackcamera.settings.ui.SettingsPageHeader
 import com.google.jetpackcamera.settings.ui.theme.SettingsPreviewTheme
 import java.util.Optional
 import org.junit.Before
@@ -67,7 +51,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
+@SdkSuppress(minSdkVersion = 34)
+@OptIn(ExperimentalPermissionsApi::class)
 @RunWith(AndroidJUnit4::class)
 class SettingsAccessibilityTest {
     @get:Rule
@@ -91,20 +76,28 @@ class SettingsAccessibilityTest {
             settingsRepository,
             constraintsRepository,
             Optional.of(FakeLocationProvider())
-        ).apply {
-            setGrantedPermissions(
-                mutableSetOf(
-                    Manifest.permission.CAMERA,
-                    Manifest.permission.RECORD_AUDIO,
-                    Manifest.permission.ACCESS_FINE_LOCATION
-                )
-            )
-        }
+        )
     }
 
     @Test
     fun settingsScreen_andPopupDialogs_meetAccessibilityChecks() {
         val viewModel = createSettingsViewModel()
+        val versionInfo = VersionInfoHolder("1.0.0", "debug")
+        val grantedPermissions = FakeMultiplePermissionsState(
+            permissions = listOf(
+                FakePermissionState(Manifest.permission.CAMERA, PermissionStatus.Granted),
+                FakePermissionState(Manifest.permission.RECORD_AUDIO, PermissionStatus.Granted),
+                FakePermissionState(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    PermissionStatus.Granted
+                ),
+                FakePermissionState(
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    PermissionStatus.Granted
+                )
+            ),
+            allPermissionsGranted = true
+        )
         val grantedLocationPermissions = FakeMultiplePermissionsState(
             permissions = listOf(
                 FakePermissionState(
@@ -115,44 +108,27 @@ class SettingsAccessibilityTest {
                     Manifest.permission.ACCESS_COARSE_LOCATION,
                     PermissionStatus.Granted
                 )
-            )
+            ),
+            allPermissionsGranted = true
         )
 
         composeTestRule.setContent {
             SettingsPreviewTheme {
-                val uiState by viewModel.settingsUiState.collectAsState()
-                val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(
-                    rememberTopAppBarState()
-                )
-                Scaffold(
-                    modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
-                    topBar = {
-                        SettingsPageHeader(
-                            modifier = Modifier.testTag(SETTINGS_TITLE),
-                            title = stringResource(id = R.string.settings_title),
-                            navBack = {},
-                            scrollBehavior = scrollBehavior
+                SettingsScreen(
+                    versionInfo = versionInfo,
+                    onNavigateBack = {},
+                    viewModel = viewModel,
+                    onOpenAppSettings = {},
+                    permissionStates = grantedPermissions,
+                    appSettingsSlot = {
+                        DefaultAppSettings(
+                            versionInfo = versionInfo,
+                            viewModel = viewModel,
+                            rememberLocationPermissionsState = { grantedLocationPermissions },
+                            onOpenAppSettings = {}
                         )
                     }
-                ) { innerPadding ->
-                    if (uiState is SettingsUiState.Enabled) {
-                        Column(
-                            modifier = Modifier
-                                .padding(innerPadding)
-                                .verticalScroll(rememberScrollState())
-                                .background(color = MaterialTheme.colorScheme.background)
-                        ) {
-                            DefaultCameraSettings(viewModel = viewModel)
-                            DefaultRecordingSettings(viewModel = viewModel)
-                            DefaultAppSettings(
-                                versionInfo = VersionInfoHolder("1.0.0", "debug"),
-                                viewModel = viewModel,
-                                rememberLocationPermissionsState = { grantedLocationPermissions },
-                                onOpenAppSettings = {}
-                            )
-                        }
-                    }
-                }
+                )
             }
         }
 

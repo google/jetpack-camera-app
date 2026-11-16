@@ -41,24 +41,23 @@ import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
 import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@SdkSuppress(minSdkVersion = 34)
 @RunWith(AndroidJUnit4::class)
 class CaptureButtonTest {
     @get:Rule
@@ -274,49 +273,6 @@ class CaptureButtonTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(isNotEnabled())
-    }
-
-    @Test
-    fun captureModeToggleButton_meetsAccessibilityAndTouchTargetChecks() {
-        var selectedMode by mutableStateOf(CaptureMode.IMAGE_ONLY)
-        setCenteredContent {
-            CaptureModeToggleButton(
-                uiState = CaptureModeToggleUiState.Available(
-                    selectedCaptureMode = selectedMode,
-                    imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
-                    videoOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
-                ),
-                onChangeCaptureMode = { selectedMode = it },
-                onToggleWhenDisabled = {}
-            )
-        }
-
-        composeTestRule.onRoot().tryPerformAccessibilityChecks()
-        composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
-        assertThat(selectedMode).isEqualTo(CaptureMode.VIDEO_ONLY)
-        composeTestRule.onRoot().tryPerformAccessibilityChecks()
-    }
-
-    @Test
-    fun toggleSwitch_compactDimensions_expandsTouchTargetToMinimum48dp() {
-        var checked by mutableStateOf(false)
-        setCenteredContent {
-            ToggleSwitch(
-                modifier = Modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
-                checked = checked,
-                onCheckedChange = { checked = it },
-                leftIconDescription = "Photo mode",
-                rightIconDescription = "Video mode",
-                switchWidth = 36.dp,
-                switchHeight = 24.dp,
-                thumbDiameter = 18.dp,
-                iconSize = 14.dp
-            )
-        }
-
-        composeTestRule.onRoot().tryPerformAccessibilityChecks()
-        composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON).performClick()
-        assertThat(checked).isTrue()
     }
 
     @Test

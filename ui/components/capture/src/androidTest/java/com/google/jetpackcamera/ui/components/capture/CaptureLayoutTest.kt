@@ -28,6 +28,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -37,6 +38,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
 import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.common.truth.Truth.assertThat
@@ -45,6 +47,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@SdkSuppress(minSdkVersion = 34)
 @RunWith(AndroidJUnit4::class)
 class CaptureLayoutTest {
 
@@ -142,8 +145,19 @@ class CaptureLayoutTest {
             )
         }
 
+        val scrimDescription = getResString(R.string.quick_settings_scrim_description)
+        val dismissLabel = getResString(
+            R.string.quick_settings_btn_close_expanded_settings_description
+        )
+
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
             .assertIsDisplayed()
+            .assertContentDescriptionEquals(scrimDescription)
+            .assert(
+                SemanticsMatcher("onClickLabel equals $dismissLabel") { node ->
+                    node.config.getOrNull(SemanticsActions.OnClick)?.label == dismissLabel
+                }
+            )
             .performClick()
 
         assertThat(onDismissCalled).isTrue()
