@@ -47,8 +47,8 @@ import com.google.android.apps.common.testing.accessibility.framework.Accessibil
 import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsSideSheet
+import com.google.jetpackcamera.ui.components.capture.quicksettings.sampleQuickSettingsUiState
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
-import com.google.jetpackcamera.ui.uistate.capture.testing.sampleQuickSettingsUiState
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test

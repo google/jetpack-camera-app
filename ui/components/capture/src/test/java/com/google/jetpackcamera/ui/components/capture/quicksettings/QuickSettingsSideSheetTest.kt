@@ -112,7 +112,6 @@ import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
-import com.google.jetpackcamera.ui.uistate.capture.testing.sampleQuickSettingsUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith

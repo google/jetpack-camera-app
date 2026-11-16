@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.jetpackcamera.ui.uistate.capture.testing
+package com.google.jetpackcamera.ui.components.capture.quicksettings
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -29,8 +29,7 @@ import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 
-/** Aspect ratio state with 9:16 selected and all ratios available. */
-val SAMPLE_ASPECT_RATIO_UI_STATE: AspectRatioUiState = AspectRatioUiState.Available(
+private val SAMPLE_ASPECT_RATIO_UI_STATE: AspectRatioUiState = AspectRatioUiState.Available(
     selectedAspectRatio = AspectRatio.NINE_SIXTEEN,
     availableAspectRatios = listOf(
         SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
@@ -39,8 +38,7 @@ val SAMPLE_ASPECT_RATIO_UI_STATE: AspectRatioUiState = AspectRatioUiState.Availa
     )
 )
 
-/** Capture mode state with [CaptureMode.STANDARD] selected and all modes available. */
-val SAMPLE_CAPTURE_MODE_UI_STATE: CaptureModeUiState = CaptureModeUiState.Available(
+private val SAMPLE_CAPTURE_MODE_UI_STATE: CaptureModeUiState = CaptureModeUiState.Available(
     selectedCaptureMode = CaptureMode.STANDARD,
     availableCaptureModes = listOf(
         SingleSelectableUiState.SelectableUi(CaptureMode.STANDARD),
@@ -49,8 +47,7 @@ val SAMPLE_CAPTURE_MODE_UI_STATE: CaptureModeUiState = CaptureModeUiState.Availa
     )
 )
 
-/** Flash state with [FlashMode.OFF] selected and off/on/auto available. */
-val SAMPLE_FLASH_MODE_UI_STATE: FlashModeUiState = FlashModeUiState.Available(
+private val SAMPLE_FLASH_MODE_UI_STATE: FlashModeUiState = FlashModeUiState.Available(
     selectedFlashMode = FlashMode.OFF,
     availableFlashModes = listOf(
         SingleSelectableUiState.SelectableUi(FlashMode.OFF),
@@ -60,8 +57,7 @@ val SAMPLE_FLASH_MODE_UI_STATE: FlashModeUiState = FlashModeUiState.Available(
     isLowLightBoostActive = false
 )
 
-/** Lens state with the back camera selected and back/front available. */
-val SAMPLE_FLIP_LENS_UI_STATE: FlipLensUiState = FlipLensUiState.Available(
+private val SAMPLE_FLIP_LENS_UI_STATE: FlipLensUiState = FlipLensUiState.Available(
     selectedLensFacing = LensFacing.BACK,
     availableLensFacings = listOf(
         SingleSelectableUiState.SelectableUi(LensFacing.BACK),
@@ -69,21 +65,16 @@ val SAMPLE_FLIP_LENS_UI_STATE: FlipLensUiState = FlipLensUiState.Available(
     )
 )
 
-/** Supported HDR state with SDR and JPEG selected. */
-val SAMPLE_HDR_UI_STATE: HdrUiState = HdrUiState.Available(
+private val SAMPLE_HDR_UI_STATE: HdrUiState = HdrUiState.Available(
     selectedImageFormat = ImageOutputFormat.JPEG,
     selectedDynamicRange = DynamicRange.SDR,
     isSupported = true
 )
 
 /**
- * Builds a fully populated [QuickSettingsUiState.Available] for tests.
- *
- * Every row is available by default, so new Quick Settings rows only need to be added here. Pass
- * an individual sub-state to override a single row (for example `hdrUiState =
- * HdrUiState.Unavailable`).
+ * Builds a fully populated [QuickSettingsUiState.Available] for tests, with per-row overrides.
  */
-fun sampleQuickSettingsUiState(
+internal fun sampleQuickSettingsUiState(
     aspectRatioUiState: AspectRatioUiState = SAMPLE_ASPECT_RATIO_UI_STATE,
     captureModeUiState: CaptureModeUiState = SAMPLE_CAPTURE_MODE_UI_STATE,
     flashModeUiState: FlashModeUiState = SAMPLE_FLASH_MODE_UI_STATE,

@@ -71,6 +71,7 @@ import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.MediaDescriptor
+import com.google.jetpackcamera.ui.components.capture.quicksettings.sampleQuickSettingsUiState
 import com.google.jetpackcamera.ui.controller.testing.FakeCameraController
 import com.google.jetpackcamera.ui.controller.testing.FakeCaptureController
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
@@ -91,7 +92,6 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
-import com.google.jetpackcamera.ui.uistate.capture.testing.sampleQuickSettingsUiState
 import java.util.LinkedList
 import org.junit.Rule
 import org.junit.Test

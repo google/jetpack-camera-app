@@ -69,6 +69,10 @@ android {
         buildConfig = true
         compose = true
     }
+    sourceSets {
+        getByName("test").kotlin.directories.add("src/sharedTest/java")
+        getByName("androidTest").kotlin.directories.add("src/sharedTest/java")
+    }
 }
 
 dependencies {
@@ -132,9 +136,7 @@ dependencies {
     testImplementation(project(":core:camera:testing"))
     testImplementation(project(":core:settings"))
     testImplementation(project(":ui:controller:testing"))
-    testImplementation(project(":ui:uistate:capture:testing"))
     androidTestImplementation(project(":ui:controller:testing"))
-    androidTestImplementation(project(":ui:uistate:capture:testing"))
     androidTestImplementation(libs.kotlinx.coroutines.test)
 
 }

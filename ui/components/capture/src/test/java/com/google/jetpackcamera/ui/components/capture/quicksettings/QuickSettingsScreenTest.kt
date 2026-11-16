@@ -71,7 +71,6 @@ import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
-import com.google.jetpackcamera.ui.uistate.capture.testing.sampleQuickSettingsUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
