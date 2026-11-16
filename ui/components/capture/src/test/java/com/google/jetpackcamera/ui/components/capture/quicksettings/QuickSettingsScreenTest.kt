@@ -16,12 +16,20 @@
 package com.google.jetpackcamera.ui.components.capture.quicksettings
 
 import android.content.Context
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
@@ -126,6 +134,26 @@ class QuickSettingsScreenTest {
         composeTestRule.onNodeWithTag(ROW_QUICK_SETTINGS_FLASH).assertIsDisplayed()
         composeTestRule.onNodeWithTag(ROW_QUICK_SETTINGS_CAPTURE_MODE).assertIsDisplayed()
         composeTestRule.onNodeWithTag(ROW_QUICK_SETTINGS_ASPECT_RATIO).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(SETTINGS_BUTTON).assertIsDisplayed()
+    }
+
+    @Test
+    fun quickSettingsScaffoldContent_shortContainer_scrollsToMoreSettingsButton() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                Box(modifier = Modifier.height(SHORT_CONTAINER_HEIGHT)) {
+                    QuickSettingsScaffoldContent(
+                        quickSettingsUiState = sampleAvailableUiState,
+                        onNavigateToSettings = {},
+                        quickSettingsController = fakeQuickSettingsController
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+            .assert(hasScrollAction())
+            .performScrollToNode(hasTestTag(SETTINGS_BUTTON))
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON).assertIsDisplayed()
     }
 
@@ -268,5 +296,9 @@ class QuickSettingsScreenTest {
 
         val drawables = CameraAspectRatio.entries.map { it.getDrawableResId() }
         assertThat(drawables).containsNoDuplicates()
+    }
+
+    private companion object {
+        val SHORT_CONTAINER_HEIGHT = 120.dp
     }
 }
