@@ -74,6 +74,7 @@ import androidx.core.net.toFile
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.submode.CameraSessionBinding
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
@@ -972,7 +973,7 @@ private fun createPreviewUseCase(
     when (effectiveStabilizationMode) {
         StabilizationMode.ON -> setPreviewStabilizationEnabled(true)
         StabilizationMode.OPTICAL -> {
-            setOpticalStabilizationModeEnabled(true)
+            setOpticalStabilizationModeEnabled(true).ignoreResult()
             // Explicitly disable preview and video stabilization. If left unset, the camera's
             //  default applies, which can turn on video stabilization when there isn't a video
             //  capture use case attached, such as in IMAGE_ONLY mode
