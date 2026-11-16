@@ -57,7 +57,7 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
-private object Tokens {
+private object PillLayoutTokens {
     val ContainerWidth = ButtonDefaults.MinHeight
     val MinSlotWidth = 48.dp
     val ContainerVerticalPadding = 6.dp
@@ -145,10 +145,10 @@ internal fun VerticalIndicatorPill(
         LocalIndicatorPillOrientation provides Orientation.Vertical
     ) {
         CutoutAwareColumn(
-            modifier = modifier.defaultMinSize(minWidth = Tokens.MinSlotWidth),
+            modifier = modifier.defaultMinSize(minWidth = PillLayoutTokens.MinSlotWidth),
             verticalSpacing = 0.dp,
-            pillVerticalPadding = Tokens.ContainerVerticalPadding,
-            pillMinWidth = Tokens.ContainerWidth,
+            pillVerticalPadding = PillLayoutTokens.ContainerVerticalPadding,
+            pillMinWidth = PillLayoutTokens.ContainerWidth,
             pillBackgroundColor = CameraControlBackgroundStyle.BLACK_60.containerColor,
             horizontalAlignment = Alignment.CenterHorizontally,
             cutoutRectsOverride = cutoutRectsOverride,
@@ -179,7 +179,7 @@ private fun VerticalIndicatorPillPreviewContent(cutoutRectDp: DpRect? = null) {
                         colors = listOf(Color.DarkGray, Color.Black)
                     )
                 )
-                .padding(Tokens.PreviewContainerPadding)
+                .padding(PillLayoutTokens.PreviewContainerPadding)
         ) {
             if (cutoutRectDp != null) {
                 Box(
@@ -239,7 +239,7 @@ private fun VerticalIndicatorPillSinglePreview() {
 @Composable
 private fun VerticalIndicatorPillCutoutSplitPreview() {
     VerticalIndicatorPillPreviewContent(
-        cutoutRectDp = Tokens.PreviewCutoutBounds
+        cutoutRectDp = PillLayoutTokens.PreviewCutoutBounds
     )
 }
 
@@ -252,6 +252,6 @@ private fun VerticalIndicatorPillCutoutSplitPreview() {
 @Composable
 private fun VerticalIndicatorPillRtlPreview() {
     VerticalIndicatorPillPreviewContent(
-        cutoutRectDp = Tokens.PreviewCutoutBounds
+        cutoutRectDp = PillLayoutTokens.PreviewCutoutBounds
     )
 }
