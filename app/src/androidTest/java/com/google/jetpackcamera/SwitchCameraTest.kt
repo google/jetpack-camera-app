@@ -130,22 +130,25 @@ class SwitchCameraTest {
             }
 
             val initialLensFacing = composeTestRule.getCurrentLensFacing()
-            composeTestRule.waitForIdle()
-            val initialBounds =
-                composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
-            assertThat(initialBounds.width > initialBounds.height)
-                .isEqualTo(expectedIsLandscape(initialLensFacing))
+
+            fun waitForPreviewOrientationOf(lensFacing: LensFacing) {
+                val expected = expectedIsLandscape(lensFacing)
+                composeTestRule.waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+                    val bounds =
+                        composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
+                    (bounds.width > bounds.height) == expected
+                }
+            }
 
             composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
             val flippedLensFacing = composeTestRule.getCurrentLensFacing()
             assertThat(flippedLensFacing).isEqualTo(initialLensFacing.flip())
+            waitForPreviewOrientationOf(flippedLensFacing)
 
-            val expectedFlippedIsLandscape = expectedIsLandscape(flippedLensFacing)
-            composeTestRule.waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
-                val bounds =
-                    composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
-                (bounds.width > bounds.height) == expectedFlippedIsLandscape
-            }
+            // Flip back so both lenses are checked after a real rebind.
+            composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).performClick()
+            assertThat(composeTestRule.getCurrentLensFacing()).isEqualTo(initialLensFacing)
+            waitForPreviewOrientationOf(initialLensFacing)
         }
 }
 
