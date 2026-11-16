@@ -45,6 +45,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
+private const val TOLERANCE = 0.5f
+
 /**
  * Unit tests for [StartSideRail], [EndSideRail], [CaptureSlots], and [PreviewOverlaySlotScope].
  */
@@ -403,22 +405,22 @@ class CaptureSideRailsTest {
     }
 
     @Test
-    fun sideRails_propagateVerticalOrientationAndCompactFlagDirectly() {
+    fun sideRails_propagateVerticalOrientationAndControlSizeDirectly() {
         var isCompactHeight by mutableStateOf(false)
         var startOrientation: Orientation? = null
-        var startCompact: Boolean? = null
+        var startControlSize: ControlSize? = null
         var endOrientation: Orientation? = null
-        var endCompact: Boolean? = null
+        var endControlSize: ControlSize? = null
 
         val scopedSlots = CaptureSlots(
             topBar = { mod ->
                 startOrientation = orientation
-                startCompact = isCompact
+                startControlSize = controlSize
                 Box(modifier = mod.size(width = 48.dp, height = 96.dp).testTag(VIDEO_QUALITY_TAG))
             },
             captureButton = { mod ->
                 endOrientation = orientation
-                endCompact = isCompact
+                endControlSize = controlSize
                 Box(modifier = mod.size(72.dp).testTag(CAPTURE_BUTTON))
             }
         )
@@ -443,8 +445,8 @@ class CaptureSideRailsTest {
 
         assertThat(startOrientation).isEqualTo(Orientation.Vertical)
         assertThat(endOrientation).isEqualTo(Orientation.Vertical)
-        assertThat(startCompact).isFalse()
-        assertThat(endCompact).isFalse()
+        assertThat(startControlSize).isEqualTo(ControlSize.Standard)
+        assertThat(endControlSize).isEqualTo(ControlSize.Standard)
 
         val startRailBounds = boundsOf(START_SIDE_RAIL_TAG)
         assertThat(startRailBounds.width).isLessThan(120.dp)
@@ -453,7 +455,78 @@ class CaptureSideRailsTest {
         isCompactHeight = true
         composeTestRule.waitForIdle()
 
-        assertThat(startCompact).isTrue()
-        assertThat(endCompact).isTrue()
+        assertThat(startControlSize).isEqualTo(ControlSize.Mini)
+        assertThat(endControlSize).isEqualTo(ControlSize.Mini)
+    }
+
+    @Test
+    fun sideRails_explicitControlSize_overridesCompactHeightDefault() {
+        var endControlSize: ControlSize? = null
+        val scopedSlots = CaptureSlots(
+            captureButton = { mod ->
+                endControlSize = controlSize
+                Box(modifier = mod.size(72.dp).testTag(CAPTURE_BUTTON))
+            }
+        )
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                EndSideRail(
+                    slots = scopedSlots,
+                    modifier = Modifier.height(800.dp),
+                    isCompactHeight = false,
+                    controlSize = ControlSize.Medium
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(endControlSize).isEqualTo(ControlSize.Medium)
+    }
+
+    @Test
+    fun sideRails_fixedRailWidth_keepsWidthAndCentersWiderControls() {
+        val scopedSlots = CaptureSlots(
+            zoomControls = { mod ->
+                Box(modifier = mod.size(width = 48.dp, height = 96.dp).testTag(ZOOM_BUTTON_ROW_TAG))
+            },
+            captureButton = { mod ->
+                // Wider than the rail, like the capture button's lock switch footprint.
+                Box(modifier = mod.size(width = 120.dp, height = 72.dp).testTag(CAPTURE_BUTTON))
+            }
+        )
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                Row(modifier = Modifier.size(800.dp)) {
+                    StartSideRail(
+                        slots = scopedSlots,
+                        modifier = Modifier.height(800.dp),
+                        railWidth = 96.dp
+                    )
+                    EndSideRail(
+                        slots = scopedSlots,
+                        modifier = Modifier.height(800.dp),
+                        railWidth = 96.dp
+                    )
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val startRail = boundsOf(START_SIDE_RAIL_TAG)
+        val endRail = boundsOf(END_SIDE_RAIL_TAG)
+        assertThat(startRail.width.value).isWithin(TOLERANCE).of(96f)
+        assertThat(endRail.width.value).isWithin(TOLERANCE).of(96f)
+
+        val zoom = boundsOf(ZOOM_BUTTON_ROW_TAG)
+        val shutter = boundsOf(CAPTURE_BUTTON)
+        assertThat((zoom.left + zoom.right).value / 2f)
+            .isWithin(TOLERANCE)
+            .of((startRail.left + startRail.right).value / 2f)
+        assertThat((shutter.left + shutter.right).value / 2f)
+            .isWithin(TOLERANCE)
+            .of((endRail.left + endRail.right).value / 2f)
+        assertThat(shutter.width.value).isWithin(TOLERANCE).of(120f)
     }
 }

@@ -504,15 +504,17 @@ class AdaptiveCaptureLayoutTest {
             CameraLayoutMode.COMPACT_SHORT,
             "CompactShortLayout"
         )
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
+            .assertDoesNotExist()
 
+        // COMPACT_SHORT presents Quick Settings in the bottom sheet; the floating card is reserved
+        // for tablet and foldable sizes.
         composeTestRule.runOnIdle { state.showQuickSettings() }
         composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-            .assertIsDisplayed()
-        assertThat(
-            composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_BOTTOM_SHEET).fetchSemanticsNodes()
-        ).hasSize(1)
+            .assertDoesNotExist()
     }
 
     @Config(qualifiers = "sw320dp-w320dp-h340dp-mdpi")

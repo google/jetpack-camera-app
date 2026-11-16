@@ -142,6 +142,41 @@ class SideRailCaptureLayoutsTest {
         assertThat(elapsedBounds.right.value).isLessThan(endRail.left.value)
     }
 
+    @Test
+    fun foldableLayout_fixedMediumRails_centerControls48dpFromEdgesAndClear3By4Viewfinder() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                FoldableLayout(
+                    slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
+                    viewfinder = { vfModifier ->
+                        Box(modifier = vfModifier.testTag(PREVIEW_DISPLAY))
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        // Both rails are a fixed 96dp wide and anchored to the window edges.
+        val startRail = boundsOf(START_SIDE_RAIL_TAG)
+        val endRail = boundsOf(END_SIDE_RAIL_TAG)
+        assertThat(startRail.right.value - startRail.left.value).isWithin(TOLERANCE).of(96f)
+        assertThat(endRail.right.value - endRail.left.value).isWithin(TOLERANCE).of(96f)
+
+        // Controls sit on a stable column 48dp from each edge.
+        val zoom = boundsOf(ZOOM_BUTTON_ROW_TAG)
+        val shutter = boundsOf(CAPTURE_BUTTON)
+        assertThat((zoom.left.value + zoom.right.value) / 2f).isWithin(TOLERANCE).of(48f)
+        assertThat((shutter.left.value + shutter.right.value) / 2f)
+            .isWithin(TOLERANCE)
+            .of(852f - 48f)
+
+        // ControlSize.Medium sizes the shutter at 72dp, which clears the ~95dp black bar beside a
+        // 3:4 viewfinder (883 * 3 / 4 = 662.25dp wide, centered).
+        assertThat(shutter.right.value - shutter.left.value).isWithin(TOLERANCE).of(72f)
+        val viewfinderRight = (852f + 883f * 3f / 4f) / 2f
+        assertThat(shutter.left.value).isAtLeast(viewfinderRight)
+    }
+
     @Config(qualifiers = "w800dp-h1280dp")
     @Test
     fun tabletPortraitLayout_shiftsZoomAndShutterIntoLowerThumbZoneWithoutCollision() {
