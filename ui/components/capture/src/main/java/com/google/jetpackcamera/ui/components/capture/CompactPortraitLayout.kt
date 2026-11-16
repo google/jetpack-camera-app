@@ -605,6 +605,15 @@ private fun CompactCaptureRow(
     }
 }
 
+/**
+ * Lower controls row hosting the Quick Settings toggle at the start and the capture mode toggle
+ * switch in the center.
+ *
+ * The start and end slots are sized to their content (the end slot mirrors the start slot's width
+ * so the center stays visually centered), and the center slot receives all remaining width rather
+ * than an equal third. This keeps the capture mode toggle from being squeezed in slim panes such
+ * as 1/3 split-screen windows.
+ */
 @Composable
 private fun CompactBottomToolbar(
     bottomBarDirection: LayoutDirection,
@@ -615,45 +624,60 @@ private fun CompactBottomToolbar(
     modifier: Modifier = Modifier
 ) {
     CompositionLocalProvider(LocalLayoutDirection provides bottomBarDirection) {
-        Row(
+        Layout(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(horizontal = CompactPortraitTokens.LowerSectionHorizontalPadding),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                    OverlapAwareStyleProvider(
-                        orientation = Orientation.Horizontal,
-                        controlSize = controlSize
-                    ) {
-                        quickSettingsToggleButton(Modifier)
+            content = {
+                Box(contentAlignment = Alignment.CenterStart) {
+                    CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                        OverlapAwareStyleProvider(
+                            orientation = Orientation.Horizontal,
+                            controlSize = controlSize
+                        ) {
+                            quickSettingsToggleButton(Modifier)
+                        }
+                    }
+                }
+
+                Box(contentAlignment = Alignment.Center) {
+                    CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                        OverlapAwareStyleProvider(
+                            orientation = Orientation.Horizontal,
+                            controlSize = controlSize
+                        ) {
+                            captureModeToggleSwitch(Modifier)
+                        }
                     }
                 }
             }
+        ) { measurables, constraints ->
+            val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+            val startPlaceable = measurables[0].measure(looseConstraints)
+            // Reserve the start slot's width on both sides so the center slot stays centered.
+            val sideWidth = startPlaceable.width
+            val centerMaxWidth = (constraints.maxWidth - sideWidth * 2).coerceAtLeast(0)
+            val centerPlaceable =
+                measurables[1].measure(looseConstraints.copy(maxWidth = centerMaxWidth))
 
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                    OverlapAwareStyleProvider(
-                        orientation = Orientation.Horizontal,
-                        controlSize = controlSize
-                    ) {
-                        captureModeToggleSwitch(Modifier)
-                    }
-                }
+            val contentHeight = maxOf(startPlaceable.height, centerPlaceable.height)
+            val layoutHeight = if (constraints.hasBoundedHeight) {
+                contentHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
+            } else {
+                maxOf(contentHeight, constraints.minHeight)
             }
+            val layoutWidth = constraints.maxWidth
 
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterEnd
-            ) {}
+            layout(layoutWidth, layoutHeight) {
+                startPlaceable.placeRelative(
+                    x = 0,
+                    y = (layoutHeight - startPlaceable.height) / 2
+                )
+                centerPlaceable.placeRelative(
+                    x = (layoutWidth - centerPlaceable.width) / 2,
+                    y = (layoutHeight - centerPlaceable.height) / 2
+                )
+            }
         }
     }
 }
