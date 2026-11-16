@@ -171,7 +171,7 @@ fun rememberCaptureScaffoldState(isInitiallyExpanded: Boolean = false): CaptureS
 /**
  * Receiver scope for [CaptureScaffold] slots.
  *
- * Extends [PreviewOverlaySlotScope] with container axis orientation, compact-sizing hints, capture
+ * Extends [PreviewOverlaySlotScope] with container axis orientation, control size hints, capture
  * session state, Quick Settings controls, and zoom actions coordinated with the scaffold's
  * [ZoomStateManager]. Properties are backed by `derivedStateOf` so that slots only recompose when a
  * property they actually read changes.
@@ -185,10 +185,11 @@ sealed interface CaptureSlotScope : PreviewOverlaySlotScope {
     override val orientation: Orientation
 
     /**
-     * Whether the hosting container is height- or space-constrained and requests compact control
-     * dimensions.
+     * Control size variant requested by the hosting container: [ControlSize.Standard] by default,
+     * or a smaller size such as [ControlSize.Mini] when the container is height- or
+     * space-constrained.
      */
-    override val isCompact: Boolean
+    override val controlSize: ControlSize
 
     /**
      * Whether a video recording is currently active (recording or paused).
@@ -234,7 +235,7 @@ sealed interface CaptureSlotScope : PreviewOverlaySlotScope {
  */
 fun CaptureSlotScope(
     orientation: Orientation = Orientation.Horizontal,
-    isCompact: Boolean = false,
+    controlSize: ControlSize = ControlSize.Standard,
     isOverViewfinder: Boolean = true,
     isRecording: Boolean = false,
     isQuickSettingsOpen: Boolean = false,
@@ -245,7 +246,7 @@ fun CaptureSlotScope(
     onSetAbsoluteZoom: (Float, LensToZoom) -> Unit = { _, _ -> }
 ): CaptureSlotScope = StaticCaptureSlotScope(
     orientation = orientation,
-    isCompact = isCompact,
+    controlSize = controlSize,
     isOverViewfinder = isOverViewfinder,
     isRecording = isRecording,
     isQuickSettingsOpen = isQuickSettingsOpen,
@@ -258,7 +259,7 @@ fun CaptureSlotScope(
 
 private class StaticCaptureSlotScope(
     override val orientation: Orientation,
-    override val isCompact: Boolean,
+    override val controlSize: ControlSize,
     override val isOverViewfinder: Boolean,
     override val isRecording: Boolean,
     override val isQuickSettingsOpen: Boolean,
@@ -305,8 +306,8 @@ private class CaptureSlotScopeImpl(
     override val orientation: Orientation
         get() = overlayScope.orientation
 
-    override val isCompact: Boolean
-        get() = overlayScope.isCompact
+    override val controlSize: ControlSize
+        get() = overlayScope.controlSize
 
     override val isOverViewfinder: Boolean
         get() = overlayScope.isOverViewfinder
@@ -425,7 +426,8 @@ fun defaultCameraErrorStrings(error: CameraError): CameraErrorStrings? {
  */
 object CaptureScaffoldDefaults {
     /**
-     * Default shutter / capture button wired to [CaptureController].
+     * Default shutter / capture button wired to [CaptureController], sized for [controlSize] via
+     * [CaptureButtonDefaults.diameterFor].
      */
     @Composable
     fun CaptureButton(
@@ -433,10 +435,12 @@ object CaptureScaffoldDefaults {
         captureController: CaptureController?,
         modifier: Modifier = Modifier,
         onDismissQuickSettings: () -> Unit = {},
-        onIncrementZoom: (Float) -> Unit = {}
+        onIncrementZoom: (Float) -> Unit = {},
+        controlSize: ControlSize = ControlSize.Standard
     ) {
         com.google.jetpackcamera.ui.components.capture.CaptureButton(
             modifier = modifier,
+            diameter = CaptureButtonDefaults.diameterFor(controlSize),
             captureButtonUiState = uiState,
             onCaptureImage = { contentResolver ->
                 onDismissQuickSettings()
@@ -825,7 +829,8 @@ fun CaptureScaffold(
             captureController = captureController,
             modifier = slotModifier,
             onDismissQuickSettings = ::dismissQuickSettings,
-            onIncrementZoom = ::incrementZoom
+            onIncrementZoom = ::incrementZoom,
+            controlSize = controlSize
         )
     },
     flipCameraButton: @Composable CaptureSlotScope.(Modifier) -> Unit = { slotModifier ->

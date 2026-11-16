@@ -51,39 +51,44 @@ internal object CaptureSlotTokens {
 
     val IndicatorCrossAxisSize = 48.dp
     val IndicatorStandardMainAxisSize = 96.dp
-    val IndicatorCompactMainAxisSize = 64.dp
+    val IndicatorMiniMainAxisSize = 64.dp
     val HorizontalTopBarHeight = 36.dp
     val HorizontalTopBarStandardWidth = 120.dp
-    val HorizontalTopBarCompactWidth = 96.dp
+    val HorizontalTopBarMiniWidth = 96.dp
 
     val ZoomCrossAxisSize = 48.dp
     val ZoomStandardMainAxisSize = 176.dp
-    val ZoomCompactMainAxisSize = 148.dp
+    val ZoomMiniMainAxisSize = 148.dp
 
     val IconTouchTargetSize = 48.dp
-    val SecondaryActionStandardSize = 52.dp
-    val SecondaryActionCompactSize = 48.dp
+    val SecondaryActionStandardSize = 56.dp
+    val SecondaryActionMiniSize = 48.dp
 
     val ShutterStandardDiameter = 86.dp
-    val ShutterCompactDiameter = 72.dp
+    // 72dp matches the foldable mocks, which don't specify exact component sizes. Confirm with
+    // design.
+    val ShutterMediumDiameter = 72.dp
 
-    val ModeToggleStandardWidth = 96.dp
-    val ModeToggleCompactWidth = 72.dp
-    val ModeToggleStandardHeight = 56.dp
-    val ModeToggleCompactHeight = 48.dp
+    // Matches the standalone "Mini shutter" component spec.
+    val ShutterMiniDiameter = 56.dp
+
+    val ModeToggleStandardWidth = 116.dp
+    val ModeToggleMiniWidth = 92.dp
+    val ModeToggleStandardHeight = 64.dp
+    val ModeToggleMiniHeight = 48.dp
 
     val CarouselStandardWidth = 180.dp
-    val CarouselCompactWidth = 140.dp
+    val CarouselMiniWidth = 140.dp
     val CarouselHeight = 32.dp
 
     val ElapsedTimeWidth = 72.dp
     val ElapsedTimeStandardHeight = 32.dp
-    val ElapsedTimeCompactHeight = 28.dp
+    val ElapsedTimeMiniHeight = 28.dp
 
     val QuickSettingsStandardWidth = 280.dp
-    val QuickSettingsCompactWidth = 240.dp
+    val QuickSettingsMiniWidth = 240.dp
     val QuickSettingsStandardHeight = 220.dp
-    val QuickSettingsCompactHeight = 160.dp
+    val QuickSettingsMiniHeight = 160.dp
 
     val ErrorDialogWidth = 280.dp
     val ErrorDialogHeight = 160.dp
@@ -132,20 +137,20 @@ val LocalCaptureRtlPolicy: ProvidableCompositionLocal<CaptureRtlPolicy> =
 
 /**
  * Hosts a [CaptureSlots] composable inside an [OverlapAwareStyleProvider], binding dynamic
- * overlap styling and container layout metadata ([orientation], [isCompact]) into a
+ * overlap styling and container layout metadata ([orientation], [controlSize]) into a
  * [PreviewOverlaySlotScope].
  */
 @Composable
 internal fun OverlapAwareCaptureSlot(
     modifier: Modifier = Modifier,
     orientation: Orientation = Orientation.Horizontal,
-    isCompact: Boolean = false,
+    controlSize: ControlSize = ControlSize.Standard,
     content: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit
 ) {
     OverlapAwareStyleProvider(
         modifier = modifier,
         orientation = orientation,
-        isCompact = isCompact
+        controlSize = controlSize
     ) {
         content(Modifier)
     }
@@ -157,7 +162,7 @@ internal fun OverlapAwareCaptureSlot(
  * Each slot defaults to an empty composable so layouts and tests can populate only the controls
  * relevant to a scenario while omitted controls collapse cleanly. Slots receive
  * [PreviewOverlaySlotScope], which exposes live viewfinder overlap styling together with
- * [PreviewOverlaySlotScope.orientation] and [PreviewOverlaySlotScope.isCompact] from the hosting
+ * [PreviewOverlaySlotScope.orientation] and [PreviewOverlaySlotScope.controlSize] from the hosting
  * layout container (and propagates directly into [CaptureSlotScope] when hosted by
  * [CaptureScaffold]).
  *
@@ -283,7 +288,7 @@ internal object PlaceholderCaptureSlots {
     /**
      * Returns the default placeholder [CaptureSlots] set, delegating to [sideRail].
      *
-     * @param isCompactHeight Whether placeholder controls default to compact-height dimensions.
+     * @param isCompactHeight Whether placeholder controls default to mini dimensions.
      */
     fun default(isCompactHeight: Boolean = false): CaptureSlots =
         sideRail(isCompactHeight = isCompactHeight)
@@ -292,8 +297,8 @@ internal object PlaceholderCaptureSlots {
      * Builds placeholder [CaptureSlots] recycling existing capture test tags for side-rail and
      * adaptive layout verification.
      *
-     * @param isCompactHeight Whether controls default to compact-height dimensions even when the
-     *   hosting [PreviewOverlaySlotScope.isCompact] flag is `false`.
+     * @param isCompactHeight Whether controls default to mini dimensions even when the
+     *   hosting [PreviewOverlaySlotScope.controlSize] is [ControlSize.Standard].
      * @param includeImageWell Whether to populate [CaptureSlots.imageWell] or leave it empty.
      * @param includeElapsedTime Whether to populate [CaptureSlots.elapsedTimeDisplay] or leave it
      *   empty.
@@ -311,13 +316,13 @@ internal object PlaceholderCaptureSlots {
         includeErrorDialog: Boolean = false
     ): CaptureSlots = CaptureSlots(
         topBar = { slotModifier ->
-            val compact = isCompactHeight || isCompact
+            val mini = isCompactHeight || controlSize != ControlSize.Standard
             if (orientation == Orientation.Vertical) {
                 PlaceholderControlBox(
                     label = "Ind",
                     width = CaptureSlotTokens.IndicatorCrossAxisSize,
-                    height = if (compact) {
-                        CaptureSlotTokens.IndicatorCompactMainAxisSize
+                    height = if (mini) {
+                        CaptureSlotTokens.IndicatorMiniMainAxisSize
                     } else {
                         CaptureSlotTokens.IndicatorStandardMainAxisSize
                     },
@@ -328,8 +333,8 @@ internal object PlaceholderCaptureSlots {
             } else {
                 PlaceholderControlBox(
                     label = "Ind",
-                    width = if (compact) {
-                        CaptureSlotTokens.HorizontalTopBarCompactWidth
+                    width = if (mini) {
+                        CaptureSlotTokens.HorizontalTopBarMiniWidth
                     } else {
                         CaptureSlotTokens.HorizontalTopBarStandardWidth
                     },
@@ -341,9 +346,9 @@ internal object PlaceholderCaptureSlots {
             }
         },
         zoomControls = { slotModifier ->
-            val compact = isCompactHeight || isCompact
-            val mainAxisSize = if (compact) {
-                CaptureSlotTokens.ZoomCompactMainAxisSize
+            val mini = isCompactHeight || controlSize != ControlSize.Standard
+            val mainAxisSize = if (mini) {
+                CaptureSlotTokens.ZoomMiniMainAxisSize
             } else {
                 CaptureSlotTokens.ZoomStandardMainAxisSize
             }
@@ -378,11 +383,11 @@ internal object PlaceholderCaptureSlots {
             )
         },
         captureButton = { slotModifier ->
-            val compact = isCompactHeight || isCompact
-            val diameter = if (compact) {
-                CaptureSlotTokens.ShutterCompactDiameter
-            } else {
-                CaptureSlotTokens.ShutterStandardDiameter
+            val diameter = when {
+                isCompactHeight || controlSize == ControlSize.Mini ->
+                    CaptureSlotTokens.ShutterMiniDiameter
+                controlSize == ControlSize.Medium -> CaptureSlotTokens.ShutterMediumDiameter
+                else -> CaptureSlotTokens.ShutterStandardDiameter
             }
             PlaceholderControlBox(
                 label = "Cap",
@@ -395,9 +400,9 @@ internal object PlaceholderCaptureSlots {
             )
         },
         flipCameraButton = { slotModifier ->
-            val compact = isCompactHeight || isCompact
-            val size = if (compact) {
-                CaptureSlotTokens.SecondaryActionCompactSize
+            val mini = isCompactHeight || controlSize != ControlSize.Standard
+            val size = if (mini) {
+                CaptureSlotTokens.SecondaryActionMiniSize
             } else {
                 CaptureSlotTokens.SecondaryActionStandardSize
             }
@@ -413,9 +418,9 @@ internal object PlaceholderCaptureSlots {
         },
         imageWell = if (includeImageWell) {
             { slotModifier ->
-                val compact = isCompactHeight || isCompact
-                val size = if (compact) {
-                    CaptureSlotTokens.SecondaryActionCompactSize
+                val mini = isCompactHeight || controlSize != ControlSize.Standard
+                val size = if (mini) {
+                    CaptureSlotTokens.SecondaryActionMiniSize
                 } else {
                     CaptureSlotTokens.SecondaryActionStandardSize
                 }
@@ -433,16 +438,16 @@ internal object PlaceholderCaptureSlots {
             {}
         },
         captureModeToggle = { slotModifier ->
-            val compact = isCompactHeight || isCompact
+            val mini = isCompactHeight || controlSize != ControlSize.Standard
             PlaceholderControlBox(
                 label = "Mode",
-                width = if (compact) {
-                    CaptureSlotTokens.ModeToggleCompactWidth
+                width = if (mini) {
+                    CaptureSlotTokens.ModeToggleMiniWidth
                 } else {
                     CaptureSlotTokens.ModeToggleStandardWidth
                 },
-                height = if (compact) {
-                    CaptureSlotTokens.ModeToggleCompactHeight
+                height = if (mini) {
+                    CaptureSlotTokens.ModeToggleMiniHeight
                 } else {
                     CaptureSlotTokens.ModeToggleStandardHeight
                 },
@@ -452,11 +457,11 @@ internal object PlaceholderCaptureSlots {
             )
         },
         captureModeCarousel = { slotModifier ->
-            val compact = isCompactHeight || isCompact
+            val mini = isCompactHeight || controlSize != ControlSize.Standard
             PlaceholderControlBox(
                 label = "Modes",
-                width = if (compact) {
-                    CaptureSlotTokens.CarouselCompactWidth
+                width = if (mini) {
+                    CaptureSlotTokens.CarouselMiniWidth
                 } else {
                     CaptureSlotTokens.CarouselStandardWidth
                 },
@@ -468,12 +473,12 @@ internal object PlaceholderCaptureSlots {
         },
         elapsedTimeDisplay = if (includeElapsedTime) {
             { slotModifier ->
-                val compact = isCompactHeight || isCompact
+                val mini = isCompactHeight || controlSize != ControlSize.Standard
                 PlaceholderControlBox(
                     label = "00:12",
                     width = CaptureSlotTokens.ElapsedTimeWidth,
-                    height = if (compact) {
-                        CaptureSlotTokens.ElapsedTimeCompactHeight
+                    height = if (mini) {
+                        CaptureSlotTokens.ElapsedTimeMiniHeight
                     } else {
                         CaptureSlotTokens.ElapsedTimeStandardHeight
                     },
@@ -486,16 +491,16 @@ internal object PlaceholderCaptureSlots {
             {}
         },
         quickSettingsOverlay = { slotModifier ->
-            val compact = isCompactHeight || isCompact
+            val mini = isCompactHeight || controlSize != ControlSize.Standard
             PlaceholderControlBox(
                 label = "Quick Settings",
-                width = if (compact) {
-                    CaptureSlotTokens.QuickSettingsCompactWidth
+                width = if (mini) {
+                    CaptureSlotTokens.QuickSettingsMiniWidth
                 } else {
                     CaptureSlotTokens.QuickSettingsStandardWidth
                 },
-                height = if (compact) {
-                    CaptureSlotTokens.QuickSettingsCompactHeight
+                height = if (mini) {
+                    CaptureSlotTokens.QuickSettingsMiniHeight
                 } else {
                     CaptureSlotTokens.QuickSettingsStandardHeight
                 },
