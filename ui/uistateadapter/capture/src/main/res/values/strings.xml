@@ -35,8 +35,6 @@
     <string name="toast_video_capture_external_unsupported">Video not supported while app is in image-only capture mode</string>
     <!-- Toast message shown when the user attempts to take a photo while the app was launched in video-only external capture mode. [CHAR LIMIT=96] -->
     <string name="toast_image_capture_external_unsupported">Image capture not supported while app is in video-only capture mode</string>
-    <!-- Toast message shown when the user tries to take a photo while two cameras are recording at once. "dual camera mode" is the same feature as the "Enable Concurrent Camera" setting (concurrent_camera_title); use the same translated term. "Image capture" means taking a photo. [CHAR LIMIT=68] -->
-    <string name="toast_image_capture_unsupported_concurrent_camera">Image capture not supported in dual camera mode</string>
     <!-- Toast message shown when the user turns on HDR in hybrid capture mode and the device cannot run HDR video recording and photo capture at the same time. "HDR" is normally left untranslated. [CHAR LIMIT=85] -->
     <string name="toast_hdr_simultaneous_image_video_unsupported">HDR video and image capture cannot be used at the same time</string>
     <!-- Toast message shown when Low Light Boost is disabled because HDR mode is active. [CHAR LIMIT=66] -->

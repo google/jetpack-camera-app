@@ -209,4 +209,17 @@ class ZoomBarComponentsTest {
         // Respects locale decimal separator
         assertThat(formatAccessibleZoomLabel(0.50783783f, Locale.GERMANY)).isEqualTo("0,5")
     }
+
+    @Test
+    fun endCapFraction_scalesWithDistanceToEndStop() {
+        assertThat(endCapFraction(distance = 0f)).isEqualTo(1f)
+        assertThat(endCapFraction(distance = 0.25f)).isEqualTo(0.75f)
+        assertThat(endCapFraction(distance = 1f)).isEqualTo(0f)
+        assertThat(endCapFraction(distance = 3f)).isEqualTo(0f)
+    }
+
+    @Test
+    fun endCapFraction_pastEndStop_staysFullyRounded() {
+        assertThat(endCapFraction(distance = -0.2f)).isEqualTo(1f)
+    }
 }

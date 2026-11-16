@@ -20,6 +20,7 @@ import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.CameraXCameraSystem
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.settings.ConstraintsRepository
 import com.google.jetpackcamera.settings.SettingsRepository
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -34,11 +35,14 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 private const val TAG = "CameraXCameraSystemRepo"
 
@@ -108,6 +112,12 @@ class CameraXCameraSystemRepository(
         cameraSystem.getCurrentSettings()
     }
 
+    override val activeCaptureSubModeId: Flow<CaptureSubModeId> by lazy {
+        currentSettings
+            .map { it.activeCaptureSubModeIdOrDefault() }
+            .distinctUntilChanged()
+    }
+
     override val currentCameraState: StateFlow<CameraState> by lazy {
         cameraSystem.getCurrentCameraState()
     }
@@ -126,3 +136,6 @@ class CameraXCameraSystemRepository(
         return constraints.getSupportedMimeTypes().values.flatten().distinct()
     }
 }
+
+private fun CameraAppSettings?.activeCaptureSubModeIdOrDefault(): CaptureSubModeId =
+    this?.activeCaptureSubModeId ?: CaptureSubModeId.DEFAULT
