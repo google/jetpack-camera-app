@@ -18,6 +18,8 @@ package com.google.jetpackcamera.utils
 import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsNode
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.getOrNull
@@ -35,6 +37,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDisplayed
 import androidx.compose.ui.test.isEnabled
 import androidx.compose.ui.test.isNotDisplayed
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -47,6 +50,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToString
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import com.google.common.truth.TruthJUnit.assume
 import com.google.errorprone.annotations.CanIgnoreReturnValue
 import com.google.jetpackcamera.core.camera.concurrent.CONCURRENT_SUB_MODE_ID
@@ -165,6 +169,64 @@ fun ComposeTestRule.waitForCaptureButton(timeoutMillis: Long = APP_START_TIMEOUT
     waitUntil(timeoutMillis = timeoutMillis) {
         onNode(hasTestTag(CAPTURE_BUTTON) and isEnabled()).isDisplayed()
     }
+}
+
+private val TOUCH_HANDLING_ACTIONS = listOf(
+    SemanticsActions.OnClick,
+    SemanticsActions.OnLongClick,
+    SemanticsActions.ScrollBy,
+    SemanticsActions.SetProgress
+)
+
+/**
+ * Returns a point inside the node with [tag] that is not covered by another control, relative to
+ * that node's top-left corner. Use it to send gestures to a node that may have other controls
+ * drawn over parts of it, such as the viewfinder.
+ *
+ * A control is any other node that handles touch input, identified by a click, long-click, scroll,
+ * or progress semantics action. Ancestors and descendants of the node are ignored. Candidate
+ * points on a [gridSize] x [gridSize] grid are tried from the center outward. Fails with a message
+ * listing the overlapping controls if every candidate point is covered.
+ */
+fun ComposeTestRule.findUncoveredPointInNode(tag: String, gridSize: Int = 9): Offset {
+    fun SemanticsNode.descendants(): Sequence<SemanticsNode> =
+        children.asSequence().flatMap { sequenceOf(it) + it.descendants() }
+
+    val target = onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode()
+    val bounds = target.boundsInRoot
+    val ignoredIds = (
+        generateSequence(target) { it.parent } + target.descendants()
+        ).map { it.id }.toSet()
+    val overlappingNodes = onAllNodes(isRoot(), useUnmergedTree = true).fetchSemanticsNodes()
+        .asSequence()
+        .flatMap { it.descendants() }
+        .filter { it.id !in ignoredIds && it.boundsInRoot.overlaps(bounds) }
+        .filter { node -> TOUCH_HANDLING_ACTIONS.any { it in node.config } }
+        .toList()
+
+    val point = (1 until gridSize).asSequence()
+        .flatMap { column ->
+            (1 until gridSize).asSequence().map { row ->
+                Offset(
+                    bounds.left + bounds.width * column / gridSize,
+                    bounds.top + bounds.height * row / gridSize
+                )
+            }
+        }
+        .sortedBy { (it - bounds.center).getDistanceSquared() }
+        .firstOrNull { candidate -> overlappingNodes.none { it.boundsInRoot.contains(candidate) } }
+
+    assertWithMessage(
+        "Every candidate point in $tag is covered by controls: " +
+            overlappingNodes.joinToString { node ->
+                val label = node.config.getOrNull(SemanticsProperties.TestTag)
+                    ?: node.config.getOrNull(SemanticsProperties.Text)?.joinToString()
+                    ?: node.config.getOrNull(SemanticsProperties.ContentDescription)?.joinToString()
+                    ?: "node ${node.id}"
+                "$label ${node.boundsInRoot}"
+            }
+    ).that(point).isNotNull()
+    return point!! - bounds.topLeft
 }
 
 fun ComposeTestRule.waitForNodeWithTag(
