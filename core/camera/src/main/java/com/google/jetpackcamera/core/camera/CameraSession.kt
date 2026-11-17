@@ -714,34 +714,26 @@ private suspend fun updateCamera2RequestOptions(
 /**
  * Updates the low light boost AE mode in this builder for [flashMode].
  *
- * For [FlashMode.LOW_LIGHT_BOOST], this sets [CaptureRequest.CONTROL_AE_MODE] to
- * [CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY] if
- * [supportedIlluminants] contains [Illuminant.LOW_LIGHT_BOOST_AE_MODE]. For any other flash mode,
- * this clears [CaptureRequest.CONTROL_AE_MODE] so that CameraX controls the AE mode.
+ * For [FlashMode.LOW_LIGHT_BOOST], when [supportedIlluminants] contains
+ * [Illuminant.LOW_LIGHT_BOOST_AE_MODE], this sets [CaptureRequest.CONTROL_AE_MODE] to
+ * [CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY]. Otherwise, this clears
+ * [CaptureRequest.CONTROL_AE_MODE] so that CameraX controls the AE mode.
  */
 @ExperimentalCamera2Interop
 internal fun CaptureRequestOptions.Builder.updateLowLightBoostAeMode(
     flashMode: FlashMode,
     supportedIlluminants: Set<Illuminant>?
 ) {
-    when (flashMode) {
-        FlashMode.LOW_LIGHT_BOOST -> {
-            if (supportedIlluminants?.contains(Illuminant.LOW_LIGHT_BOOST_AE_MODE) == true) {
-                Log.d(
-                    TAG,
-                    "Setting LLB with " +
-                        "CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY"
-                )
-                setCaptureRequestOption(
-                    CaptureRequest.CONTROL_AE_MODE,
-                    CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
-                )
-            }
-        }
-
-        else -> {
-            clearCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE)
-        }
+    if (flashMode == FlashMode.LOW_LIGHT_BOOST &&
+        supportedIlluminants?.contains(Illuminant.LOW_LIGHT_BOOST_AE_MODE) == true
+    ) {
+        Log.d(TAG, "Setting LLB with CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY")
+        setCaptureRequestOption(
+            CaptureRequest.CONTROL_AE_MODE,
+            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+        )
+    } else {
+        clearCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE)
     }
 }
 

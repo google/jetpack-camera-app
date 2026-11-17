@@ -122,8 +122,11 @@ class CameraSessionTest {
     }
 
     @Test
-    fun updateLowLightBoostAeMode_lowLightBoostWithCameraEffect_doesNotSetAeMode() {
-        val builder = CaptureRequestOptions.Builder()
+    fun updateLowLightBoostAeMode_lowLightBoostWithCameraEffect_clearsAeMode() {
+        val builder = CaptureRequestOptions.Builder().setCaptureRequestOption(
+            CaptureRequest.CONTROL_AE_MODE,
+            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+        )
 
         builder.updateLowLightBoostAeMode(
             flashMode = FlashMode.LOW_LIGHT_BOOST,
