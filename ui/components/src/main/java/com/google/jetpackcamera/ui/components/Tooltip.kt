@@ -585,11 +585,11 @@ fun TooltipIconButton(
  * @param contentDescription explicit accessibility label for the anchor button; unlike the `String`
  *   overload, no automatic fallback is available, so pass `null` only when semantics are supplied
  *   externally.
+ * @param caret [TooltipCaret] whose position provider places the popup; reuse the same instance
+ *   for [TooltipCaret.bubbleShape] and [TooltipCaret.caretPadding] inside [tooltip].
  * @param modifier [Modifier] applied to the outer [TooltipBox] wrapper.
  * @param state controls tooltip visibility; defaults to a persistent [TooltipState] so the popup
  *   remains open until tapped again or dismissed externally.
- * @param caret [TooltipCaret] whose position provider places the popup; reuse the same instance
- *   for [TooltipCaret.bubbleShape] and [TooltipCaret.caretPadding] inside [tooltip].
  * @param hasAction pass `true` when [tooltip] contains interactive controls so [TooltipBox] adjusts
  *   accessibility focus and dismissal handling accordingly.
  * @param isOutlined when `true`, draws a `1.dp` circular border around the [size] container using
@@ -609,9 +609,9 @@ fun TooltipIconButton(
     icon: @Composable () -> Unit,
     tooltip: @Composable TooltipScope.() -> Unit,
     contentDescription: String?,
+    caret: TooltipCaret,
     modifier: Modifier = Modifier,
     state: TooltipState = rememberTooltipState(isPersistent = true),
-    caret: TooltipCaret = rememberTooltipCaret(),
     hasAction: Boolean = false,
     isOutlined: Boolean = false,
     containerColor: Color = Color.Transparent,

@@ -116,6 +116,7 @@ class TooltipTest {
                 TooltipIconButton(
                     icon = { Box(modifier = Modifier.size(24.dp)) },
                     contentDescription = "Info button",
+                    caret = rememberTooltipCaret(),
                     hasAction = true,
                     tooltip = {
                         RichTooltip(
