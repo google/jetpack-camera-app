@@ -21,7 +21,6 @@ import androidx.datastore.core.DataStoreFactory
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
@@ -169,12 +168,6 @@ class ProtoDataStoreSettingsDataSource(
     override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.copy { this.audioEnabled = isAudioEnabled }
-        }
-    }
-
-    override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.copy { this.concurrentCameraMode = concurrentCameraMode.toProto() }
         }
     }
 
