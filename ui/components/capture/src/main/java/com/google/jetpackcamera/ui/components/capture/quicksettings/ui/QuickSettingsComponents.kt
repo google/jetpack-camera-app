@@ -535,9 +535,9 @@ private fun QuickSettingToggleSelectorButton(
         shapes = shapes,
         colors = ToggleButtonDefaults.colors(
             containerColor = MaterialTheme.colorScheme.onSecondaryFixedVariant,
-            checkedContainerColor = MaterialTheme.colorScheme.primary,
+            checkedContainerColor = MaterialTheme.colorScheme.primaryFixed,
             contentColor = MaterialTheme.colorScheme.secondaryFixed,
-            checkedContentColor = MaterialTheme.colorScheme.onPrimary
+            checkedContentColor = MaterialTheme.colorScheme.onPrimaryFixed
         ),
         contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
     ) {

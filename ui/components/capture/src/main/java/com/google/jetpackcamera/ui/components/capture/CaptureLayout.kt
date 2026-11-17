@@ -45,7 +45,6 @@ import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
@@ -86,6 +85,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.Constraints
@@ -357,6 +357,12 @@ fun CaptureScaffoldLayout(
                                     onClickLabel = dismissQuickSettingsLabel,
                                     onClick = handleDismissQuickSettings
                                 )
+                                .semantics {
+                                    dismiss(dismissQuickSettingsLabel) {
+                                        handleDismissQuickSettings()
+                                        true
+                                    }
+                                }
                                 .minimumInteractiveComponentSize()
                         )
                     }

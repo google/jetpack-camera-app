@@ -48,6 +48,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -71,12 +72,12 @@ import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
 import com.google.jetpackcamera.model.MediaDescriptor
-import com.google.jetpackcamera.ui.components.capture.quicksettings.sampleQuickSettingsUiState
 import com.google.jetpackcamera.ui.controller.testing.FakeCameraController
 import com.google.jetpackcamera.ui.controller.testing.FakeCaptureController
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
 import com.google.jetpackcamera.ui.controller.testing.FakeSnackBarController
 import com.google.jetpackcamera.ui.controller.testing.FakeZoomController
+import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
@@ -835,6 +836,19 @@ class CaptureScaffoldTest {
         assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
         assertThat(dismissCount).isEqualTo(1)
+
+        composeTestRule.runOnIdle {
+            scaffoldState.showQuickSettings()
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
+            .performSemanticsAction(SemanticsActions.Dismiss)
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
+        assertThat(dismissCount).isEqualTo(2)
     }
 
     @Test
@@ -935,6 +949,34 @@ class CaptureScaffoldTest {
         assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
         assertThat(dismissCount).isEqualTo(1)
+    }
+
+    @Test
+    fun rememberCaptureScaffoldState_restoresQuickSettingsStateAcrossSavedInstanceState() {
+        val restorationTester = StateRestorationTester(composeTestRule)
+        var scaffoldState: CaptureScaffoldState? = null
+
+        restorationTester.setContent {
+            scaffoldState = rememberCaptureScaffoldState()
+        }
+
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isFalse()
+
+        composeTestRule.runOnIdle {
+            scaffoldState!!.showQuickSettings()
+        }
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isTrue()
+
+        scaffoldState = null
+        restorationTester.emulateSavedInstanceStateRestore()
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isTrue()
+
+        composeTestRule.runOnIdle {
+            scaffoldState!!.dismissQuickSettings()
+        }
+        scaffoldState = null
+        restorationTester.emulateSavedInstanceStateRestore()
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isFalse()
     }
 
     private companion object {

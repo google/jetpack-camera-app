@@ -51,12 +51,12 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isPopup
-import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -91,7 +91,6 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_O
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.CaptureScaffoldDefaults
-import com.google.jetpackcamera.ui.components.capture.CaptureScaffoldState
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_BOTTOM_SHEET
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DRAG_HANDLE
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_3_4_BUTTON
@@ -103,8 +102,8 @@ import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_CAPTURE
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
-import com.google.jetpackcamera.ui.components.capture.rememberCaptureScaffoldState
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
+import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -224,15 +223,15 @@ class QuickSettingsSideSheetTest {
         composeTestRule.onNodeWithTag(ROW_QUICK_SETTINGS_ASPECT_RATIO).assertIsDisplayed()
         composeTestRule.onNodeWithTag(ROW_QUICK_SETTINGS_HDR).assertIsDisplayed()
 
-        val sheetWidth = composeTestRule
+        val sheetBounds = composeTestRule
             .onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .getUnclippedBoundsInRoot()
-            .width
-        assertThat(sheetWidth).isAtMost(412.dp)
+        assertThat(sheetBounds.width).isAtMost(470.dp)
+        assertThat(sheetBounds.height).isEqualTo(570.dp)
     }
 
     @Test
-    fun quickSettingsSideSheet_outsideTap_dismissesAndPassesThroughToUnderlyingControl() {
+    fun quickSettingsSideSheet_outsideTap_dismissesWithoutPassingThroughToUnderlyingControl() {
         var dismissCount = 0
         var underlyingClicked = false
 
@@ -254,17 +253,17 @@ class QuickSettingsSideSheetTest {
             }
         }
 
-        // The underlying control is a sibling of the whole sheet composable, as the camera
-        // controls are in CaptureScaffoldLayout, not a sibling of the scrim itself.
         composeTestRule.onRoot().performTouchInput { click(Offset(right - 4f, 4f)) }
 
         assertThat(dismissCount).isEqualTo(1)
-        assertThat(underlyingClicked).isTrue()
+        assertThat(underlyingClicked).isFalse()
     }
 
     @Test
-    fun quickSettingsSideSheet_secondFingerOutside_doesNotDismissAgain() {
+    fun quickSettingsSideSheet_scrim_exposesButtonSemanticsAndDismissesOnClick() {
         var dismissCount = 0
+        val dismissLabel = ApplicationProvider.getApplicationContext<Context>()
+            .getString(R.string.quick_settings_btn_close_expanded_settings_description)
 
         composeTestRule.setContent {
             MaterialTheme {
@@ -277,33 +276,14 @@ class QuickSettingsSideSheetTest {
             }
         }
 
-        composeTestRule.onRoot().performTouchInput {
-            down(pointerId = 0, position = Offset(right - 40f, 40f))
-            down(pointerId = 1, position = Offset(right - 40f, 140f))
-            up(pointerId = 1)
-            up(pointerId = 0)
-        }
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
+            .assertIsDisplayed()
+            .assertContentDescriptionEquals(dismissLabel)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.TraversalIndex, 1f))
+            .performClick()
 
         assertThat(dismissCount).isEqualTo(1)
-    }
-
-    @Test
-    fun quickSettingsSideSheet_scrim_hasNoButtonSemanticsSoTalkBackCanReachControls() {
-        composeTestRule.setContent {
-            MaterialTheme {
-                QuickSettingsSideSheet(
-                    isOpen = true,
-                    onDismissRequest = {},
-                    quickSettingsUiState = sampleAvailableUiState,
-                    quickSettingsController = fakeQuickSettingsController
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
-            .assert(SemanticsMatcher.keyNotDefined(SemanticsActions.OnClick))
-            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.Role))
-            .assert(SemanticsMatcher.keyNotDefined(SemanticsProperties.ContentDescription))
     }
 
     @Test
@@ -476,34 +456,6 @@ class QuickSettingsSideSheetTest {
     }
 
     @Test
-    fun rememberCaptureScaffoldState_restoresQuickSettingsStateAcrossSavedInstanceState() {
-        val restorationTester = StateRestorationTester(composeTestRule)
-        var scaffoldState: CaptureScaffoldState? = null
-
-        restorationTester.setContent {
-            scaffoldState = rememberCaptureScaffoldState()
-        }
-
-        assertThat(scaffoldState!!.isQuickSettingsOpen).isFalse()
-
-        composeTestRule.runOnIdle {
-            scaffoldState!!.showQuickSettings()
-        }
-        assertThat(scaffoldState!!.isQuickSettingsOpen).isTrue()
-
-        scaffoldState = null
-        restorationTester.emulateSavedInstanceStateRestore()
-        assertThat(scaffoldState!!.isQuickSettingsOpen).isTrue()
-
-        composeTestRule.runOnIdle {
-            scaffoldState!!.dismissQuickSettings()
-        }
-        scaffoldState = null
-        restorationTester.emulateSavedInstanceStateRestore()
-        assertThat(scaffoldState!!.isQuickSettingsOpen).isFalse()
-    }
-
-    @Test
     fun quickSettingsSideSheet_slotOverload_clearsRailPaddingAndCapsMaxSheetWidth() {
         composeTestRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
@@ -583,7 +535,7 @@ class QuickSettingsSideSheetTest {
             .onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO)
             .getUnclippedBoundsInRoot()
 
-        assertThat(sheetBoundsLtr.left).isEqualTo(16.dp)
+        assertThat(sheetBoundsLtr.left).isEqualTo(0.dp)
         assertThat(sheetBoundsLtr.right).isLessThan(rootBounds.width / 2)
         // Vertically centered along the attached edge by default.
         assertThat((sheetBoundsLtr.top + sheetBoundsLtr.bottom) / 2)
@@ -609,7 +561,7 @@ class QuickSettingsSideSheetTest {
             .onNodeWithTag(BTN_QUICK_SETTINGS_FLASH_OPTION_AUTO)
             .getUnclippedBoundsInRoot()
 
-        assertThat(sheetBoundsRtl.left).isEqualTo(16.dp)
+        assertThat(sheetBoundsRtl.left).isEqualTo(0.dp)
         assertThat(sheetBoundsRtl.right).isLessThan(rootBounds.width / 2)
         assertThat(sheetBoundsRtl.top).isEqualTo(sheetBoundsLtr.top)
         assertThat(flashTitleBoundsRtl.left).isGreaterThan(flashOffBoundsRtl.left)
@@ -625,7 +577,8 @@ class QuickSettingsSideSheetTest {
                     onDismissRequest = {},
                     quickSettingsUiState = sampleAvailableUiState,
                     quickSettingsController = fakeQuickSettingsController,
-                    contentAlignment = Alignment.TopEnd
+                    contentAlignment = Alignment.TopEnd,
+                    minSheetHeight = 200.dp
                 )
             }
         }
@@ -636,7 +589,7 @@ class QuickSettingsSideSheetTest {
             .getUnclippedBoundsInRoot()
 
         assertThat(sheetBounds.left).isGreaterThan(rootBounds.width / 2)
-        assertThat(sheetBounds.right).isEqualTo(rootBounds.right - 16.dp)
+        assertThat(sheetBounds.right).isEqualTo(rootBounds.right)
         assertThat(sheetBounds.top).isEqualTo(16.dp)
         assertThat(sheetBounds.bottom).isLessThan(rootBounds.height / 2)
     }
@@ -859,14 +812,14 @@ class QuickSettingsSideSheetTest {
 
             assertThat(hostBounds).isEqualTo(rootBounds)
             assertThat(scrimBounds).isEqualTo(rootBounds)
-            assertThat(sheetBounds.width).isAtMost(412.dp)
+            assertThat(sheetBounds.width).isAtMost(470.dp)
 
             // Tap near the top-right corner, outside the sheet.
             composeTestRule.onRoot().performTouchInput { click(Offset(right - 8f, 8f)) }
         }
 
         assertThat(dismissCount).isEqualTo(2)
-        assertThat(underlyingClicked).isTrue()
+        assertThat(underlyingClicked).isFalse()
     }
 
     @OptIn(ExperimentalTestApi::class)
@@ -981,7 +934,7 @@ class QuickSettingsSideSheetTest {
             composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
                 .getUnclippedBoundsInRoot()
                 .left
-        ).isEqualTo(16.dp)
+        ).isEqualTo(0.dp)
     }
 
     @Test
@@ -1005,7 +958,7 @@ class QuickSettingsSideSheetTest {
             .getUnclippedBoundsInRoot()
         val handleBounds = composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
             .getUnclippedBoundsInRoot()
-        assertThat(sheetBounds.right).isEqualTo(rootBounds.right - 16.dp)
+        assertThat(sheetBounds.right).isEqualTo(rootBounds.right)
         // The handle sits on the free (left) edge.
         assertThat(handleBounds.left).isEqualTo(sheetBounds.left)
 
@@ -1079,7 +1032,7 @@ class QuickSettingsSideSheetTest {
                 val left = composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
                     .getUnclippedBoundsInRoot()
                     .left
-                sawSlidingFrame = left < 16.dp && left > (-412).dp
+                sawSlidingFrame = left < 0.dp && left > (-470).dp
             }
         }
         assertThat(sawSlidingFrame).isTrue()
@@ -1192,6 +1145,7 @@ class QuickSettingsSideSheetTest {
                     onDismissRequest = {},
                     quickSettingsUiState = sampleAvailableUiState,
                     quickSettingsController = fakeQuickSettingsController,
+                    sheetPadding = PaddingValues(start = 16.dp),
                     windowInsets = WindowInsets(left = 24.dp)
                 )
             }

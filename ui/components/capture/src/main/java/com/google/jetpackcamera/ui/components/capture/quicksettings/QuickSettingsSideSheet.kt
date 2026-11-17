@@ -31,6 +31,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.ScrollScope
 import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.gestures.animateTo
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -75,18 +76,14 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.input.pointer.PointerEvent
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import androidx.compose.ui.layout.layout
-import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.PointerInputModifierNode
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.paneTitle
@@ -125,9 +122,9 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.first
 
 private object QuickSettingsSideSheetTokens {
-    val MaxSheetWidth = 412.dp
-    val FoldableMaxSheetWidth = 380.dp
-    val OuterPadding = 16.dp
+    val MaxSheetWidth = 470.dp
+    val MinSheetHeight = 570.dp
+    val OuterVerticalPadding = 16.dp
     val ContentVerticalPadding = 20.dp
     val DragHandleWidth = 4.dp
     val DragHandleHeight = 32.dp
@@ -192,8 +189,10 @@ internal fun QuickSettingsSideSheet(
     onNavigateToSettings: () -> Unit = {},
     showMoreSettingsButton: Boolean = false,
     contentAlignment: Alignment = AbsoluteAlignment.CenterLeft,
-    sheetPadding: PaddingValues = PaddingValues(QuickSettingsSideSheetTokens.OuterPadding),
+    sheetPadding: PaddingValues =
+        PaddingValues(vertical = QuickSettingsSideSheetTokens.OuterVerticalPadding),
     maxSheetWidth: Dp = QuickSettingsSideSheetTokens.MaxSheetWidth,
+    minSheetHeight: Dp = QuickSettingsSideSheetTokens.MinSheetHeight,
     maxSheetHeight: Dp = Dp.Unspecified,
     sheetContainerDirection: LayoutDirection = LocalLayoutDirection.current,
     windowInsets: WindowInsets = WindowInsets.safeDrawing,
@@ -221,6 +220,7 @@ internal fun QuickSettingsSideSheet(
         contentAlignment = contentAlignment,
         sheetPadding = sheetPadding,
         maxSheetWidth = maxSheetWidth,
+        minSheetHeight = minSheetHeight,
         maxSheetHeight = maxSheetHeight,
         sheetContainerDirection = sheetContainerDirection,
         windowInsets = windowInsets,
@@ -239,9 +239,9 @@ internal fun QuickSettingsSideSheet(
  * In-hierarchy Quick Settings sheet attached to a side edge for medium and expanded layouts.
  *
  * It slides in from its edge and is dismissed by swiping back toward it, the drag handle, the
- * Dismiss accessibility action, back (with predictive back), Escape, or a tap outside. A tap
- * outside is not consumed, so the control underneath also responds. Host it in a `Box` over the
- * content it covers. Leaves composition once the hide animation finishes.
+ * Dismiss accessibility action, back (with predictive back), Escape, or tapping the scrim outside
+ * the sheet. Host it in a `Box` over the content it covers. Leaves composition once the hide
+ * animation finishes.
  *
  * @param onDismissRequest Called when the user dismisses the sheet; set [isOpen] to `false`.
  * @param contentAlignment Where the sheet sits; its horizontal side is also the edge it attaches
@@ -259,8 +259,10 @@ internal fun QuickSettingsSideSheet(
     modifier: Modifier = Modifier,
     paneTitle: String = stringResource(R.string.quick_settings_title_photo_and_video_settings),
     contentAlignment: Alignment = AbsoluteAlignment.CenterLeft,
-    sheetPadding: PaddingValues = PaddingValues(QuickSettingsSideSheetTokens.OuterPadding),
+    sheetPadding: PaddingValues =
+        PaddingValues(vertical = QuickSettingsSideSheetTokens.OuterVerticalPadding),
     maxSheetWidth: Dp = QuickSettingsSideSheetTokens.MaxSheetWidth,
+    minSheetHeight: Dp = QuickSettingsSideSheetTokens.MinSheetHeight,
     maxSheetHeight: Dp = Dp.Unspecified,
     sheetContainerDirection: LayoutDirection = LocalLayoutDirection.current,
     windowInsets: WindowInsets = WindowInsets.safeDrawing,
@@ -274,7 +276,8 @@ internal fun QuickSettingsSideSheet(
         if (disableAnimations) snap() else MaterialTheme.motionScheme.defaultSpatialSpec()
     val hideSpec: AnimationSpec<Float> =
         if (disableAnimations) snap() else MaterialTheme.motionScheme.fastEffectsSpec()
-    val settleSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
+    val settleSpec: AnimationSpec<Float> =
+        if (disableAnimations) snap() else MaterialTheme.motionScheme.defaultSpatialSpec()
     var isComposed by remember { mutableStateOf(isOpen) }
     if (isOpen) {
         isComposed = true
@@ -381,22 +384,23 @@ internal fun QuickSettingsSideSheet(
         }
     }
 
-    val heightCapModifier = if (maxSheetHeight != Dp.Unspecified) {
-        Modifier.heightIn(max = maxSheetHeight)
-    } else {
-        Modifier
-    }
-
     CompositionLocalProvider(LocalLayoutDirection provides sheetContainerDirection) {
-        // Emitted beside the caller's content, not inside the sheet's container, because pointer
-        // sharing only reaches layout siblings. Absent once the sheet starts hiding.
         if (isOpen && sheetState.targetValue == SideSheetValue.Expanded) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(scrimColor)
                     .testTag(QUICK_SETTINGS_SCRIM)
-                    .dismissOnOutsideTouch { currentOnDismissRequest() }
+                    .semantics {
+                        contentDescription = dismissDescription
+                        traversalIndex = 1f
+                    }
+                    .clickable(
+                        role = Role.Button,
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClick = { currentOnDismissRequest() }
+                    )
             )
         }
 
@@ -424,7 +428,7 @@ internal fun QuickSettingsSideSheet(
                     .windowInsetsPadding(windowInsets)
                     .padding(sheetPadding)
                     .widthIn(max = maxSheetWidth)
-                    .then(heightCapModifier)
+                    .heightIn(min = minSheetHeight, max = maxSheetHeight)
                     .sideSheetAnchors(
                         state = sheetState,
                         edge = edge,
@@ -561,40 +565,6 @@ private fun Modifier.sideSheetAnchors(
     }
 }
 
-/** Calls [onDismiss] on the first pointer down without consuming it, sharing it with siblings. */
-private fun Modifier.dismissOnOutsideTouch(onDismiss: () -> Unit): Modifier =
-    this then DismissOnOutsideTouchElement(onDismiss)
-
-private data class DismissOnOutsideTouchElement(val onDismiss: () -> Unit) :
-    ModifierNodeElement<DismissOnOutsideTouchNode>() {
-    override fun create() = DismissOnOutsideTouchNode(onDismiss)
-
-    override fun update(node: DismissOnOutsideTouchNode) {
-        node.onDismiss = onDismiss
-    }
-}
-
-private class DismissOnOutsideTouchNode(var onDismiss: () -> Unit) :
-    Modifier.Node(),
-    PointerInputModifierNode {
-    override fun onPointerEvent(
-        pointerEvent: PointerEvent,
-        pass: PointerEventPass,
-        bounds: IntSize
-    ) {
-        // Only the first finger of a gesture dismisses; later fingers (e.g. pinch) do not.
-        if (pass == PointerEventPass.Initial &&
-            pointerEvent.changes.all { it.changedToDownIgnoreConsumed() }
-        ) {
-            onDismiss()
-        }
-    }
-
-    override fun onCancelPointerInput() = Unit
-
-    override fun sharePointerInputWithSiblings(): Boolean = true
-}
-
 /** Pixels [offset] has moved past the expanded anchor away from [edge], or 0. */
 internal fun overshootPastExpanded(offset: Float, edge: SideSheetEdge): Float = when {
     offset.isNaN() -> 0f
@@ -652,7 +622,8 @@ private fun SideSheetDragHandle(onClickLabel: String, onClick: () -> Unit) {
 @Composable
 private fun QuickSettingsSideSheetPreviewContent(
     showMoreSettingsButton: Boolean = false,
-    sheetPadding: PaddingValues = PaddingValues(QuickSettingsSideSheetTokens.OuterPadding),
+    sheetPadding: PaddingValues =
+        PaddingValues(vertical = QuickSettingsSideSheetTokens.OuterVerticalPadding),
     maxSheetWidth: Dp = QuickSettingsSideSheetTokens.MaxSheetWidth
 ) {
     MaterialTheme(
@@ -729,33 +700,25 @@ private fun QuickSettingsSideSheetPreview() {
 }
 
 @Preview(
-    name = "Foldable Rail-Cleared (852x883dp)",
+    name = "Foldable (852x883dp)",
     widthDp = 852,
     heightDp = 883,
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
 private fun QuickSettingsSideSheetFoldablePreview() {
-    QuickSettingsSideSheetPreviewContent(
-        showMoreSettingsButton = true,
-        sheetPadding = PaddingValues(start = 92.dp, end = 92.dp, top = 24.dp, bottom = 24.dp),
-        maxSheetWidth = QuickSettingsSideSheetTokens.FoldableMaxSheetWidth
-    )
+    QuickSettingsSideSheetPreviewContent(showMoreSettingsButton = true)
 }
 
 @Preview(
-    name = "Tablet Rail-Cleared (1280x800dp)",
+    name = "Tablet (1280x800dp)",
     widthDp = 1280,
     heightDp = 800,
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
 private fun QuickSettingsSideSheetTabletPreview() {
-    QuickSettingsSideSheetPreviewContent(
-        showMoreSettingsButton = true,
-        sheetPadding = PaddingValues(start = 100.dp, end = 100.dp, top = 24.dp, bottom = 28.dp),
-        maxSheetWidth = QuickSettingsSideSheetTokens.MaxSheetWidth
-    )
+    QuickSettingsSideSheetPreviewContent(showMoreSettingsButton = true)
 }
 
 @Preview(

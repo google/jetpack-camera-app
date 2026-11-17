@@ -66,6 +66,7 @@ import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_FLASH
 import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
+import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
