@@ -433,6 +433,10 @@ fun defaultCameraErrorStrings(error: CameraError): CameraErrorStrings? {
  * Public default building blocks for [CaptureScaffold] slots.
  */
 object CaptureScaffoldDefaults {
+    /** Compact layouts that present Quick Settings in a bottom sheet. */
+    private val BottomSheetQuickSettingsLayouts =
+        setOf("CompactPortraitLayout", "CompactShortLayout")
+
     /**
      * Default shutter / capture button wired to [CaptureController], sized for [controlSize] via
      * [CaptureButtonDefaults.diameterFor].
@@ -728,6 +732,10 @@ object CaptureScaffoldDefaults {
 
     /**
      * Default Quick Settings content.
+     *
+     * Compact layouts present it in their Quick Settings bottom sheet as
+     * [QuickSettingsScaffoldContent], which scrolls and pads for system bars. Other layouts receive
+     * the bare [QuickSettingsContent].
      */
     @Composable
     fun QuickSettings(
@@ -738,7 +746,9 @@ object CaptureScaffoldDefaults {
         showMoreSettingsButton: Boolean = true
     ) {
         if (controller != null) {
-            if (LocalActiveCaptureLayout.current == "CompactPortraitLayout") {
+            // TODO(#648): Foldable and tablet layouts temporarily host the bare content in a bottom
+            // sheet; give them the Quick Settings side sheet once #648 lands.
+            if (LocalActiveCaptureLayout.current in BottomSheetQuickSettingsLayouts) {
                 QuickSettingsScaffoldContent(
                     quickSettingsUiState = uiState,
                     onNavigateToSettings = onNavigateToSettings,
