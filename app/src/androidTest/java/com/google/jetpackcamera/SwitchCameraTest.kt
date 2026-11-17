@@ -28,12 +28,13 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.ui.components.capture.PREVIEW_DISPLAY
-import com.google.jetpackcamera.utils.APP_START_TIMEOUT_MILLIS
+import com.google.jetpackcamera.utils.DEFAULT_TIMEOUT_MILLIS
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.assumeFlipCameraAvailable
+import com.google.jetpackcamera.utils.findUncoveredPointInNode
 import com.google.jetpackcamera.utils.getCurrentLensFacing
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
-import com.google.jetpackcamera.utils.waitForNodeWithTag
+import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -81,15 +82,13 @@ class SwitchCameraTest {
         lensFacingStates.add(initialLensFacing)
 
         // Double click display to flip camera
-        composeTestRule.onNodeWithTag(PREVIEW_DISPLAY)
-            .performTouchInput { doubleClick() }
+        doubleTapViewfinderToFlip(initialLensFacing.flip())
 
         // Get lens facing after first flip
         lensFacingStates.add(composeTestRule.getCurrentLensFacing())
 
         // Double click display to flip camera again
-        composeTestRule.onNodeWithTag(PREVIEW_DISPLAY)
-            .performTouchInput { doubleClick() }
+        doubleTapViewfinderToFlip(initialLensFacing)
 
         // Get lens facing after second flip
         lensFacingStates.add(composeTestRule.getCurrentLensFacing())
@@ -100,14 +99,33 @@ class SwitchCameraTest {
             initialLensFacing.flip().flip()
         ).inOrder()
     }
+
+    /**
+     * Double-taps the viewfinder and waits for the lens to switch to [expectedLensFacing].
+     *
+     * Waits for the camera to be ready first, since a double-tap delivered while the camera is
+     * still switching after a previous flip can be dropped. The double-tap targets a point not
+     * covered by other controls, since parts of the preview, such as its center, can be covered by
+     * the zoom controls.
+     */
+    private fun doubleTapViewfinderToFlip(expectedLensFacing: LensFacing) {
+        composeTestRule.waitForCaptureButton()
+        val uncoveredPoint = composeTestRule.findUncoveredPointInNode(PREVIEW_DISPLAY)
+        composeTestRule.onNodeWithTag(PREVIEW_DISPLAY)
+            .performTouchInput { doubleClick(uncoveredPoint) }
+        composeTestRule.waitUntil(timeoutMillis = DEFAULT_TIMEOUT_MILLIS) {
+            composeTestRule.getCurrentLensFacing() == expectedLensFacing
+        }
+    }
 }
 
 inline fun runFlipCameraTest(
     composeTestRule: ComposeTestRule,
     crossinline block: ActivityScenario<MainActivity>.() -> Unit
 ) = runMainActivityScenarioTest {
-    // Wait for the preview display to be visible
-    composeTestRule.waitForNodeWithTag(PREVIEW_DISPLAY, APP_START_TIMEOUT_MILLIS)
+    // Wait for the camera to finish initializing. The loading placeholder shows a disabled
+    // capture button and a disabled flip button, so waiting for the preview alone is not enough.
+    composeTestRule.waitForCaptureButton()
 
     // If flipping the camera is available, flip it. Otherwise skip test.
     composeTestRule.assumeFlipCameraAvailable()
