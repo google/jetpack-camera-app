@@ -651,31 +651,13 @@ private suspend fun updateCamera2RequestOptions(
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
         prevTransientSettings?.flashMode != newTransientSettings.flashMode
     ) {
-        when (newTransientSettings.flashMode) {
-            FlashMode.LOW_LIGHT_BOOST -> {
-                if (cameraConstraints?.supportedIlluminants?.contains(
-                        Illuminant.LOW_LIGHT_BOOST_AE_MODE
-                    ) == true
-                ) {
-                    Log.d(
-                        TAG,
-                        "Setting LLB with " +
-                            "CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY"
-                    )
-                    // Set on the shared builder rather than through a separate
-                    // addCaptureRequestOptions() call. setCaptureRequestOptions() below replaces
-                    // all options previously applied through Camera2CameraControl.
-                    optionsBuilder.setCaptureRequestOption(
-                        CaptureRequest.CONTROL_AE_MODE,
-                        CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
-                    )
-                }
-            }
-
-            else -> {
-                optionsBuilder.clearCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE)
-            }
-        }
+        // The AE mode is set on the shared builder rather than through a separate
+        // addCaptureRequestOptions() call, since setCaptureRequestOptions() below replaces all
+        // options previously applied through Camera2CameraControl.
+        optionsBuilder.updateLowLightBoostAeMode(
+            flashMode = newTransientSettings.flashMode,
+            supportedIlluminants = cameraConstraints?.supportedIlluminants
+        )
         needsUpdate = true
     }
 
@@ -726,6 +708,40 @@ private suspend fun updateCamera2RequestOptions(
     if (needsUpdate) {
         Camera2CameraControl.from(camera.cameraControl)
             .setCaptureRequestOptions(optionsBuilder.build())
+    }
+}
+
+/**
+ * Updates the low light boost AE mode in this builder for [flashMode].
+ *
+ * For [FlashMode.LOW_LIGHT_BOOST], this sets [CaptureRequest.CONTROL_AE_MODE] to
+ * [CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY] if
+ * [supportedIlluminants] contains [Illuminant.LOW_LIGHT_BOOST_AE_MODE]. For any other flash mode,
+ * this clears [CaptureRequest.CONTROL_AE_MODE] so that CameraX controls the AE mode.
+ */
+@ExperimentalCamera2Interop
+internal fun CaptureRequestOptions.Builder.updateLowLightBoostAeMode(
+    flashMode: FlashMode,
+    supportedIlluminants: Set<Illuminant>?
+) {
+    when (flashMode) {
+        FlashMode.LOW_LIGHT_BOOST -> {
+            if (supportedIlluminants?.contains(Illuminant.LOW_LIGHT_BOOST_AE_MODE) == true) {
+                Log.d(
+                    TAG,
+                    "Setting LLB with " +
+                        "CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY"
+                )
+                setCaptureRequestOption(
+                    CaptureRequest.CONTROL_AE_MODE,
+                    CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+                )
+            }
+        }
+
+        else -> {
+            clearCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE)
+        }
     }
 }
 
