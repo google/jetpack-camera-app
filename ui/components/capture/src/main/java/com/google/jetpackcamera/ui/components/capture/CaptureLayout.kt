@@ -42,10 +42,12 @@ import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
@@ -70,14 +72,17 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.takeOrElse
+import com.google.jetpackcamera.ui.components.TooltipIconButton
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
 import com.google.jetpackcamera.ui.components.capture.layout.CameraRowIds
@@ -159,8 +164,9 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * Positions the [viewfinder], individual control slots ([captureButton], [imageWell],
  * [flipCameraButton], [zoomLevelDisplay], [elapsedTimeDisplay], [quickSettingsButton],
  * [indicatorRow], [captureModeToggle], [captureModeCarousel]), [quickSettingsOverlay],
- * [topStartContent], [viewfinderTopEndContent], [topBarTrailingContent], [overlay],
- * [screenFlashOverlay], [snackBar], and [errorDialog] without depending on [CaptureUiState].
+ * [topStartContent], [viewfinderTopEndContent], [topBarLeadingContent], [topBarTrailingContent],
+ * [overlay], [screenFlashOverlay], [snackBar], and [errorDialog] without depending on
+ * [CaptureUiState].
  *
  * @param modifier the [Modifier] for this component.
  * @param state the mode-agnostic [CaptureScaffoldState] controlling Quick Settings visibility and
@@ -198,6 +204,8 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  *   below [topStartContent], this content moves down with the top edge of the viewfinder while
  *   [topStartContent] stays in place. Like [topStartContent], this content receives a
  *   [PreviewOverlaySlotScope].
+ * @param topBarLeadingContent optional composable content placed at the start of the top
+ *   status/indicator bar directly adjacent to [indicatorRow].
  * @param topBarTrailingContent optional composable content aligned to the end of the top
  *   status/indicator bar.
  * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
@@ -229,6 +237,7 @@ fun CaptureScaffoldLayout(
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit = { _, _ -> },
     topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)? = null,
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
@@ -310,6 +319,7 @@ fun CaptureScaffoldLayout(
                             viewfinderTopEndContent = viewfinderTopEndContent,
                             onRequiresImmersiveChange = onRequiresImmersiveChange,
                             indicatorRow = indicatorRow,
+                            topBarLeadingContent = topBarLeadingContent,
                             topBarTrailingContent = topBarTrailingContent,
                             elapsedTimeDisplay = elapsedTimeDisplay,
                             zoomControls = zoomLevelDisplay,
@@ -356,9 +366,10 @@ fun CaptureScaffoldLayout(
                                     .padding(horizontal = LOWER_SECTION_HORIZONTAL_PADDING),
                                 contentAlignment = Alignment.CenterStart
                             ) {
-                                OverlapAwareStyleProvider {
-                                    indicatorRow(Modifier)
-                                }
+                                TopBarLeadingAndIndicatorsRow(
+                                    topBarLeadingContent = topBarLeadingContent,
+                                    indicatorRow = indicatorRow
+                                )
                                 OverlapAwareStyleProvider(Modifier.align(Alignment.CenterEnd)) {
                                     topBarTrailingContent(Modifier)
                                 }
@@ -434,6 +445,45 @@ fun CaptureScaffoldLayout(
     }
 }
 
+/**
+ * Lays out the optional [topBarLeadingContent] directly adjacent to [indicatorRow] inside the top
+ * status/indicator bar, flowing the leading content past any overlapping corner display cutout.
+ *
+ * @param topBarLeadingContent optional leading slot content scoped to [PreviewOverlaySlotScope].
+ * @param indicatorRow top status indicator row content scoped to [PreviewOverlaySlotScope].
+ * @param modifier [Modifier] applied to the outer row.
+ * @param cutoutRectsOverride synthetic cutout rectangles in local coordinates for deterministic
+ *   unit testing; when empty, the host window's display cutout is used.
+ */
+@Composable
+internal fun TopBarLeadingAndIndicatorsRow(
+    topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)?,
+    indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    modifier: Modifier = Modifier,
+    cutoutRectsOverride: List<IntRect> = emptyList()
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (topBarLeadingContent != null) {
+            OverlapAwareStyleProvider {
+                val slotScope = this
+                CutoutAwareRow(
+                    modifier = Modifier.wrapContentWidth(align = Alignment.Start),
+                    horizontalSpacing = 0.dp,
+                    cutoutRectsOverride = cutoutRectsOverride.ifEmpty { null }
+                ) {
+                    slotScope.topBarLeadingContent(Modifier)
+                }
+            }
+        }
+        OverlapAwareStyleProvider {
+            indicatorRow(Modifier)
+        }
+    }
+}
+
 private enum class CaptureSlotId {
     Viewfinder,
     TopStartContent,
@@ -456,6 +506,7 @@ private fun AdaptivePortraitCaptureLayout(
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     onRequiresImmersiveChange: (Boolean) -> Unit,
     indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)?,
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     elapsedTimeDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
@@ -545,9 +596,10 @@ private fun AdaptivePortraitCaptureLayout(
                         .padding(horizontal = LOWER_SECTION_HORIZONTAL_PADDING),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    OverlapAwareStyleProvider {
-                        indicatorRow(Modifier)
-                    }
+                    TopBarLeadingAndIndicatorsRow(
+                        topBarLeadingContent = topBarLeadingContent,
+                        indicatorRow = indicatorRow
+                    )
                     OverlapAwareStyleProvider(Modifier.align(Alignment.CenterEnd)) {
                         topBarTrailingContent(Modifier)
                     }
@@ -1008,6 +1060,98 @@ private fun CaptureLayoutPreview() {
                     .fillMaxWidth()
                     .background(Color.Green)
             )
+        },
+        captureModeToggle = { modifier ->
+            Box(
+                modifier = modifier
+                    .height(48.dp)
+                    .fillMaxWidth(0.5f)
+                    .background(Color.Blue)
+            )
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@PreviewPortraitDevices
+@Composable
+private fun CaptureLayoutWithTooltipPreview() {
+    CaptureScaffoldLayout(
+        modifier = Modifier.background(Color.Black),
+        viewfinder = { modifier ->
+            Box(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .aspectRatio(3f / 4f)
+                    .background(Color.DarkGray)
+            )
+        },
+        captureButton = { modifier ->
+            Box(
+                modifier = modifier
+                    .size(80.dp)
+                    .background(Color.White)
+            )
+        },
+        flipCameraButton = { modifier ->
+            Box(
+                modifier = modifier
+                    .size(48.dp)
+                    .background(Color.Cyan)
+            )
+        },
+        imageWell = { modifier ->
+            Box(
+                modifier = modifier
+                    .size(48.dp)
+                    .background(Color.Cyan)
+            )
+        },
+        zoomLevelDisplay = { modifier ->
+            Box(
+                modifier = modifier
+                    .height(48.dp)
+                    .fillMaxWidth()
+                    .background(Color.Magenta)
+            )
+        },
+        elapsedTimeDisplay = { modifier ->
+            Box(
+                modifier = modifier
+                    .height(24.dp)
+                    .fillMaxWidth(0.5f)
+                    .background(Color.Red)
+            )
+        },
+        quickSettingsButton = { modifier ->
+            Box(
+                modifier = modifier
+                    .size(48.dp)
+                    .background(Color.Yellow)
+            )
+        },
+        topBarLeadingContent = { modifier ->
+            TooltipIconButton(
+                modifier = modifier,
+                icon = {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_info_filled),
+                        contentDescription = null
+                    )
+                },
+                tooltipText = "Camera information",
+                isOutlined = true
+            )
+        },
+        indicatorRow = { modifier ->
+            IndicatorPill(modifier = modifier.fillMaxWidth()) {
+                IndicatorPillIcon(visible = true) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_flash_on_filled),
+                        contentDescription = null
+                    )
+                }
+            }
         },
         captureModeToggle = { modifier ->
             Box(
