@@ -74,7 +74,7 @@ private val SAMPLE_HDR_UI_STATE: HdrUiState = HdrUiState.Available(
 /**
  * Builds a fully populated [QuickSettingsUiState.Available] for tests, with per-row overrides.
  */
-internal fun sampleQuickSettingsUiState(
+fun sampleQuickSettingsUiState(
     aspectRatioUiState: AspectRatioUiState = SAMPLE_ASPECT_RATIO_UI_STATE,
     captureModeUiState: CaptureModeUiState = SAMPLE_CAPTURE_MODE_UI_STATE,
     flashModeUiState: FlashModeUiState = SAMPLE_FLASH_MODE_UI_STATE,

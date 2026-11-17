@@ -90,7 +90,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Mode-agnostic state holder for [CaptureScaffold] and [CaptureScaffoldLayout], managing Quick
- * Settings visibility (compatible with both bottom-sheet and side-rail / floating-card layouts)
+ * Settings visibility (compatible with both bottom-sheet and side-rail / side-sheet layouts)
  * and the scaffold [SnackbarHostState].
  *
  * @param isInitiallyExpanded whether the Quick Settings surface starts in the open state.

@@ -19,6 +19,7 @@ import android.content.res.Configuration
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.snap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusGroup
@@ -104,6 +105,7 @@ import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.ui.components.capture.LocalDisableAnimations
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DRAG_HANDLE
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SCRIM
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_SIDE_SHEET_TAG
@@ -267,10 +269,16 @@ internal fun QuickSettingsSideSheet(
 ) {
     val sheetState = remember { SideSheetState() }
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
-    val showSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
-    val hideSpec = MaterialTheme.motionScheme.fastEffectsSpec<Float>()
+    val disableAnimations = LocalDisableAnimations.current
+    val showSpec: AnimationSpec<Float> =
+        if (disableAnimations) snap() else MaterialTheme.motionScheme.defaultSpatialSpec()
+    val hideSpec: AnimationSpec<Float> =
+        if (disableAnimations) snap() else MaterialTheme.motionScheme.fastEffectsSpec()
     val settleSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>()
     var isComposed by remember { mutableStateOf(isOpen) }
+    if (isOpen) {
+        isComposed = true
+    }
 
     LaunchedEffect(isOpen) {
         if (isOpen) {
@@ -438,7 +446,11 @@ internal fun QuickSettingsSideSheet(
                             sheetState.anchoredDraggableState.offset,
                             edge
                         )
-                        scaleX = if (overshoot > 0f) (size.width + overshoot) / size.width else 1f
+                        scaleX = if (overshoot > 0f && size.width > 0f) {
+                            (size.width + overshoot) / size.width
+                        } else {
+                            1f
+                        }
                         transformOrigin = TransformOrigin(
                             pivotFractionX = if (edge == SideSheetEdge.Left) 1f else 0f,
                             pivotFractionY = 0.5f
@@ -497,7 +509,7 @@ internal fun QuickSettingsSideSheet(
                                             edge
                                         )
                                         val containerWidth = size.width + overshoot
-                                        scaleX = if (overshoot > 0f) {
+                                        scaleX = if (overshoot > 0f && size.width > 0f) {
                                             size.width / containerWidth
                                         } else {
                                             1f

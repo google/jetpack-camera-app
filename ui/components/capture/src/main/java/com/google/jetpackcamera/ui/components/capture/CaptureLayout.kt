@@ -342,12 +342,12 @@ fun CaptureScaffoldLayout(
                             color = QuickSettingsSheetDefaults.DragHandleColor,
                             modifier = Modifier
                                 .testTag(QUICK_SETTINGS_DRAG_HANDLE)
-                                .minimumInteractiveComponentSize()
                                 .clickable(
                                     role = Role.Button,
                                     onClickLabel = dismissQuickSettingsLabel,
                                     onClick = handleDismissQuickSettings
                                 )
+                                .minimumInteractiveComponentSize()
                         )
                     }
                     Column(

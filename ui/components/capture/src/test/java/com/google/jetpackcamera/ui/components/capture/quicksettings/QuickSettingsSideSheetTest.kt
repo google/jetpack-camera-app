@@ -329,8 +329,8 @@ class QuickSettingsSideSheetTest {
             }
         }
 
-        // Click inside the top and bottom vertical padding of the card surface (horizontally
-        // centered so the touch clears the card's 28.dp corner radius).
+        // Click inside the top and bottom vertical padding of the sheet surface (horizontally
+        // centered so the touch clears the sheet's 28.dp corner radius).
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .performTouchInput {
                 click(Offset(centerX, 8f))
@@ -546,7 +546,7 @@ class QuickSettingsSideSheetTest {
         assertThat(sheetBounds.left).isEqualTo(92.dp)
         assertThat(sheetBounds.width).isAtMost(380.dp)
         assertThat(sheetBounds.bottom).isEqualTo(rootBounds.bottom - 28.dp)
-        // Card interior still respects ambient RTL direction even when container is pinned LTR.
+        // Sheet interior still respects ambient RTL direction even when container is pinned LTR.
         assertThat(flashOffBounds.left).isGreaterThan(flashAutoBounds.left)
     }
 
