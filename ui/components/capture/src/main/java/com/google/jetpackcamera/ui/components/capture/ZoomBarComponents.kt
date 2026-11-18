@@ -274,8 +274,9 @@ private fun ZoomControlUiState.Enabled.displayZoomRatio(): Float =
  * @param orientation Layout orientation ([Orientation.Horizontal] or [Orientation.Vertical]),
  *   allowing flexible placement across portrait phones, landscape mode, and open foldables/tablets.
  * @param colors Styling configuration for track and indicator colors.
- * @param labelRotationDegrees Rotation in degrees applied to each stop's label in the draw phase to
- *   keep labels upright across device orientations without recomposing items or reordering stops.
+ * @param labelRotationDegrees Provider for rotation in degrees applied to each stop's label in the
+ *   draw phase to keep labels upright across device orientations without recomposing `ZoomBar` or
+ *   reordering stops.
  */
 // TODO: Confirm final vertical stop ordering with UX (e.g. telephoto at top so dragging up
 //  zooms in).
@@ -287,12 +288,12 @@ fun ZoomBar(
     modifier: Modifier = Modifier,
     orientation: Orientation = Orientation.Horizontal,
     colors: ZoomBarColors = ZoomBarDefaults.colors(),
-    labelRotationDegrees: Float = 0f
+    labelRotationDegrees: () -> Float = { 0f }
 ) {
     if (zoomControlUiState is ZoomControlUiState.Enabled) {
         val currentZoomState by rememberUpdatedState(zoomControlUiState)
         val currentLabelRotation by rememberUpdatedState(labelRotationDegrees)
-        val labelRotationProvider = remember { { currentLabelRotation } }
+        val labelRotationProvider = remember { { currentLabelRotation() } }
         val selectedOptionIndex: Int by remember(zoomControlUiState.primaryLensFacing) {
             derivedStateOf {
                 val checkValue = currentZoomState.animatingToValue
@@ -746,7 +747,7 @@ internal fun ZoomBarPreview(
     orientation: Orientation = Orientation.Horizontal,
     zoomLevels: List<Float> = listOf(0.5f, 1.0f, 2.0f, 5.0f),
     colors: ZoomBarColors = ZoomBarDefaults.black60Colors(),
-    labelRotationDegrees: Float = 0f
+    labelRotationDegrees: () -> Float = { 0f }
 ) {
     Box(
         modifier = Modifier
@@ -847,7 +848,7 @@ private fun ZoomBarVerticalRtlPreview() {
 @Preview(name = "Horizontal - Rotated Labels (90 deg)", showBackground = true)
 @Composable
 private fun ZoomBarHorizontalRotatedLabelsPreview() {
-    ZoomBarPreview(zoomRatio = 1.0f, labelRotationDegrees = 90f)
+    ZoomBarPreview(zoomRatio = 1.0f, labelRotationDegrees = { 90f })
 }
 
 @Preview(name = "Legacy Delegate - One Selected", showBackground = true)

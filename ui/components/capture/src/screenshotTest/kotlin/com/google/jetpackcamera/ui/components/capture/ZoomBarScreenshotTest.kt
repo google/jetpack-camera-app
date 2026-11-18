@@ -94,5 +94,5 @@ internal fun ZoomBarHorizontalRtlFirstStopScreenshotPreview() {
 @Preview
 @Composable
 internal fun ZoomBarHorizontalRotatedPinchedScreenshotPreview() {
-    ZoomBarPreview(zoomRatio = 1.4f, labelRotationDegrees = 90f)
+    ZoomBarPreview(zoomRatio = 1.4f, labelRotationDegrees = { 90f })
 }

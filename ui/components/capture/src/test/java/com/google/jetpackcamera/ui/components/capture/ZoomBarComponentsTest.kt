@@ -525,7 +525,7 @@ class ZoomBarComponentsTest {
                     ),
                     onChangeZoom = {},
                     orientation = orientation,
-                    labelRotationDegrees = rotationDegrees
+                    labelRotationDegrees = { rotationDegrees }
                 )
             }
         }
@@ -870,7 +870,7 @@ class ZoomBarComponentsTest {
                     ),
                     onChangeZoom = {},
                     orientation = Orientation.Horizontal,
-                    labelRotationDegrees = rotationDegrees
+                    labelRotationDegrees = { rotationDegrees }
                 )
             }
         }
@@ -950,7 +950,7 @@ class ZoomBarComponentsTest {
                     ),
                     onChangeZoom = {},
                     orientation = Orientation.Horizontal,
-                    labelRotationDegrees = rotationDegrees
+                    labelRotationDegrees = { rotationDegrees }
                 )
             }
         }

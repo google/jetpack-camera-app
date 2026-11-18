@@ -152,7 +152,7 @@ class ZoomBarTest {
                 zoomLevels = listOf(0.5f, 1.0f, 2.0f, 5.0f, 10.0f),
                 primaryZoomRatio = 10.5f,
                 orientation = Orientation.Horizontal,
-                labelRotationDegrees = 90f
+                labelRotationDegrees = { 90f }
             )
         }
 
@@ -178,7 +178,7 @@ class ZoomBarTest {
         primaryZoomRatio: Float = 1.0f,
         orientation: Orientation = Orientation.Horizontal,
         layoutDirection: LayoutDirection = LayoutDirection.Ltr,
-        labelRotationDegrees: Float = 0f,
+        labelRotationDegrees: () -> Float = { 0f },
         backgroundColor: Color = Color.Black,
         useWhite20Colors: Boolean = false,
         onChangeZoom: (Float) -> Unit = {}
