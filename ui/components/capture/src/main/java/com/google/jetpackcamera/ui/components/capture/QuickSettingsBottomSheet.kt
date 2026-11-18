@@ -31,6 +31,7 @@ import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -110,11 +111,22 @@ internal fun QuickSettingsBottomSheetScaffold(
         modifier = modifier,
         scaffoldState = scaffoldState,
         sheetPeekHeight = QuickSettingsBottomSheetTokens.SheetPeekHeight,
-        sheetDragHandle = {
+        sheetDragHandle = null,
+        sheetShape = RoundedCornerShape(
+            topStart = QuickSettingsBottomSheetTokens.SheetTopCornerRadius,
+            topEnd = QuickSettingsBottomSheetTokens.SheetTopCornerRadius
+        ),
+        containerColor = Color.Transparent,
+        sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        sheetContent = {
+            // Rendered inside sheetContent rather than sheetDragHandle because
+            // StandardBottomSheet wraps non-null sheetDragHandle in its own clickable
+            // DragHandleWithTooltip, creating duplicate clickable bounds and overriding
+            // onDismissQuickSettings.
             BottomSheetDefaults.DragHandle(
                 modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
                     .testTag(QUICK_SETTINGS_DRAG_HANDLE)
-                    .minimumInteractiveComponentSize()
                     .clickable(
                         role = Role.Button,
                         onClickLabel = dismissQuickSettingsLabel,
@@ -123,15 +135,10 @@ internal fun QuickSettingsBottomSheetScaffold(
                             onDismissQuickSettings()
                         }
                     )
+                    .minimumInteractiveComponentSize()
             )
+            sheetContent()
         },
-        sheetShape = RoundedCornerShape(
-            topStart = QuickSettingsBottomSheetTokens.SheetTopCornerRadius,
-            topEnd = QuickSettingsBottomSheetTokens.SheetTopCornerRadius
-        ),
-        containerColor = Color.Transparent,
-        sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-        sheetContent = { sheetContent() },
         snackbarHost = {}
     ) {
         val isSheetVisible = state.isQuickSettingsOpen ||
@@ -149,15 +156,18 @@ internal fun QuickSettingsBottomSheetScaffold(
 internal fun QuickSettingsSheetScrim(onDismiss: () -> Unit, modifier: Modifier = Modifier) {
     val dismissQuickSettingsLabel =
         stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
+    val quickSettingsScrimDescription =
+        stringResource(R.string.quick_settings_scrim_description)
     Box(
         modifier = modifier
             .fillMaxSize()
             .testTag(QUICK_SETTINGS_SCRIM)
             .semantics {
-                contentDescription = dismissQuickSettingsLabel
+                contentDescription = quickSettingsScrimDescription
                 traversalIndex = 1f
             }
             .clickable(
+                onClickLabel = dismissQuickSettingsLabel,
                 role = Role.Button,
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
