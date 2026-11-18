@@ -233,7 +233,9 @@ class MainActivity : ComponentActivity() {
             isInMultiWindowMode = multiWindowMode,
             smallestScreenWidthDp = configuration.smallestScreenWidthDp
         )
-        if (requestedOrientation != targetOrientation) {
+        if (requestedOrientation != ActivityInfo.SCREEN_ORIENTATION_LOCKED &&
+            requestedOrientation != targetOrientation
+        ) {
             requestedOrientation = targetOrientation
         }
     }

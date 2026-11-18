@@ -852,16 +852,21 @@ internal fun calculateViewfinderSize(
     maxWidth: Dp,
     maxHeight: Dp,
     aspectRatio: AspectRatio,
-    useLandscapeAspectRatio: Boolean
+    useLandscapeAspectRatio: Boolean,
+    isPreviewLandscape: Boolean? = null
 ): DpSize {
     if (maxWidth <= 0.dp || maxHeight <= 0.dp) {
         return DpSize.Zero
     }
     val maxAspectRatio: Float = maxWidth / maxHeight
-    val aspectRatioFloat: Float = if (useLandscapeAspectRatio && maxWidth > maxHeight) {
-        aspectRatio.toLandscapeFloat()
-    } else {
-        aspectRatio.toFloat()
+    val aspectRatioFloat: Float = when (isPreviewLandscape) {
+        true -> aspectRatio.toLandscapeFloat()
+        false -> aspectRatio.toFloat()
+        null -> if (useLandscapeAspectRatio && maxWidth > maxHeight) {
+            aspectRatio.toLandscapeFloat()
+        } else {
+            aspectRatio.toFloat()
+        }
     }
     val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
     val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
@@ -972,7 +977,8 @@ fun PreviewDisplay(
                     .layout { measurable, constraints ->
                         val maxWidth = constraints.maxWidth.toDp()
                         val maxHeight = constraints.maxHeight.toDp()
-                        val solvedBand = if (maxHeight > maxWidth) {
+                        val isPreviewLandscape = previewDisplayUiState.isPreviewLandscape
+                        val solvedBand = if (maxHeight > maxWidth && isPreviewLandscape != true) {
                             layoutSolution?.viewfinderBandFor(aspectRatio.toFloat())
                         } else {
                             null
@@ -986,7 +992,8 @@ fun PreviewDisplay(
                                 maxWidth = maxWidth,
                                 maxHeight = maxHeight,
                                 aspectRatio = aspectRatio,
-                                useLandscapeAspectRatio = useLandscapeAspectRatio
+                                useLandscapeAspectRatio = useLandscapeAspectRatio,
+                                isPreviewLandscape = isPreviewLandscape
                             )
                         }
                         val widthPx = size.width.roundToPx().coerceIn(0, constraints.maxWidth)
