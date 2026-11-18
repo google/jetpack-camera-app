@@ -40,7 +40,6 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -184,20 +183,26 @@ internal fun rememberStickyGravityTargetDegrees(
     deviceRotation: DeviceRotation = LocalDeviceRotation.current,
     windowRotation: DeviceRotation = LocalWindowRotation.current
 ): Int {
-    var lastNon180Degrees by remember { mutableIntStateOf(0) }
-    var previousWindowRotation by remember { mutableStateOf(windowRotation) }
-    if (previousWindowRotation != windowRotation) {
-        previousWindowRotation = windowRotation
-        lastNon180Degrees = 0
+    val holder = remember { StickyGravityTargetHolder(windowRotation = windowRotation) }
+    if (holder.previousWindowRotation != windowRotation) {
+        holder.previousWindowRotation = windowRotation
+        holder.lastNon180Degrees = 0
     }
     val resolved = deviceRotation.toGravityRotationDegrees(
         windowRotation = windowRotation,
-        fallbackOn180Degrees = lastNon180Degrees
+        fallbackOn180Degrees = holder.lastNon180Degrees
     )
-    if (resolved != lastNon180Degrees) {
-        lastNon180Degrees = resolved
+    if (resolved != holder.lastNon180Degrees) {
+        holder.lastNon180Degrees = resolved
     }
     return resolved
+}
+
+private class StickyGravityTargetHolder(
+    var windowRotation: DeviceRotation,
+    var lastNon180Degrees: Int = 0
+) {
+    var previousWindowRotation: DeviceRotation = windowRotation
 }
 
 /**
@@ -222,15 +227,19 @@ fun rememberGravityRotationState(
         deviceRotation = deviceRotation,
         windowRotation = windowRotation
     )
-    var continuousTarget by remember { mutableFloatStateOf(targetClockwiseDegrees.toFloat()) }
-    var previousWindowRotation by remember { mutableStateOf(windowRotation) }
-
-    val windowRotationChanged = previousWindowRotation != windowRotation
-    if (windowRotationChanged) {
-        previousWindowRotation = windowRotation
+    val holder = remember {
+        GravityRotationStateHolder(
+            continuousTarget = targetClockwiseDegrees.toFloat(),
+            previousWindowRotation = windowRotation
+        )
     }
 
-    val currentMod = ((continuousTarget % 360f) + 360f) % 360f
+    val windowRotationChanged = holder.previousWindowRotation != windowRotation
+    if (windowRotationChanged) {
+        holder.previousWindowRotation = windowRotation
+    }
+
+    val currentMod = ((holder.continuousTarget % 360f) + 360f) % 360f
     val rawDelta = ((targetClockwiseDegrees - currentMod + 540f) % 360f) - 180f
     val isHalfTurnFlip = rawDelta == -180f || rawDelta == 180f
     val delta = if (isHalfTurnFlip) {
@@ -238,18 +247,17 @@ fun rememberGravityRotationState(
     } else {
         rawDelta
     }
-    var snapCurrentTransition by remember { mutableStateOf(false) }
-    if (delta != 0f || windowRotationChanged) {
-        snapCurrentTransition = windowRotationChanged || isHalfTurnFlip
-        continuousTarget += delta
+    val snapCurrentTransition = windowRotationChanged || isHalfTurnFlip
+    if (delta != 0f) {
+        holder.continuousTarget += delta
     }
 
     val disableAnimations = LocalDisableAnimations.current
     if (!animateQuarterTurns || disableAnimations) {
-        return rememberUpdatedState(continuousTarget)
+        return rememberUpdatedState(holder.continuousTarget)
     }
     return animateFloatAsState(
-        targetValue = continuousTarget,
+        targetValue = holder.continuousTarget,
         animationSpec = if (snapCurrentTransition) {
             snap()
         } else {
@@ -261,6 +269,11 @@ fun rememberGravityRotationState(
         label = "GravityRotationDegrees"
     )
 }
+
+private class GravityRotationStateHolder(
+    var continuousTarget: Float,
+    var previousWindowRotation: DeviceRotation
+)
 
 /**
  * Rotates a square or circular icon/button in-place around its center in the draw/layer phase so it

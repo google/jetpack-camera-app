@@ -90,10 +90,14 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * @param topStartContent optional composable content placed at the top-start of the capture screen.
  * @param viewfinderTopEndContent optional composable content anchored to the top-end corner of the
  *   viewfinder.
+ * @param topBarLeadingContent optional composable content placed at the start of the top
+ *   status/indicator bar directly adjacent to [indicatorRow].
  * @param topBarTrailingContent optional composable content aligned to the end of the top bar.
  * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
  *   tallest viewfinder to clear a persistent navigation bar, and `false` otherwise or on dispose.
  * @param errorDialog the camera error alert dialog composable.
+ * @param isErrorDialogShowing whether a modal camera error dialog is currently visible above the
+ *   capture chrome.
  * @param deviceRotation physical gravity orientation of the device.
  * @param windowRotation display/window rotation reported by Android.
  */
@@ -119,9 +123,11 @@ fun CaptureScaffoldLayout(
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit = { _, _ -> },
     topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)? = null,
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {},
+    isErrorDialogShowing: Boolean = false,
     deviceRotation: DeviceRotation = rememberDeviceRotation(),
     windowRotation: DeviceRotation = rememberWindowRotation()
 ) {
@@ -148,9 +154,11 @@ fun CaptureScaffoldLayout(
         snackBar = snackBar,
         topStartContent = topStartContent,
         viewfinderTopEndContent = viewfinderTopEndContent,
+        topBarLeadingContent = topBarLeadingContent,
         topBarTrailingContent = topBarTrailingContent,
         onRequiresImmersiveChange = onRequiresImmersiveChange,
         errorDialog = errorDialog,
+        isErrorDialogShowing = isErrorDialogShowing,
         slots = null
     )
 }
@@ -179,6 +187,7 @@ internal fun CaptureScaffoldLayout(
     snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit = { _, _ -> },
     topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)? = null,
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {},
@@ -216,6 +225,7 @@ internal fun CaptureScaffoldLayout(
         ) {
             val resolvedSlots = slots ?: CaptureSlots(
                 topBar = indicatorRow,
+                topBarLeadingContent = topBarLeadingContent,
                 topBarTrailingContent = topBarTrailingContent,
                 zoomControls = zoomLevelDisplay,
                 quickSettingsButton = quickSettingsButton,
@@ -245,6 +255,7 @@ internal fun CaptureScaffoldLayout(
                         controlsVisible = controlsVisible,
                         isErrorDialogShowing = isErrorDialogShowing,
                         includeStatusBarsInTopBar = !isFullScreenCompactPhone,
+                        isSlim = layoutMode == CameraLayoutMode.COMPACT_SLIM,
                         onDismissQuickSettings = onDismissQuickSettings,
                         onRequiresImmersiveChange = onRequiresImmersiveChange,
                         overlay = overlay,

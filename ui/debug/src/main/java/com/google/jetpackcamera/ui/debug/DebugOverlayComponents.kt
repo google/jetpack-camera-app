@@ -63,7 +63,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -570,21 +569,22 @@ internal fun DebugLayoutReadout(
 @Composable
 private fun DebugUpwardTriangleIndicator(rotationDegrees: Int, modifier: Modifier = Modifier) {
     val targetAngle = rotationDegrees.toFloat()
-    var cumulativeTargetDegrees by remember { mutableFloatStateOf(targetAngle) }
-    val currentNormalized = ((cumulativeTargetDegrees % 360f) + 360f) % 360f
+    val angleHolder = remember { CumulativeAngleHolder(targetAngle) }
+    val currentNormalized = ((angleHolder.cumulativeTargetDegrees % 360f) + 360f) % 360f
     var delta = targetAngle - currentNormalized
     if (delta > 180f) delta -= 360f
     if (delta <= -180f) delta += 360f
     if (delta != 0f) {
-        cumulativeTargetDegrees += delta
+        angleHolder.cumulativeTargetDegrees += delta
     }
     val animatedDegrees = animateFloatAsState(
-        targetValue = cumulativeTargetDegrees,
+        targetValue = angleHolder.cumulativeTargetDegrees,
         animationSpec = tween(durationMillis = 300),
         label = "DebugUpwardTriangleRotation"
     )
     val triangleColor = LocalContentColor.current
     val rotationDescription = stringResource(R.string.debug_text_rotation_degrees, rotationDegrees)
+    val trianglePath = remember { Path() }
 
     Box(
         modifier = modifier
@@ -603,16 +603,17 @@ private fun DebugUpwardTriangleIndicator(rotationDegrees: Int, modifier: Modifie
                     rotationZ = animatedDegrees.value
                 }
         ) {
-            val path = Path().apply {
-                moveTo(size.width / 2f, 0f)
-                lineTo(size.width, size.height)
-                lineTo(0f, size.height)
-                close()
-            }
-            drawPath(path = path, color = triangleColor)
+            trianglePath.rewind()
+            trianglePath.moveTo(size.width / 2f, 0f)
+            trianglePath.lineTo(size.width, size.height)
+            trianglePath.lineTo(0f, size.height)
+            trianglePath.close()
+            drawPath(path = trianglePath, color = triangleColor)
         }
     }
 }
+
+private class CumulativeAngleHolder(var cumulativeTargetDegrees: Float)
 
 @Composable
 private fun DebugTextBar(modifier: Modifier = Modifier, title: String, value: String, tag: String) {

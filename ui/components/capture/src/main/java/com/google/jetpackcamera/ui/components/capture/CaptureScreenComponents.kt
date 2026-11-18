@@ -858,16 +858,21 @@ internal fun calculateViewfinderSize(
     maxWidth: Dp,
     maxHeight: Dp,
     aspectRatio: AspectRatio,
-    useLandscapeAspectRatio: Boolean
+    useLandscapeAspectRatio: Boolean,
+    isPreviewLandscape: Boolean? = null
 ): DpSize {
     if (maxWidth <= 0.dp || maxHeight <= 0.dp) {
         return DpSize.Zero
     }
     val maxAspectRatio: Float = maxWidth / maxHeight
-    val aspectRatioFloat: Float = if (useLandscapeAspectRatio && maxWidth > maxHeight) {
-        aspectRatio.toLandscapeFloat()
-    } else {
-        aspectRatio.toFloat()
+    val aspectRatioFloat: Float = when (isPreviewLandscape) {
+        true -> aspectRatio.toLandscapeFloat()
+        false -> aspectRatio.toFloat()
+        null -> if (useLandscapeAspectRatio && maxWidth > maxHeight) {
+            aspectRatio.toLandscapeFloat()
+        } else {
+            aspectRatio.toFloat()
+        }
     }
     val shouldUseMaxWidth = maxAspectRatio <= aspectRatioFloat
     val width = if (shouldUseMaxWidth) maxWidth else maxHeight * aspectRatioFloat
@@ -979,9 +984,10 @@ fun PreviewDisplay(
                     .layout { measurable, constraints ->
                         val maxWidth = constraints.maxWidth.toDp()
                         val maxHeight = constraints.maxHeight.toDp()
+                        val isPreviewLandscape = previewDisplayUiState.isPreviewLandscape
                         val isPortraitBounds = maxHeight >= maxWidth
                         val solvedBand = layoutSolution?.viewfinderBandFor(aspectRatio.toFloat())
-                        if (solvedBand != null && isPortraitBounds) {
+                        if (solvedBand != null && isPortraitBounds && isPreviewLandscape != true) {
                             val topOffsetPx = solvedBand.top.roundToPx()
                                 .coerceIn(0, constraints.maxHeight)
                             val widthPx = maxWidth.roundToPx().coerceIn(0, constraints.maxWidth)
@@ -997,7 +1003,7 @@ fun PreviewDisplay(
                             ) {
                                 placeable.place(0, topOffsetPx)
                             }
-                        } else if (solvedBand != null) {
+                        } else if (solvedBand != null && !isPortraitBounds) {
                             val portraitTopOffsetPx = solvedBand.top.roundToPx()
                                 .coerceIn(0, constraints.maxWidth)
                             val widthPx = solvedBand.height.roundToPx()
@@ -1028,7 +1034,8 @@ fun PreviewDisplay(
                                 maxWidth = maxWidth,
                                 maxHeight = maxHeight,
                                 aspectRatio = aspectRatio,
-                                useLandscapeAspectRatio = useLandscapeAspectRatio
+                                useLandscapeAspectRatio = useLandscapeAspectRatio,
+                                isPreviewLandscape = isPreviewLandscape
                             )
                             val widthPx = size.width.roundToPx().coerceIn(0, constraints.maxWidth)
                             val heightPx = size.height.roundToPx()
@@ -1256,6 +1263,8 @@ private fun PreviewDisplayRtlPreview() {
  * @param onStartVideoRecording callback to start video recording.
  * @param onStopVideoRecording callback to stop video recording.
  * @param onLockVideoRecording callback to lock the video recording for hands-free operation.
+ * @param diameter the diameter of the capture button ring; see [CaptureButtonDefaults] for the
+ *   standard, medium, and mini sizes.
  */
 @Composable
 fun CaptureButton(
@@ -1265,7 +1274,8 @@ fun CaptureButton(
     onCaptureImage: (ContentResolver) -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onLockVideoRecording: (Boolean) -> Unit = {}
+    onLockVideoRecording: (Boolean) -> Unit = {},
+    diameter: Dp = CaptureButtonDefaults.diameterFor(LocalControlSize.current)
 ) {
     val context = LocalContext.current
 
@@ -1290,8 +1300,42 @@ fun CaptureButton(
             onStopVideoRecording()
         },
         captureButtonUiState = captureButtonUiState,
+        captureButtonSize = diameter.value,
         onLockVideoRecording = onLockVideoRecording
     )
+}
+
+/**
+ * Default dimensions for [CaptureButton].
+ */
+object CaptureButtonDefaults {
+    /** Diameter of the standard capture button ring. */
+    val StandardDiameter: Dp = 86.dp
+
+    // 72dp matches the foldable mocks, which don't specify exact component sizes. Confirm with
+    // design.
+
+    /**
+     * Diameter of the medium capture button ring, used for intermediate containers such as
+     * foldable side rails.
+     */
+    val MediumDiameter: Dp = 72.dp
+
+    // Matches the standalone "Mini shutter" component spec.
+
+    /** Diameter of the mini capture button ring, used for tight containers. */
+    val MiniDiameter: Dp = 56.dp
+
+    /**
+     * Returns the capture button ring diameter for [controlSize]: [MiniDiameter] for
+     * [ControlSize.Mini], [MediumDiameter] for [ControlSize.Medium], and [StandardDiameter]
+     * otherwise.
+     */
+    fun diameterFor(controlSize: ControlSize): Dp = when (controlSize) {
+        ControlSize.Mini -> MiniDiameter
+        ControlSize.Medium -> MediumDiameter
+        else -> StandardDiameter
+    }
 }
 
 /**

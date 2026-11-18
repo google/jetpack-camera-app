@@ -69,7 +69,10 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     var lastPictureTakenLocation: Location? = null
         private set
 
-    /** The most recent [Location] passed to [startVideoRecording], or `null` if none was provided. */
+    /**
+     * The most recent [Location] passed to [startVideoRecording], or `null` if none was
+     * provided.
+     */
     var lastVideoRecordingLocation: Location? = null
         private set
 

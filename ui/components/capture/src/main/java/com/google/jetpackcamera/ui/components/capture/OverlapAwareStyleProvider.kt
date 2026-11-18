@@ -19,6 +19,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
@@ -26,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -38,7 +40,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
  *
  * Content can use [isOverViewfinder] to choose its own colors, or use
  * [cameraControlContainerColor] to match the built-in camera controls. Adaptive containers such as
- * side rails and condensed panes also expose [orientation] and [isCompact] so controls can adapt
+ * side rails and condensed panes also expose [orientation] and [controlSize] so controls can adapt
  * their axis and dimensions to the hosting slot.
  */
 @Stable
@@ -65,11 +67,12 @@ interface PreviewOverlaySlotScope {
         get() = Orientation.Horizontal
 
     /**
-     * Whether the hosting container is height- or space-constrained and requests compact control
-     * dimensions.
+     * Control size variant requested by the hosting container: [ControlSize.Standard] by default,
+     * or a smaller size such as [ControlSize.Mini] when the container is height- or
+     * space-constrained.
      */
-    val isCompact: Boolean
-        get() = false
+    val controlSize: ControlSize
+        get() = ControlSize.Standard
 }
 
 /**
@@ -79,17 +82,17 @@ interface PreviewOverlaySlotScope {
 internal fun PreviewOverlaySlotScope(
     isOverViewfinder: Boolean = true,
     orientation: Orientation = Orientation.Horizontal,
-    isCompact: Boolean = false
+    controlSize: ControlSize = ControlSize.Standard
 ): PreviewOverlaySlotScope = StaticPreviewOverlaySlotScope(
     isOverViewfinder = isOverViewfinder,
     orientation = orientation,
-    isCompact = isCompact
+    controlSize = controlSize
 )
 
 private class StaticPreviewOverlaySlotScope(
     override val isOverViewfinder: Boolean,
     override val orientation: Orientation,
-    override val isCompact: Boolean
+    override val controlSize: ControlSize
 ) : PreviewOverlaySlotScope {
     override val cameraControlContainerColor: Color
         get() = backgroundStyleFor(isOverViewfinder).containerColor
@@ -98,7 +101,7 @@ private class StaticPreviewOverlaySlotScope(
 private class PreviewOverlaySlotScopeImpl(
     private val isOverViewfinderState: State<Boolean>,
     override val orientation: Orientation = Orientation.Horizontal,
-    override val isCompact: Boolean = false
+    override val controlSize: ControlSize = ControlSize.Standard
 ) : PreviewOverlaySlotScope {
     override val isOverViewfinder: Boolean
         get() = isOverViewfinderState.value
@@ -115,6 +118,14 @@ internal fun backgroundStyleFor(isOverlapping: Boolean): CameraControlBackground
     }
 
 /**
+ * CompositionLocal providing the active [ControlSize] of the enclosing [OverlapAwareStyleProvider]
+ * slot so controls that do not receive [PreviewOverlaySlotScope.controlSize] explicitly still adapt
+ * their dimensions to the hosting container.
+ */
+internal val LocalControlSize: ProvidableCompositionLocal<ControlSize> =
+    staticCompositionLocalOf { ControlSize.Standard }
+
+/**
  * Applies [LocalCameraControlBackgroundStyle] based on whether this
  * component's spatial bounds overlap with the [LocalOverlapTargetBounds].
  *
@@ -125,7 +136,7 @@ internal fun backgroundStyleFor(isOverlapping: Boolean): CameraControlBackground
  * @param modifier The [Modifier] to be applied to the outer layout.
  * @param overlapThreshold The ratio of overlap (between 0.0 and 1.0) required to switch the style.
  * @param orientation Primary axis along which the hosting container arranges its controls.
- * @param isCompact Whether compact control sizing is requested by the hosting container.
+ * @param controlSize Control size variant requested by the hosting container.
  * @param content The composable content that will receive the computed
  *   [LocalCameraControlBackgroundStyle].
  */
@@ -134,7 +145,7 @@ internal fun OverlapAwareStyleProvider(
     modifier: Modifier = Modifier,
     overlapThreshold: Float = 0.5f,
     orientation: Orientation = Orientation.Horizontal,
-    isCompact: Boolean = false,
+    controlSize: ControlSize = ControlSize.Standard,
     content: @Composable PreviewOverlaySlotScope.() -> Unit
 ) {
     val targetBoundsState = LocalOverlapTargetBounds.current
@@ -148,11 +159,11 @@ internal fun OverlapAwareStyleProvider(
             myArea > 0f && (intersectArea / myArea) >= overlapThreshold
         }
     }
-    val scope = remember(isOverlappingState, orientation, isCompact) {
+    val scope = remember(isOverlappingState, orientation, controlSize) {
         PreviewOverlaySlotScopeImpl(
             isOverViewfinderState = isOverlappingState,
             orientation = orientation,
-            isCompact = isCompact
+            controlSize = controlSize
         )
     }
     val style = backgroundStyleFor(isOverlappingState.value)
@@ -165,7 +176,10 @@ internal fun OverlapAwareStyleProvider(
             }
         }
     ) {
-        CompositionLocalProvider(LocalCameraControlBackgroundStyle provides style) {
+        CompositionLocalProvider(
+            LocalCameraControlBackgroundStyle provides style,
+            LocalControlSize provides controlSize
+        ) {
             scope.content()
         }
     }

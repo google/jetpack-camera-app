@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -43,8 +44,10 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutMode
+import com.google.jetpackcamera.ui.components.capture.layout.rememberCameraLayoutMode
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -96,6 +99,7 @@ class AdaptiveCaptureLayoutTest {
         slots: CaptureSlots? = null,
         onModeObserved: (CameraLayoutMode) -> Unit = {},
         onActiveLayoutObserved: (String) -> Unit = {},
+        onToolbarControlSizeObserved: (ControlSize) -> Unit = {},
         viewfinderContent: @Composable (Modifier) -> Unit = { vfMod ->
             PlaceholderViewfinder(modifier = vfMod)
         }
@@ -147,6 +151,7 @@ class AdaptiveCaptureLayoutTest {
                     )
                 },
                 captureModeToggle = { modeMod ->
+                    onToolbarControlSizeObserved(controlSize)
                     Box(
                         modeMod
                             .size(
@@ -232,16 +237,39 @@ class AdaptiveCaptureLayoutTest {
     fun slimDisplay_sw320dp_w320dp_h640dp_resolvesToCompactSlimUsingCompactLayout() {
         var observedMode: CameraLayoutMode? = null
         var observedLayout: String? = null
+        var observedToolbarControlSize: ControlSize? = null
 
         composeTestRule.setContent {
             OrchestratedLayoutUnderTest(
                 onModeObserved = { observedMode = it },
-                onActiveLayoutObserved = { observedLayout = it }
+                onActiveLayoutObserved = { observedLayout = it },
+                onToolbarControlSizeObserved = { observedToolbarControlSize = it }
             )
         }
         composeTestRule.waitForIdle()
 
         assertCompactLayoutTopology(observedMode, observedLayout, CameraLayoutMode.COMPACT_SLIM)
+        assertThat(observedToolbarControlSize).isEqualTo(ControlSize.Mini)
+    }
+
+    @Config(qualifiers = "sw355dp-w355dp-h610dp-port-mdpi")
+    @Test
+    fun slimDisplay_nonShortAspectRatio_sw355dp_h610dp_requestsMiniToolbarControlSize() {
+        var observedMode: CameraLayoutMode? = null
+        var observedLayout: String? = null
+        var observedToolbarControlSize: ControlSize? = null
+
+        composeTestRule.setContent {
+            OrchestratedLayoutUnderTest(
+                onModeObserved = { observedMode = it },
+                onActiveLayoutObserved = { observedLayout = it },
+                onToolbarControlSizeObserved = { observedToolbarControlSize = it }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        assertCompactLayoutTopology(observedMode, observedLayout, CameraLayoutMode.COMPACT_SLIM)
+        assertThat(observedToolbarControlSize).isEqualTo(ControlSize.Mini)
     }
 
     @Config(qualifiers = "sw800dp-w480dp-h800dp-port-mdpi")
@@ -381,7 +409,8 @@ class AdaptiveCaptureLayoutTest {
                 flashModeUiState = FlashModeUiState.Unavailable,
                 flipLensUiState = FlipLensUiState.Unavailable,
                 hdrUiState = HdrUiState.Unavailable
-            )
+            ),
+            videoQuality = VideoQuality.FHD
         )
 
         composeTestRule.setContent {
@@ -426,18 +455,16 @@ class AdaptiveCaptureLayoutTest {
         composeTestRule.waitForIdle()
         assertThat(selectedCaptureMode).isEqualTo(CaptureMode.VIDEO_ONLY)
 
-        composeTestRule
-            .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-            .assertDoesNotExist()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertDoesNotExist()
+        // The hidden sheet keeps QuickSettingsContent composed off-screen until it is opened.
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsNotDisplayed()
 
-        // Clicking real ToggleQuickSettingsButton opens QuickSettingsContent inside the card shell.
+        // Clicking real ToggleQuickSettingsButton opens QuickSettingsContent in the bottom sheet.
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).performClick()
         composeTestRule.waitForIdle()
 
         assertThat(state.isQuickSettingsOpen).isTrue()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).assertIsDisplayed()
         assertThat(
             composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_BOTTOM_SHEET).fetchSemanticsNodes()
         ).hasSize(1)
@@ -504,15 +531,12 @@ class AdaptiveCaptureLayoutTest {
             CameraLayoutMode.COMPACT_SHORT,
             "CompactShortLayout"
         )
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertDoesNotExist()
 
+        // COMPACT_SHORT presents Quick Settings in the bottom sheet.
         composeTestRule.runOnIdle { state.showQuickSettings() }
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-            .assertIsDisplayed()
-        assertThat(
-            composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_BOTTOM_SHEET).fetchSemanticsNodes()
-        ).hasSize(1)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
     }
 
     @Config(qualifiers = "sw320dp-w320dp-h340dp-mdpi")
@@ -660,5 +684,38 @@ class AdaptiveCaptureLayoutTest {
         assertCompactLayoutTopology(observedMode, observedLayout, CameraLayoutMode.COMPACT)
         assertThat(composeCount).isEqualTo(1)
         assertThat(disposeCount).isEqualTo(0)
+    }
+
+    @Config(qualifiers = "sw800dp-w1280dp-h1280dp-mdpi")
+    @Test
+    fun rememberCameraLayoutMode_heightDeadbandAround480dp_persistsStabilizedState() {
+        val windowSizeState = mutableStateOf(DpSize(800.dp, 500.dp))
+        var observedMode: CameraLayoutMode? = null
+
+        composeTestRule.setContent {
+            observedMode = rememberCameraLayoutMode(
+                widthDp = windowSizeState.value.width,
+                heightDp = windowSizeState.value.height,
+                isFullScreenCompactPhone = false
+            )
+        }
+        composeTestRule.waitForIdle()
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
+
+        windowSizeState.value = DpSize(800.dp, 472.dp)
+        composeTestRule.waitForIdle()
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
+
+        windowSizeState.value = DpSize(800.dp, 480.dp)
+        composeTestRule.waitForIdle()
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
+
+        windowSizeState.value = DpSize(800.dp, 486.dp)
+        composeTestRule.waitForIdle()
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
+
+        windowSizeState.value = DpSize(800.dp, 487.dp)
+        composeTestRule.waitForIdle()
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
     }
 }

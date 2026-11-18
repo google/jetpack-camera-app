@@ -302,8 +302,7 @@ internal suspend fun runSingleCameraSession(
                             imageFormat = sessionSettings.imageFormat,
                             captureMode = sessionSettings.captureMode,
                             effect = effect,
-                            captureResults = captureResults,
-                            windowRotation = currentTransientSettings.windowRotation
+                            captureResults = captureResults
                         )
                     }.apply {
                         attachPreviewSurfaceProvider(useCaseGroup = this)
@@ -317,6 +316,8 @@ internal suspend fun runSingleCameraSession(
                         useCaseGroup
                     ) { camera ->
                         Log.d(TAG, "Camera session started")
+                        updatePreviewOrientation(camera.cameraInfo, useCaseGroup)
+
                         launch {
                             processFocusMeteringEvents(
                                 camera.cameraInfo,
@@ -776,15 +777,10 @@ fun CameraSessionContext.applyDeviceRotation(
  * updated on a bound use case.
  */
 @InternalCameraApi
-fun applyWindowRotation(
-    windowRotation: DeviceRotation,
-    useCaseGroup: UseCaseGroup
-) {
+fun applyWindowRotation(windowRotation: DeviceRotation, useCaseGroup: UseCaseGroup) {
     val targetRotation = windowRotation.toUiSurfaceRotation()
-    useCaseGroup.useCases.forEach { useCase ->
-        if (useCase is Preview) {
-            useCase.targetRotation = targetRotation
-        }
+    useCaseGroup.useCases.filterIsInstance<Preview>().forEach { preview ->
+        preview.targetRotation = targetRotation
     }
 }
 
@@ -834,11 +830,16 @@ fun createUseCaseGroup(
             "Setting initial device rotation to ${initialTransientSettings.deviceRotation}, " +
                 "window rotation to $windowRotation"
         )
-        // TODO(#592): Plumb windowRotation into PR #592's getViewPortAspectRatio /
-        //  isPreviewLandscape once #592 merges into main.
+        val viewPortAspectRatio = getViewPortAspectRatio(
+            sensorRotationDegrees =
+            cameraInfo.getSensorRotationDegrees(previewUseCase.targetRotation),
+            sensorRect = cameraInfo.sensorRect,
+            aspectRatio = aspectRatio
+        )
         setViewPort(
             ViewPort.Builder(
-                Rational(aspectRatio.numerator, aspectRatio.denominator),
+                viewPortAspectRatio,
+                // Initialize rotation to Preview's rotation, which comes from Display rotation
                 previewUseCase.targetRotation
             ).build()
         )
@@ -857,6 +858,53 @@ fun createUseCaseGroup(
  */
 internal fun Preview.Builder.applyWindowRotation(windowRotation: DeviceRotation): Preview.Builder =
     setTargetRotation(windowRotation.toUiSurfaceRotation())
+
+/**
+ * Updates [CameraState.isPreviewLandscape] to match the [Preview] output orientation of
+ * [cameraInfo] in [useCaseGroup].
+ */
+@InternalCameraApi
+fun CameraSessionContext.updatePreviewOrientation(
+    cameraInfo: CameraInfo,
+    useCaseGroup: UseCaseGroup
+) {
+    val isPreviewLandscape = useCaseGroup.getPreview()?.let { preview ->
+        isSensorOutputLandscape(
+            sensorRotationDegrees = cameraInfo.getSensorRotationDegrees(preview.targetRotation),
+            sensorRect = cameraInfo.sensorRect
+        )
+    }
+    currentCameraState.update { old ->
+        old.copy(isPreviewLandscape = isPreviewLandscape)
+    }
+}
+
+/**
+ * Returns whether the camera sensor output is landscape after applying the target rotation
+ * ([sensorRotationDegrees]).
+ */
+internal fun isSensorOutputLandscape(sensorRotationDegrees: Int, sensorRect: Rect): Boolean {
+    // If the relative rotation is 0 or 180, the orientation matches the sensor's natural
+    // orientation. If the relative rotation is 90 or 270, the orientation is rotated
+    // (landscape becomes portrait, and vice versa).
+    return (sensorRotationDegrees % 180 == 0) == (sensorRect.width() >= sensorRect.height())
+}
+
+/**
+ * Computes the [ViewPort] aspect ratio oriented to match the camera sensor output after applying
+ * the target rotation ([sensorRotationDegrees]).
+ */
+internal fun getViewPortAspectRatio(
+    sensorRotationDegrees: Int,
+    sensorRect: Rect,
+    aspectRatio: AspectRatio
+): Rational {
+    return if (isSensorOutputLandscape(sensorRotationDegrees, sensorRect)) {
+        Rational(aspectRatio.denominator, aspectRatio.numerator)
+    } else {
+        Rational(aspectRatio.numerator, aspectRatio.denominator)
+    }
+}
 
 /**
  * Maps a given resolution [Size] to its corresponding [VideoQuality] based on the short edge.
@@ -988,52 +1036,52 @@ private fun createPreviewUseCase(
     previewMirrorMode: Int,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null,
     windowRotation: DeviceRotation = DeviceRotation.Natural
-): Preview = Preview.Builder().apply {
-    applyWindowRotation(windowRotation)
-
-    updateCameraStateWithCaptureResults(
-        targetCameraInfo = cameraInfo,
-        captureResults = captureResults
-    )
-
-    // set preview stabilization
-    val effectiveStabilizationMode = when (stabilizationMode) {
-        StabilizationMode.ON ->
-            if (cameraInfo.isPreviewStabilizationSupported) {
-                StabilizationMode.ON
-            } else {
-                StabilizationMode.OFF
-            }
-        StabilizationMode.OPTICAL ->
-            if (cameraInfo.isOpticalStabilizationSupported) {
-                StabilizationMode.OPTICAL
-            } else {
-                StabilizationMode.OFF
-            }
-        else -> stabilizationMode
-    }
-    when (effectiveStabilizationMode) {
-        StabilizationMode.ON -> setPreviewStabilizationEnabled(true)
-        StabilizationMode.OPTICAL -> setOpticalStabilizationModeEnabled(true)
-        StabilizationMode.OFF -> {
-            setOpticalStabilizationModeEnabled(false)
-            // Setting this to false in Preview use case will disable video stabilization, even in
-            //  IMAGE_ONLY mode where there isn't a video capture use case attached
-            setPreviewStabilizationEnabled(false)
-        }
-        StabilizationMode.HIGH_QUALITY -> {} // No-op. Handled by VideoCapture use case.
-        else -> throw UnsupportedOperationException(
-            "Unexpected stabilization mode: $stabilizationMode. Stabilization mode should always " +
-                "an explicit mode, such as ON, OPTICAL, OFF or HIGH_QUALITY"
+): Preview = Preview.Builder()
+    .applyWindowRotation(windowRotation)
+    .apply {
+        updateCameraStateWithCaptureResults(
+            targetCameraInfo = cameraInfo,
+            captureResults = captureResults
         )
-    }
 
-    setResolutionSelector(
-        getResolutionSelector(cameraInfo.sensorLandscapeRatio, aspectRatio)
-    )
+        // set preview stabilization
+        val effectiveStabilizationMode = when (stabilizationMode) {
+            StabilizationMode.ON ->
+                if (cameraInfo.isPreviewStabilizationSupported) {
+                    StabilizationMode.ON
+                } else {
+                    StabilizationMode.OFF
+                }
+            StabilizationMode.OPTICAL ->
+                if (cameraInfo.isOpticalStabilizationSupported) {
+                    StabilizationMode.OPTICAL
+                } else {
+                    StabilizationMode.OFF
+                }
+            else -> stabilizationMode
+        }
+        when (effectiveStabilizationMode) {
+            StabilizationMode.ON -> setPreviewStabilizationEnabled(true)
+            StabilizationMode.OPTICAL -> setOpticalStabilizationModeEnabled(true)
+            StabilizationMode.OFF -> {
+                setOpticalStabilizationModeEnabled(false)
+                // Setting this to false in Preview use case will disable video stabilization, even in
+                //  IMAGE_ONLY mode where there isn't a video capture use case attached
+                setPreviewStabilizationEnabled(false)
+            }
+            StabilizationMode.HIGH_QUALITY -> {} // No-op. Handled by VideoCapture use case.
+            else -> throw UnsupportedOperationException(
+                "Unexpected stabilization mode: $stabilizationMode. Stabilization mode should " +
+                    "always be an explicit mode, such as ON, OPTICAL, OFF or HIGH_QUALITY"
+            )
+        }
 
-    setMirrorMode(previewMirrorMode)
-}.build()
+        setResolutionSelector(
+            getResolutionSelector(cameraInfo.sensorLandscapeRatio, aspectRatio)
+        )
+
+        setMirrorMode(previewMirrorMode)
+    }.build()
 
 /**
  * Routes surface requests from the [Preview] use case in [useCaseGroup] to [surfaceRequests].

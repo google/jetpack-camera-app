@@ -18,9 +18,13 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.tappableElement
+import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -62,6 +66,11 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
 /**
  * Agnostic content for the Quick Settings panel wrapped for a BottomSheetScaffold sheet.
  *
+ * The content scrolls vertically so every row stays reachable when the sheet is taller than the
+ * window, such as on short compact windows. Its bottom and side padding clears the navigation bar,
+ * even while it is hidden or only transiently shown, and persistent taskbars that are reported as
+ * tappable elements rather than navigation bars.
+ *
  * @param quickSettingsUiState The current [QuickSettingsUiState].
  * @param onNavigateToSettings Callback when the user navigates to full settings.
  * @param quickSettingsController The [QuickSettingsController] to handle setting changes.
@@ -81,12 +90,20 @@ fun QuickSettingsScaffoldContent(
         val gravityDegrees = snapToQuadrantDegrees(LocalGravityRotationState.current.value)
         val isLandscapeSheet = gravityDegrees == 90 || gravityDegrees == 270
         val portraitNavBars = WindowInsets.navigationBarsIgnoringVisibility
+            .union(WindowInsets.tappableElement)
             .toPortraitWindowInsets(LocalWindowRotation.current)
+            .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
         Column(
             modifier = modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .windowInsetsPadding(portraitNavBars)
+                .then(
+                    if (isLandscapeSheet) {
+                        Modifier
+                    } else {
+                        Modifier.windowInsetsPadding(portraitNavBars)
+                    }
+                )
                 .padding(
                     top = if (isLandscapeSheet) 24.dp else 0.dp,
                     bottom = 24.dp

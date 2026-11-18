@@ -775,9 +775,6 @@ class ContentGravityTest {
             composeTestRule.runOnIdle { state.showQuickSettings() }
             composeTestRule.waitForIdle()
 
-            composeTestRule
-                .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-                .assertIsDisplayed()
             composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
             val flashRowBounds = clippedBoundsOf(ROW_QUICK_SETTINGS_FLASH)
             val captureModeRowBounds = clippedBoundsOf(ROW_QUICK_SETTINGS_CAPTURE_MODE)

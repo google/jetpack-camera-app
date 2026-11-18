@@ -773,6 +773,56 @@ class CaptureLayoutPositionTest {
         assertThat(topOf(TOP_START_TAG)).isWithin(TOLERANCE).of(48f)
     }
 
+    /**
+     * On a slim 280dp-wide portrait pane (such as a 1/3 split-screen window), the bottom toolbar
+     * gives the capture mode toggle all width not reserved by the side slots instead of an equal
+     * third (`(280 - 32) / 3 ≈ 83dp`), so a standard 116dp toggle keeps its full width and stays
+     * horizontally centered.
+     */
+    @Config(qualifiers = "w280dp-h800dp")
+    @Test
+    fun bottomToolbar_onSlimPane_doesNotSqueezeCaptureModeToggle_andKeepsItCentered() {
+        composeTestRule.setContent {
+            CaptureScaffoldLayout(
+                viewfinder = {},
+                captureButton = {},
+                imageWell = {},
+                flipCameraButton = {},
+                zoomLevelDisplay = {},
+                elapsedTimeDisplay = {},
+                quickSettingsButton = {
+                    Box(
+                        Modifier
+                            .testTag(QUICK_SETTINGS_TAG)
+                            .size(SIDE_BUTTON_SIZE)
+                    )
+                },
+                indicatorRow = {},
+                captureModeToggle = {
+                    Box(
+                        Modifier
+                            .testTag(TOGGLE_SWITCH_TAG)
+                            .size(width = STANDARD_TOGGLE_WIDTH, height = STANDARD_TOGGLE_HEIGHT)
+                    )
+                }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        val rootWidth = composeTestRule.onRoot().getUnclippedBoundsInRoot().width.value
+        assertThat(rootWidth).isWithin(TOLERANCE).of(SLIM_SCREEN_WIDTH.value)
+
+        val toggleBounds =
+            composeTestRule.onNodeWithTag(TOGGLE_SWITCH_TAG).getUnclippedBoundsInRoot()
+        assertThat(toggleBounds.width.value).isWithin(TOLERANCE).of(STANDARD_TOGGLE_WIDTH.value)
+        val toggleCenterX = (toggleBounds.left.value + toggleBounds.right.value) / 2f
+        assertThat(toggleCenterX).isWithin(TOLERANCE).of(rootWidth / 2f)
+
+        val quickSettingsBounds =
+            composeTestRule.onNodeWithTag(QUICK_SETTINGS_TAG).getUnclippedBoundsInRoot()
+        assertThat(quickSettingsBounds.right.value).isAtMost(toggleBounds.left.value)
+    }
+
     private companion object {
         const val CAPTURE_BUTTON_TAG = "test_capture_button"
         const val ZOOM_BAR_TAG = "test_zoom_bar"
@@ -780,10 +830,15 @@ class CaptureLayoutPositionTest {
         const val TOP_START_TAG = "test_top_start"
         const val VIEWFINDER_TOP_END_TAG = "test_viewfinder_top_end"
         const val TOGGLE_SWITCH_TAG = "test_toggle_switch"
+        const val QUICK_SETTINGS_TAG = "test_quick_settings"
         const val CAROUSEL_TAG = "test_carousel"
         val CAPTURE_BUTTON_SIZE = 80.dp
         val ZOOM_BAR_HEIGHT = 48.dp
         val CAROUSEL_HEIGHT = 32.dp
+        val SIDE_BUTTON_SIZE = 48.dp
+        val STANDARD_TOGGLE_WIDTH = 116.dp
+        val STANDARD_TOGGLE_HEIGHT = 64.dp
+        val SLIM_SCREEN_WIDTH = 280.dp
 
         /** A carousel whose touch target is taller than the 32dp mode switcher band. */
         val TALL_CAROUSEL_HEIGHT = 50.dp
