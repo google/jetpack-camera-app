@@ -121,9 +121,9 @@ class CaptureSideRailsTest {
         assertThat(rtlQuickSettings.bottom).isAtMost(rtlRail.bottom)
 
         // Vertical coordinates must remain identical under RTL while child slots inherit RTL.
-        assertThat(rtlIndicator.top.value).isWithin(0.5f).of(ltrIndicator.top.value)
-        assertThat(rtlZoom.top.value).isWithin(0.5f).of(ltrZoom.top.value)
-        assertThat(rtlQuickSettings.top.value).isWithin(0.5f).of(ltrQuickSettings.top.value)
+        assertThat(rtlIndicator.top.value).isWithin(TOLERANCE).of(ltrIndicator.top.value)
+        assertThat(rtlZoom.top.value).isWithin(TOLERANCE).of(ltrZoom.top.value)
+        assertThat(rtlQuickSettings.top.value).isWithin(TOLERANCE).of(ltrQuickSettings.top.value)
         assertThat(indicatorDirection).isEqualTo(LayoutDirection.Rtl)
         assertThat(zoomDirection).isEqualTo(LayoutDirection.Rtl)
         assertThat(quickSettingsDirection).isEqualTo(LayoutDirection.Rtl)
@@ -201,7 +201,7 @@ class CaptureSideRailsTest {
         ltrBounds.zip(rtlBounds).forEachIndexed { index, (ltrRect, rtlRect) ->
             assertWithMessage("Vertical top for ${orderedTags[index]} should match in LTR and RTL")
                 .that(rtlRect.top.value)
-                .isWithin(0.5f)
+                .isWithin(TOLERANCE)
                 .of(ltrRect.top.value)
         }
     }
@@ -256,13 +256,13 @@ class CaptureSideRailsTest {
                     .isGreaterThan(0.dp)
                 assertWithMessage("$railLabel: $tag top must be >= 0dp")
                     .that(unclipped.top.value)
-                    .isAtLeast(-0.5f)
+                    .isAtLeast(-TOLERANCE)
                 assertWithMessage("$railLabel: $tag bottom must be <= 360dp")
                     .that(unclipped.bottom.value)
-                    .isAtMost(360.5f)
+                    .isAtMost(360f + TOLERANCE)
                 assertWithMessage("$railLabel: $tag should not be clipped vertically")
                     .that(clipped.height.value)
-                    .isWithin(0.5f)
+                    .isWithin(TOLERANCE)
                     .of(unclipped.height.value)
                 unclipped
             }
@@ -272,12 +272,15 @@ class CaptureSideRailsTest {
                         "${tags[i + 1]} top (${unclippedList[i + 1].top})"
                 )
                     .that(unclippedList[i].bottom.value)
-                    .isAtMost(unclippedList[i + 1].top.value + 0.5f)
+                    .isAtMost(unclippedList[i + 1].top.value + TOLERANCE)
             }
         }
 
         verifyRailFitsIn360dp("StartSideRail", startRailTags)
         verifyRailFitsIn360dp("EndSideRail", endRailTags)
+        val toggleBounds = boundsOf(CAPTURE_MODE_TOGGLE_BUTTON)
+        assertThat(toggleBounds.width.value).isWithin(TOLERANCE).of(48f)
+        assertThat(toggleBounds.height.value).isWithin(TOLERANCE).of(92f)
     }
 
     @Test
@@ -401,7 +404,8 @@ class CaptureSideRailsTest {
         assertThat(captureBounds.top).isGreaterThan(640.dp)
         assertThat(zoomBounds.bottom.value).isAtMost(quickSettingsBounds.top.value - 15.5f)
         assertThat(imageWellBounds.bottom.value).isAtMost(modeToggleBounds.top.value - 15.5f)
-        assertThat(startRailBounds.width).isAtLeast(96.dp) // 48dp content + 24dp * 2 padding
+        // 48dp content + 24dp * 2 padding
+        assertThat(startRailBounds.width).isAtLeast(96.dp)
     }
 
     @Test
