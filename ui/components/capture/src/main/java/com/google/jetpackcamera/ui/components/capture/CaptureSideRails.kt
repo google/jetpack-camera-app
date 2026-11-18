@@ -18,10 +18,12 @@ package com.google.jetpackcamera.ui.components.capture
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
@@ -138,11 +140,27 @@ internal fun StartSideRail(
         minSectionGap = minSectionGap,
         centerVerticalFraction = centerVerticalFraction,
         topContent = {
-            OverlapAwareCaptureSlot(
-                orientation = Orientation.Vertical,
-                controlSize = controlSize,
-                content = slots.topBar
-            )
+            val leadingContent = slots.topBarLeadingContent
+            if (leadingContent != null) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    OverlapAwareCaptureSlot(
+                        orientation = Orientation.Vertical,
+                        controlSize = controlSize,
+                        content = leadingContent
+                    )
+                    OverlapAwareCaptureSlot(
+                        orientation = Orientation.Vertical,
+                        controlSize = controlSize,
+                        content = slots.topBar
+                    )
+                }
+            } else {
+                OverlapAwareCaptureSlot(
+                    orientation = Orientation.Vertical,
+                    controlSize = controlSize,
+                    content = slots.topBar
+                )
+            }
         },
         centerContent = {
             OverlapAwareCaptureSlot(

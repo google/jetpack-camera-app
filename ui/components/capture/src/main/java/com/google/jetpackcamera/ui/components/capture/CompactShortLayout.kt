@@ -215,6 +215,16 @@ private fun CaptureSlots.withCondensedSizeCaps(
                 slot = original.topBar
             )
         },
+        topBarLeadingContent = original.topBarLeadingContent?.let { leading ->
+            { mod ->
+                ConstrainedSlot(
+                    modifier = mod,
+                    maxWidth = quickSettingsButtonMaxSize,
+                    maxHeight = quickSettingsButtonMaxSize,
+                    slot = leading
+                )
+            }
+        },
         // Hidden: condensed short windows cannot fit a legible zoom bar in the start rail. Restore
         // once a condensed zoom control is available for this layout.
         zoomControls = {},
