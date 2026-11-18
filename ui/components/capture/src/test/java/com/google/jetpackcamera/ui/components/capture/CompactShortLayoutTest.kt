@@ -35,7 +35,6 @@ import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.LayoutDirection
@@ -56,8 +55,8 @@ import org.robolectric.annotation.Config
 /**
  * Unit tests for [CompactShortLayout] across `COMPACT_SHORT` (`360x360dp`, `470x400dp`),
  * `COMPACT_SHORT_SLIM` (`320x340dp`), RTL policies, and visible multi-window `statusBars` insets,
- * asserting zero clipping, zero vertical overlap in both rails, and in-hierarchy
- * [QuickSettingsOverlayCard] bounds.
+ * asserting zero clipping, zero vertical overlap in both rails, hidden zoom bar and image well, and
+ * the in-hierarchy Quick Settings bottom sheet.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "w360dp-h360dp")
@@ -276,7 +275,7 @@ class CompactShortLayoutTest {
     }
 
     @Test
-    fun compactShortLayout_quickSettingsOverlayCard_displaysInHierarchyWithinCondensedBounds() {
+    fun compactShortLayout_quickSettings_opensBottomSheet() {
         val state = CaptureScaffoldState(isInitiallyExpanded = true)
         composeTestRule.setContent {
             MaterialTheme {
@@ -289,34 +288,44 @@ class CompactShortLayoutTest {
         }
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
             .assertIsDisplayed()
             .assert(!isPopup())
             .assert(!isDialog())
             .assert(!hasAnyAncestor(isPopup()))
             .assert(!hasAnyAncestor(isDialog()))
-        assertThat(
-            composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_BOTTOM_SHEET).fetchSemanticsNodes()
-        ).hasSize(1)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).assertIsDisplayed()
 
-        val cardBounds = boundsOf(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-        assertThat(cardBounds.left.value).isAtLeast(8f - TOLERANCE)
-        assertThat(cardBounds.right.value).isAtMost(352f + TOLERANCE)
-        assertThat(cardBounds.right.value - cardBounds.left.value).isAtMost(320f + TOLERANCE)
-        assertThat(cardBounds.top.value).isAtLeast(8f - TOLERANCE)
-        assertThat(cardBounds.bottom.value).isAtMost(352f + TOLERANCE)
-
-        // Tapping inside the floating card must not dismiss Quick Settings; tapping the exposed
-        // top-end scrim region outside the card dismisses it.
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG).performClick()
-        composeTestRule.waitForIdle()
-        assertThat(state.isQuickSettingsOpen).isTrue()
-
+        // Tapping the exposed scrim above the sheet dismisses Quick Settings.
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).performTouchInput {
             click(Offset(right - 10f, top + 10f))
         }
         composeTestRule.waitForIdle()
         assertThat(state.isQuickSettingsOpen).isFalse()
+    }
+
+    @Test
+    fun compactShortLayout_hidesZoomBarAndImageWell() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                CompactShortLayout(
+                    slots = PlaceholderCaptureSlots.sideRail(
+                        isCompactHeight = false,
+                        includeImageWell = true,
+                        includeElapsedTime = true
+                    ),
+                    viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(composeTestRule.onAllNodesWithTag(ZOOM_BUTTON_ROW_TAG).fetchSemanticsNodes())
+            .isEmpty()
+        assertThat(composeTestRule.onAllNodesWithTag(IMAGE_WELL_TAG).fetchSemanticsNodes())
+            .isEmpty()
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
     }
 
     private fun assertNoClippingAndNoOverlapInWindow(
@@ -397,13 +406,11 @@ class CompactShortLayoutTest {
     private companion object {
         val START_RAIL_TAGS = listOf(
             VIDEO_QUALITY_TAG,
-            ZOOM_BUTTON_ROW_TAG,
             QUICK_SETTINGS_DROP_DOWN
         )
         val END_RAIL_TAGS = listOf(
             FLIP_CAMERA_BUTTON,
             CAPTURE_BUTTON,
-            IMAGE_WELL_TAG,
             CAPTURE_MODE_TOGGLE_BUTTON
         )
         val HUD_TAGS = listOf(
