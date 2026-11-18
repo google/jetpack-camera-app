@@ -950,9 +950,10 @@ internal class CameraAppSettingsViewModelTest {
 
         composeTestRule.onNodeWithText("Flash On is unsupported in Settings mode")
             .assertIsDisplayed()
-        // The row and its radio button are both selectable, and neither accepts input.
+        // Only the row owns selection semantics (RadioButton uses onClick = null), and it does not
+        // accept input when disabled.
         composeTestRule.onAllNodes(isSelectable())
-            .assertCountEquals(2)
+            .assertCountEquals(1)
             .assertAll(isNotEnabled())
     }
 

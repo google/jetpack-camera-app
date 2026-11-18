@@ -125,6 +125,8 @@ dependencies {
     testImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.compose.accessibility)
+    androidTestImplementation(libs.accessibility.test.framework)
 
     // Futures
     implementation(libs.futures.ktx)
