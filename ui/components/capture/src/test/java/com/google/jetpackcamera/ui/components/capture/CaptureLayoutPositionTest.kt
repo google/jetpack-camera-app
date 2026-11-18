@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -68,9 +69,12 @@ class CaptureLayoutPositionTest {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun TestCaptureLayout(
-        captureModeCarousel: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {}
+        state: CaptureScaffoldState = rememberCaptureScaffoldState(),
+        captureModeCarousel: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+        elapsedTimeDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {}
     ) {
         CaptureScaffoldLayout(
+            state = state,
             viewfinder = {},
             captureButton = {
                 Box(
@@ -89,7 +93,7 @@ class CaptureLayoutPositionTest {
                         .height(ZOOM_BAR_HEIGHT)
                 )
             },
-            elapsedTimeDisplay = {},
+            elapsedTimeDisplay = elapsedTimeDisplay,
             quickSettingsButton = {},
             indicatorRow = {},
             captureModeToggle = {},
@@ -773,6 +777,90 @@ class CaptureLayoutPositionTest {
         assertThat(topOf(TOP_START_TAG)).isWithin(TOLERANCE).of(48f)
     }
 
+    /**
+     * In the adaptive portrait layout, `elapsedTimeDisplay` shares the fixed `MODE_SWITCHER` band
+     * between the shutter row and the bottom toolbar, staying centered on that band without moving
+     * the capture button or zoom bar.
+     */
+    @Config(qualifiers = "w360dp-h800dp")
+    @Test
+    fun elapsedTimeDisplay_isCenteredInModeSwitcherBand_andDoesNotMoveCaptureButton() {
+        var showElapsedTime by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            TestCaptureLayout(
+                elapsedTimeDisplay = { elapsedModifier ->
+                    if (showElapsedTime) {
+                        Box(
+                            elapsedModifier
+                                .testTag(ELAPSED_TIME_TEST_TAG)
+                                .size(width = 72.dp, height = CAROUSEL_HEIGHT)
+                        )
+                    }
+                }
+            )
+        }
+        composeTestRule.waitForIdle()
+        val emptySlotButtonTop = topOf(CAPTURE_BUTTON_TAG)
+
+        showElapsedTime = true
+        composeTestRule.waitForIdle()
+
+        val elapsed = boundsOf(ELAPSED_TIME_TEST_TAG)
+        assertThat((elapsed.top.value + elapsed.bottom.value) / 2f)
+            .isWithin(TOLERANCE).of(MODE_SWITCHER_BAND_CENTER)
+        assertThat(elapsed.top.value).isAtLeast(CAPTURE_ROW_BOTTOM - TOLERANCE)
+        assertThat(elapsed.bottom.value).isAtMost(BOTTOM_TOOLBAR_TOP + TOLERANCE)
+        assertThat(topOf(CAPTURE_BUTTON_TAG)).isEqualTo(emptySlotButtonTop)
+    }
+
+    /**
+     * In the compressed fallback layout (`VerticalMaterialControls`), `elapsedTimeDisplay` also
+     * occupies the reserved middle slot below the shutter row without shifting the capture button.
+     */
+    @Config(qualifiers = "w360dp-h500dp")
+    @Test
+    fun elapsedTimeDisplay_inCompressedFallbackLayout_isCenteredInMiddleSlot() {
+        composeTestRule.setContent {
+            TestCaptureLayout(
+                elapsedTimeDisplay = { elapsedModifier ->
+                    Box(
+                        elapsedModifier
+                            .testTag(ELAPSED_TIME_TEST_TAG)
+                            .size(width = 72.dp, height = CAROUSEL_HEIGHT)
+                    )
+                }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(topOf(CAPTURE_BUTTON_TAG)).isWithin(TOLERANCE).of(EXPECTED_SHORT_BUTTON_TOP)
+        val captureBounds = boundsOf(CAPTURE_BUTTON_TAG)
+        val elapsedBounds = boundsOf(ELAPSED_TIME_TEST_TAG)
+        assertThat(elapsedBounds.top.value).isAtLeast(captureBounds.bottom.value - TOLERANCE)
+    }
+
+    /**
+     * Moving `elapsedTimeDisplay` into `MODE_SWITCHER` leaves the snackbar host anchored directly
+     * above `ZoomBar` in the adaptive portrait layout.
+     */
+    @Config(qualifiers = "w360dp-h800dp")
+    @Test
+    fun snackbarHost_remainsAboveZoomBar_inAdaptivePortraitLayout() {
+        composeTestRule.setContent {
+            val scaffoldState = rememberCaptureScaffoldState()
+            LaunchedEffect(Unit) {
+                scaffoldState.snackbarHostState.showSnackbar("Video saved")
+            }
+            TestCaptureLayout(state = scaffoldState)
+        }
+        composeTestRule.waitForIdle()
+
+        val zoomBounds = boundsOf(ZOOM_BAR_TAG)
+        val snackbarBounds = boundsOf(SNACKBAR_NODE_TAG)
+        assertThat(snackbarBounds.bottom.value).isWithin(TOLERANCE).of(zoomBounds.top.value)
+    }
+
     private companion object {
         const val CAPTURE_BUTTON_TAG = "test_capture_button"
         const val ZOOM_BAR_TAG = "test_zoom_bar"
@@ -781,6 +869,7 @@ class CaptureLayoutPositionTest {
         const val VIEWFINDER_TOP_END_TAG = "test_viewfinder_top_end"
         const val TOGGLE_SWITCH_TAG = "test_toggle_switch"
         const val CAROUSEL_TAG = "test_carousel"
+        const val ELAPSED_TIME_TEST_TAG = "test_elapsed_time"
         val CAPTURE_BUTTON_SIZE = 80.dp
         val ZOOM_BAR_HEIGHT = 48.dp
         val CAROUSEL_HEIGHT = 32.dp
