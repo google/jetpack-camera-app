@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -70,6 +71,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
@@ -231,6 +233,7 @@ internal fun CompactPortraitLayout(
     val snackBar = slots.snackBar
     val topStartContent = slots.topStartContent
     val viewfinderTopEndContent = slots.viewfinderTopEndContent
+    val topBarLeadingContent = slots.topBarLeadingContent
     val topBarTrailingContent = slots.topBarTrailingContent
     val errorDialog = slots.errorDialog
 
@@ -288,6 +291,7 @@ internal fun CompactPortraitLayout(
                             viewfinderTopEndContent = viewfinderTopEndContent,
                             onRequiresImmersiveChange = onRequiresImmersiveChange,
                             indicatorRow = indicatorRow,
+                            topBarLeadingContent = topBarLeadingContent,
                             topBarTrailingContent = topBarTrailingContent,
                             elapsedTimeDisplay = elapsedTimeDisplay,
                             zoomControls = zoomLevelDisplay,
@@ -331,6 +335,7 @@ internal fun CompactPortraitLayout(
                                 topBarHeight = topBarHeight,
                                 topBarTopPadding = topBarTopPadding,
                                 indicatorRow = indicatorRow,
+                                topBarLeadingContent = topBarLeadingContent,
                                 topBarTrailingContent = topBarTrailingContent
                             )
                             Box {
@@ -432,6 +437,7 @@ private fun CompactTopBarBox(
     topBarHeight: Dp,
     topBarTopPadding: Dp,
     indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)?,
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -448,15 +454,55 @@ private fun CompactTopBarBox(
                 .padding(horizontal = CompactPortraitTokens.LowerSectionHorizontalPadding),
             contentAlignment = Alignment.CenterStart
         ) {
-            OverlapAwareStyleProvider(orientation = Orientation.Horizontal) {
-                indicatorRow(Modifier)
-            }
+            TopBarLeadingAndIndicatorsRow(
+                topBarLeadingContent = topBarLeadingContent,
+                indicatorRow = indicatorRow
+            )
             OverlapAwareStyleProvider(
                 modifier = Modifier.align(Alignment.CenterEnd),
                 orientation = Orientation.Horizontal
             ) {
                 topBarTrailingContent(Modifier)
             }
+        }
+    }
+}
+
+/**
+ * Lays out the optional [topBarLeadingContent] directly adjacent to [indicatorRow] inside the top
+ * status/indicator bar, flowing the leading content past any overlapping corner display cutout.
+ *
+ * @param topBarLeadingContent optional leading slot content scoped to [PreviewOverlaySlotScope].
+ * @param indicatorRow top status indicator row content scoped to [PreviewOverlaySlotScope].
+ * @param modifier [Modifier] applied to the outer row.
+ * @param cutoutRectsOverride synthetic cutout rectangles in local coordinates for deterministic
+ *   unit testing; when empty, the host window's display cutout is used.
+ */
+@Composable
+internal fun TopBarLeadingAndIndicatorsRow(
+    topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)?,
+    indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    modifier: Modifier = Modifier,
+    cutoutRectsOverride: List<IntRect> = emptyList()
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (topBarLeadingContent != null) {
+            OverlapAwareStyleProvider(orientation = Orientation.Horizontal) {
+                val slotScope = this
+                CutoutAwareRow(
+                    modifier = Modifier.wrapContentWidth(align = Alignment.Start),
+                    horizontalSpacing = 0.dp,
+                    cutoutRectsOverride = cutoutRectsOverride.ifEmpty { null }
+                ) {
+                    slotScope.topBarLeadingContent(Modifier)
+                }
+            }
+        }
+        OverlapAwareStyleProvider(orientation = Orientation.Horizontal) {
+            indicatorRow(Modifier)
         }
     }
 }
@@ -616,6 +662,7 @@ internal fun AdaptivePortraitCaptureLayout(
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     onRequiresImmersiveChange: (Boolean) -> Unit,
     indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)?,
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     elapsedTimeDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
@@ -708,6 +755,7 @@ internal fun AdaptivePortraitCaptureLayout(
                     topBarTopPadding = topBarTopPadding,
                     modifier = Modifier.layoutId(CaptureSlotId.TopBar),
                     indicatorRow = indicatorRow,
+                    topBarLeadingContent = topBarLeadingContent,
                     topBarTrailingContent = topBarTrailingContent
                 )
 
