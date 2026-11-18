@@ -18,16 +18,17 @@ package com.google.jetpackcamera.permissions.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -45,6 +46,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
@@ -173,44 +175,59 @@ fun PermissionTemplate(
     bodyText: String,
     requestButtonText: String
 ) {
-    Column(
+    BoxWithConstraints(
         // The background is applied before the inset padding so that it still extends behind the
         // system bars, while the content itself stays clear of them.
         modifier = modifier
             .background(MaterialTheme.colorScheme.primary)
-            .safeDrawingPadding(),
-        verticalArrangement = Arrangement.Bottom
+            .safeDrawingPadding()
     ) {
-        // permission image / top half
-        PermissionImage(
-            modifier = Modifier
-                .height(IntrinsicSize.Min)
-                .align(Alignment.CenterHorizontally)
-                .testTag(testTag),
-            painter = painter,
-            accessibilityText = iconAccessibilityText
-        )
-        Spacer(modifier = Modifier.fillMaxHeight(.1f))
-        // bottom half
+        val hasBoundedHeight = maxHeight != Dp.Infinity
+        val iconSize = if (hasBoundedHeight) {
+            (maxHeight * 0.35f).coerceIn(96.dp, 300.dp)
+        } else {
+            300.dp
+        }
+        val sectionSpacing = if (hasBoundedHeight) {
+            (maxHeight * 0.06f).coerceAtLeast(16.dp)
+        } else {
+            24.dp
+        }
+        val bottomSpacing = if (hasBoundedHeight) {
+            (maxHeight * 0.1f).coerceAtLeast(24.dp)
+        } else {
+            32.dp
+        }
+
         Column(
             modifier = Modifier
-                .align(Alignment.CenterHorizontally)
+                .fillMaxWidth()
+                .then(if (hasBoundedHeight) Modifier.heightIn(min = maxHeight) else Modifier)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.Bottom,
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // permission image / top half
+            PermissionImage(
+                modifier = Modifier.testTag(testTag),
+                painter = painter,
+                accessibilityText = iconAccessibilityText,
+                iconSize = iconSize
+            )
+            Spacer(modifier = Modifier.height(sectionSpacing))
             // text section
             PermissionText(title = title, bodyText = bodyText)
-            Spacer(modifier = Modifier.fillMaxHeight(.1f))
+            Spacer(modifier = Modifier.height(sectionSpacing))
             // permission button section
             PermissionButtonSection(
                 modifier = Modifier
                     .testTag(REQUEST_PERMISSION_BUTTON)
-                    .fillMaxWidth()
-                    .align(Alignment.CenterHorizontally)
-                    .height(IntrinsicSize.Min),
+                    .fillMaxWidth(),
                 requestButtonText = requestButtonText,
                 onRequestPermission = onRequestPermission
             )
+            Spacer(modifier = Modifier.height(bottomSpacing))
         }
-        Spacer(modifier = Modifier.fillMaxHeight(.2f))
     }
 }
 
@@ -249,11 +266,16 @@ private fun Preview_Audio_Permission_Page() {
 Permission UI Subcomponents
  */
 @Composable
-fun PermissionImage(modifier: Modifier = Modifier, painter: Painter, accessibilityText: String) {
+fun PermissionImage(
+    modifier: Modifier = Modifier,
+    painter: Painter,
+    accessibilityText: String,
+    iconSize: Dp = 300.dp
+) {
     Box(modifier = modifier) {
         Icon(
             modifier = Modifier
-                .size(300.dp)
+                .size(iconSize)
                 .align(Alignment.BottomCenter),
             painter = painter,
             tint = MaterialTheme.colorScheme.onPrimary,
@@ -307,33 +329,23 @@ fun PermissionButton(
 
 @Composable
 fun PermissionText(modifier: Modifier = Modifier, title: String, bodyText: String) {
-    Box(
-        modifier = modifier
-            .height(IntrinsicSize.Min)
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .align(Alignment.Center)
-        ) {
-            // permission title
-
-            PermissionTitleText(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally),
-                text = title,
-                color = MaterialTheme.colorScheme.onPrimary
-            )
-            Spacer(modifier = Modifier.height(10.dp))
-            // permission body text
-            PermissionBodyText(
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(horizontal = 50.dp),
-                text = bodyText,
-                color = MaterialTheme.colorScheme.onPrimary
-            )
-        }
+        // permission title
+        PermissionTitleText(
+            modifier = Modifier.padding(horizontal = 24.dp),
+            text = title,
+            color = MaterialTheme.colorScheme.onPrimary
+        )
+        Spacer(modifier = Modifier.height(10.dp))
+        // permission body text
+        PermissionBodyText(
+            modifier = Modifier.padding(horizontal = 50.dp),
+            text = bodyText,
+            color = MaterialTheme.colorScheme.onPrimary
+        )
     }
 }
 
@@ -344,7 +356,8 @@ fun PermissionTitleText(modifier: Modifier = Modifier, text: String, color: Colo
         color = color,
         text = text,
         style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Bold,
+        textAlign = TextAlign.Center
     )
 }
 

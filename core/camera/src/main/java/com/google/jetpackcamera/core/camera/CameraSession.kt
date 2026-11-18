@@ -317,6 +317,8 @@ internal suspend fun runSingleCameraSession(
                         useCaseGroup
                     ) { camera ->
                         Log.d(TAG, "Camera session started")
+                        updatePreviewOrientation(camera.cameraInfo, useCaseGroup)
+
                         launch {
                             processFocusMeteringEvents(
                                 camera.cameraInfo,
@@ -809,9 +811,15 @@ fun createUseCaseGroup(
             TAG,
             "Setting initial device rotation to ${initialTransientSettings.deviceRotation}"
         )
+        val viewPortAspectRatio = getViewPortAspectRatio(
+            sensorRotationDegrees =
+            cameraInfo.getSensorRotationDegrees(previewUseCase.targetRotation),
+            sensorRect = cameraInfo.sensorRect,
+            aspectRatio = aspectRatio
+        )
         setViewPort(
             ViewPort.Builder(
-                Rational(aspectRatio.numerator, aspectRatio.denominator),
+                viewPortAspectRatio,
                 // Initialize rotation to Preview's rotation, which comes from Display rotation
                 previewUseCase.targetRotation
             ).build()
@@ -824,6 +832,53 @@ fun createUseCaseGroup(
 
         effect?.let { addEffect(it) }
     }.build()
+}
+
+/**
+ * Updates [CameraState.isPreviewLandscape] to match the [Preview] output orientation of
+ * [cameraInfo] in [useCaseGroup].
+ */
+@InternalCameraApi
+fun CameraSessionContext.updatePreviewOrientation(
+    cameraInfo: CameraInfo,
+    useCaseGroup: UseCaseGroup
+) {
+    val isPreviewLandscape = useCaseGroup.getPreview()?.let { preview ->
+        isSensorOutputLandscape(
+            sensorRotationDegrees = cameraInfo.getSensorRotationDegrees(preview.targetRotation),
+            sensorRect = cameraInfo.sensorRect
+        )
+    }
+    currentCameraState.update { old ->
+        old.copy(isPreviewLandscape = isPreviewLandscape)
+    }
+}
+
+/**
+ * Returns whether the camera sensor output is landscape after applying the target rotation
+ * ([sensorRotationDegrees]).
+ */
+internal fun isSensorOutputLandscape(sensorRotationDegrees: Int, sensorRect: Rect): Boolean {
+    // If the relative rotation is 0 or 180, the orientation matches the sensor's natural
+    // orientation. If the relative rotation is 90 or 270, the orientation is rotated
+    // (landscape becomes portrait, and vice versa).
+    return (sensorRotationDegrees % 180 == 0) == (sensorRect.width() >= sensorRect.height())
+}
+
+/**
+ * Computes the [ViewPort] aspect ratio oriented to match the camera sensor output after applying
+ * the target rotation ([sensorRotationDegrees]).
+ */
+internal fun getViewPortAspectRatio(
+    sensorRotationDegrees: Int,
+    sensorRect: Rect,
+    aspectRatio: AspectRatio
+): Rational {
+    return if (isSensorOutputLandscape(sensorRotationDegrees, sensorRect)) {
+        Rational(aspectRatio.denominator, aspectRatio.numerator)
+    } else {
+        Rational(aspectRatio.numerator, aspectRatio.denominator)
+    }
 }
 
 /**
