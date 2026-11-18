@@ -108,8 +108,12 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(project(":data:settings:testing"))
     testImplementation(project(":core:location:testing"))
+    androidTestImplementation(project(":data:settings:testing"))
+    androidTestImplementation(project(":core:location:testing"))
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.compose.accessibility)
+    androidTestImplementation(libs.accessibility.test.framework)
     androidTestImplementation(libs.truth)
 
     implementation(libs.androidx.core.ktx)
