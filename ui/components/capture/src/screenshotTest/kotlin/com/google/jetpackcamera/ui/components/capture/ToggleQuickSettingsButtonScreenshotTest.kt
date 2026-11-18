@@ -24,17 +24,19 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQui
 
 // --- Enabled ---
 
+/** Enabled quick settings toggle button with the default `WHITE_20` container style. */
 @PreviewTest
 @Preview
 @Composable
-fun EnabledToggleQuickSettingsButtonScreenshotPreview() {
+internal fun EnabledToggleQuickSettingsButtonScreenshotPreview() {
     ToggleQuickSettingsButtonEnabledPreview()
 }
 
+/** Enabled quick settings toggle button with the `BLACK_60` container style. */
 @PreviewTest
 @Preview
 @Composable
-fun EnabledToggleQuickSettingsButtonBlack60ScreenshotPreview() {
+internal fun EnabledToggleQuickSettingsButtonBlack60ScreenshotPreview() {
     CompositionLocalProvider(
         LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60
     ) {
@@ -44,17 +46,19 @@ fun EnabledToggleQuickSettingsButtonBlack60ScreenshotPreview() {
 
 // --- Disabled ---
 
+/** Disabled quick settings toggle button with the default `WHITE_20` container style. */
 @PreviewTest
 @Preview
 @Composable
-fun DisabledToggleQuickSettingsButtonScreenshotPreview() {
+internal fun DisabledToggleQuickSettingsButtonScreenshotPreview() {
     ToggleQuickSettingsButtonDisabledPreview()
 }
 
+/** Disabled quick settings toggle button with the `BLACK_60` container style. */
 @PreviewTest
 @Preview
 @Composable
-fun DisabledToggleQuickSettingsButtonBlack60ScreenshotPreview() {
+internal fun DisabledToggleQuickSettingsButtonBlack60ScreenshotPreview() {
     CompositionLocalProvider(
         LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60
     ) {
