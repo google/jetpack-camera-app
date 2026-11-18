@@ -191,12 +191,21 @@ internal fun CutoutAwareColumn(
                 windowCutoutRects = ViewCompat.getRootWindowInsets(view)
                     ?.displayCutout?.boundingRects.orEmpty(),
                 windowAnchor = windowAnchor,
-                isRtl = layoutDirection == LayoutDirection.Rtl,
+                isRtl = false,
                 rtlReferenceWidth = columnWidth
             )
+            val maxSegmentWidth = max(maxChildWidth, pillMinWidthPx)
+                .coerceAtMost(columnWidth)
+            val alignedLeft = horizontalAlignment.align(
+                maxSegmentWidth,
+                columnWidth,
+                layoutDirection
+            )
+            val alignedRight = alignedLeft + maxSegmentWidth
             val verticalCutouts = computeVerticalKeepOutRanges(
                 localCutoutRects = localCutoutRects,
-                columnWidth = columnWidth,
+                alignedLeft = alignedLeft,
+                alignedRight = alignedRight,
                 clearancePx = clearancePx
             )
             val placement = calculateVerticalCutoutPlacement(
@@ -248,14 +257,15 @@ private class VerticalCutoutPlacement(
 
 private fun computeVerticalKeepOutRanges(
     localCutoutRects: List<IntRect>,
-    columnWidth: Int,
+    alignedLeft: Int,
+    alignedRight: Int,
     clearancePx: Int
 ): List<IntRange> {
-    if (localCutoutRects.isEmpty()) return emptyList()
+    if (localCutoutRects.isEmpty() || alignedRight <= alignedLeft) return emptyList()
     return localCutoutRects
         .filter { rect ->
-            rect.width > 0 && rect.height > 0 && rect.right > 0 &&
-                rect.left < columnWidth && rect.bottom + clearancePx > 0
+            rect.width > 0 && rect.height > 0 && rect.right + clearancePx > alignedLeft &&
+                rect.left - clearancePx < alignedRight && rect.bottom + clearancePx > 0
         }
         .map { rect ->
             IntRange(

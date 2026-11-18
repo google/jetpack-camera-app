@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import com.google.jetpackcamera.core.common.ignoreResult
 import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
@@ -129,7 +130,7 @@ fun CutoutAwareRow(
                     if (pillBackgroundColor != Color.Unspecified) {
                         for (segment in pillSegments) {
                             if (segment.width > 0 && segment.height > 0) {
-                                val radius = segment.height / 2f
+                                val radius = min(segment.width, segment.height) / 2f
                                 drawRoundRect(
                                     color = pillBackgroundColor,
                                     topLeft = Offset(
@@ -149,6 +150,7 @@ fun CutoutAwareRow(
         ) { measurables, constraints ->
             // Read WindowInsets.displayCutout inside measure to subscribe to inset updates.
             cutoutInsets.getTop(this).ignoreResult()
+            cutoutInsets.getBottom(this).ignoreResult()
             cutoutInsets.getLeft(this, layoutDirection).ignoreResult()
             cutoutInsets.getRight(this, layoutDirection).ignoreResult()
 
@@ -195,7 +197,8 @@ fun CutoutAwareRow(
             // Convert vertically overlapping cutout rects into sorted horizontal keep-out ranges.
             val horizontalCutouts = localCutoutRects
                 .filter { rect ->
-                    rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < rowHeight
+                    rect.width > 0 && rect.height > 0 && rect.bottom > 0 &&
+                        rect.top < rowHeight && rect.right + clearancePx > 0
                 }
                 .map { rect ->
                     IntRange(
@@ -363,9 +366,17 @@ fun CutoutAwareRow(
  * @property left physical left edge of the container in window coordinates (pixels).
  * @property top physical top edge of the container in window coordinates (pixels).
  * @property width physical width of the container in window coordinates (pixels).
+ * @property right physical right edge of the container in window coordinates (pixels).
+ * @property bottom physical bottom edge of the container in window coordinates (pixels).
  */
 @Immutable
-internal data class WindowAnchor(val left: Int, val top: Int, val width: Int)
+internal data class WindowAnchor(
+    val left: Int,
+    val top: Int,
+    val width: Int,
+    val right: Int = left + width,
+    val bottom: Int = top
+)
 
 /**
  * Computes the [WindowAnchor] for these [LayoutCoordinates] in window pixel coordinates.
@@ -373,11 +384,15 @@ internal data class WindowAnchor(val left: Int, val top: Int, val width: Int)
 internal fun LayoutCoordinates.toWindowAnchor(): WindowAnchor {
     val bounds = boundsInWindow()
     val left = bounds.left.roundToInt()
+    val top = bounds.top.roundToInt()
     val right = bounds.right.roundToInt()
+    val bottom = bounds.bottom.roundToInt()
     return WindowAnchor(
         left = left,
-        top = bounds.top.roundToInt(),
-        width = right - left
+        top = top,
+        width = right - left,
+        right = right,
+        bottom = bottom
     )
 }
 
@@ -395,8 +410,9 @@ internal fun resolveLocalCutoutRects(
     rtlReferenceWidth: Int
 ): List<IntRect> {
     val ltrRects = cutoutRectsOverride ?: run {
-        val offsetX = windowAnchor?.left ?: 0
-        val offsetY = windowAnchor?.top ?: 0
+        val anchor = windowAnchor ?: return emptyList()
+        val offsetX = anchor.left
+        val offsetY = anchor.top
         windowCutoutRects.map { rect ->
             IntRect(
                 left = rect.left - offsetX,

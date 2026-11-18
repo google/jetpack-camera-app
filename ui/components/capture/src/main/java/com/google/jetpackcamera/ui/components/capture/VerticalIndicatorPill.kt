@@ -20,8 +20,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -38,9 +38,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
@@ -110,7 +112,7 @@ internal val LocalIndicatorPillOrientation = staticCompositionLocalOf { Orientat
  */
 // TODO: Confirm final vertical status indicator stacking order with UX.
 @Composable
-fun VerticalIndicatorPill(
+internal fun VerticalIndicatorPill(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -184,7 +186,7 @@ private fun VerticalIndicatorPillPreviewContent(cutoutRectDp: DpRect? = null) {
             if (cutoutRectDp != null) {
                 Box(
                     modifier = Modifier
-                        .offset(x = cutoutRectDp.left, y = cutoutRectDp.top)
+                        .absoluteOffset(x = cutoutRectDp.left, y = cutoutRectDp.top)
                         .size(width = cutoutRectDp.width, height = cutoutRectDp.height)
                         .background(Color.Black, CircleShape)
                 )
@@ -251,7 +253,9 @@ private fun VerticalIndicatorPillCutoutSplitPreview() {
 )
 @Composable
 private fun VerticalIndicatorPillRtlPreview() {
-    VerticalIndicatorPillPreviewContent(
-        cutoutRectDp = PillLayoutTokens.PreviewCutoutBounds
-    )
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        VerticalIndicatorPillPreviewContent(
+            cutoutRectDp = PillLayoutTokens.PreviewCutoutBounds
+        )
+    }
 }

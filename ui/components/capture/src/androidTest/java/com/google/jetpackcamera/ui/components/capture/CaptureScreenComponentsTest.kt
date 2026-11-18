@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -373,44 +374,36 @@ class CaptureScreenComponentsTest {
             context.getString(R.string.stabilization_icon_description_preview_and_video)
 
         composeTestRule.setContent {
-            CompositionLocalProvider(LocalDisableAnimations provides true) {
-                MaterialTheme(colorScheme = darkColorScheme()) {
-                    Box(
-                        modifier = Modifier
-                            .background(Color.Black)
-                            .padding(16.dp)
-                    ) {
-                        VerticalIndicatorPill(
-                            modifier = Modifier.testTag(PILL_VERTICAL_INDICATOR_TAG),
-                            cutoutRectsOverride = listOf(
-                                IntRect(left = 0, top = 60, right = 48, bottom = 100)
-                            )
-                        ) {
-                            FlashModeIndicator(
-                                flashModeUiState = FlashModeUiState.Available(
-                                    selectedFlashMode = FlashMode.ON,
-                                    availableFlashModes = listOf(
-                                        SingleSelectableUiState.SelectableUi(FlashMode.ON)
-                                    ),
-                                    isLowLightBoostActive = false
-                                )
-                            )
-                            HdrIndicator(
-                                hdrUiState = HdrUiState.Available(
-                                    selectedDynamicRange = DEFAULT_HDR_DYNAMIC_RANGE,
-                                    selectedImageFormat = DEFAULT_HDR_IMAGE_OUTPUT,
-                                    isSupported = true
-                                )
-                            )
-                            VideoQualityIcon(videoQuality = VideoQuality.FHD)
-                            StabilizationIcon(
-                                stabilizationUiState = StabilizationUiState.Specific(
-                                    stabilizationMode = StabilizationMode.ON,
-                                    active = true
-                                )
-                            )
-                        }
-                    }
+            VerticalIndicatorTestChrome(darkTheme = true, backgroundColor = Color.Black) {
+                VerticalIndicatorPill(
+                    modifier = Modifier.testTag(PILL_VERTICAL_INDICATOR_TAG),
+                    cutoutRectsOverride = listOf(
+                        IntRect(left = 0, top = 60, right = 48, bottom = 100)
+                    )
+                ) {
+                    FlashModeIndicator(
+                        flashModeUiState = FlashModeUiState.Available(
+                            selectedFlashMode = FlashMode.ON,
+                            availableFlashModes = listOf(
+                                SingleSelectableUiState.SelectableUi(FlashMode.ON)
+                            ),
+                            isLowLightBoostActive = false
+                        )
+                    )
+                    HdrIndicator(
+                        hdrUiState = HdrUiState.Available(
+                            selectedDynamicRange = DEFAULT_HDR_DYNAMIC_RANGE,
+                            selectedImageFormat = DEFAULT_HDR_IMAGE_OUTPUT,
+                            isSupported = true
+                        )
+                    )
+                    VideoQualityIcon(videoQuality = VideoQuality.FHD)
+                    StabilizationIcon(
+                        stabilizationUiState = StabilizationUiState.Specific(
+                            stabilizationMode = StabilizationMode.ON,
+                            active = true
+                        )
+                    )
                 }
             }
         }
@@ -433,32 +426,24 @@ class CaptureScreenComponentsTest {
             context.getString(R.string.quick_settings_dynamic_range_hdr_description)
 
         composeTestRule.setContent {
-            CompositionLocalProvider(LocalDisableAnimations provides true) {
-                MaterialTheme(colorScheme = lightColorScheme()) {
-                    Box(
-                        modifier = Modifier
-                            .background(Color.White)
-                            .padding(16.dp)
-                    ) {
-                        VerticalIndicatorPill(cutoutRectsOverride = emptyList()) {
-                            FlashModeIndicator(
-                                flashModeUiState = FlashModeUiState.Available(
-                                    selectedFlashMode = FlashMode.ON,
-                                    availableFlashModes = listOf(
-                                        SingleSelectableUiState.SelectableUi(FlashMode.ON)
-                                    ),
-                                    isLowLightBoostActive = false
-                                )
-                            )
-                            HdrIndicator(
-                                hdrUiState = HdrUiState.Available(
-                                    selectedDynamicRange = DEFAULT_HDR_DYNAMIC_RANGE,
-                                    selectedImageFormat = DEFAULT_HDR_IMAGE_OUTPUT,
-                                    isSupported = true
-                                )
-                            )
-                        }
-                    }
+            VerticalIndicatorTestChrome(darkTheme = false, backgroundColor = Color.White) {
+                VerticalIndicatorPill(cutoutRectsOverride = emptyList()) {
+                    FlashModeIndicator(
+                        flashModeUiState = FlashModeUiState.Available(
+                            selectedFlashMode = FlashMode.ON,
+                            availableFlashModes = listOf(
+                                SingleSelectableUiState.SelectableUi(FlashMode.ON)
+                            ),
+                            isLowLightBoostActive = false
+                        )
+                    )
+                    HdrIndicator(
+                        hdrUiState = HdrUiState.Available(
+                            selectedDynamicRange = DEFAULT_HDR_DYNAMIC_RANGE,
+                            selectedImageFormat = DEFAULT_HDR_IMAGE_OUTPUT,
+                            isSupported = true
+                        )
+                    )
                 }
             }
         }
@@ -471,33 +456,25 @@ class CaptureScreenComponentsTest {
     @Test
     fun verticalIndicatorPill_inactiveState_passesAccessibilityChecks() {
         composeTestRule.setContent {
-            CompositionLocalProvider(LocalDisableAnimations provides true) {
-                MaterialTheme(colorScheme = lightColorScheme()) {
-                    Box(
-                        modifier = Modifier
-                            .background(Color.White)
-                            .padding(16.dp)
-                    ) {
-                        VerticalIndicatorPill(cutoutRectsOverride = emptyList()) {
-                            FlashModeIndicator(
-                                flashModeUiState = FlashModeUiState.Available(
-                                    selectedFlashMode = FlashMode.OFF,
-                                    availableFlashModes = listOf(
-                                        SingleSelectableUiState.SelectableUi(FlashMode.OFF)
-                                    ),
-                                    isLowLightBoostActive = false
-                                )
-                            )
-                            HdrIndicator(hdrUiState = HdrUiState.Unavailable)
-                            VideoQualityIcon(videoQuality = VideoQuality.UNSPECIFIED)
-                            StabilizationIcon(
-                                stabilizationUiState = StabilizationUiState.Specific(
-                                    stabilizationMode = StabilizationMode.ON,
-                                    active = false
-                                )
-                            )
-                        }
-                    }
+            VerticalIndicatorTestChrome(darkTheme = false, backgroundColor = Color.White) {
+                VerticalIndicatorPill(cutoutRectsOverride = emptyList()) {
+                    FlashModeIndicator(
+                        flashModeUiState = FlashModeUiState.Available(
+                            selectedFlashMode = FlashMode.OFF,
+                            availableFlashModes = listOf(
+                                SingleSelectableUiState.SelectableUi(FlashMode.OFF)
+                            ),
+                            isLowLightBoostActive = false
+                        )
+                    )
+                    HdrIndicator(hdrUiState = HdrUiState.Unavailable)
+                    VideoQualityIcon(videoQuality = VideoQuality.UNSPECIFIED)
+                    StabilizationIcon(
+                        stabilizationUiState = StabilizationUiState.Specific(
+                            stabilizationMode = StabilizationMode.ON,
+                            active = false
+                        )
+                    )
                 }
             }
         }
@@ -507,5 +484,26 @@ class CaptureScreenComponentsTest {
             useUnmergedTree = true
         ).assertCountEquals(0)
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+}
+
+@Composable
+private fun VerticalIndicatorTestChrome(
+    darkTheme: Boolean,
+    backgroundColor: Color,
+    content: @Composable () -> Unit
+) {
+    CompositionLocalProvider(LocalDisableAnimations provides true) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) darkColorScheme() else lightColorScheme()
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(backgroundColor)
+                    .padding(16.dp)
+            ) {
+                content()
+            }
+        }
     }
 }

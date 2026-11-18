@@ -159,7 +159,7 @@ class CutoutAwareColumnTest {
         // In a 60dp-wide column with Alignment.Start and pillMinWidth = 40dp:
         // - In LTR, start-aligned pill sits at x=[0, 40].
         // - In RTL, start-aligned pill reflects to physical x=[20, 60].
-        // A cutout at physical local x=[20, 60], y=[60, 100] overlaps the column in both
+        // A cutout at physical local x=[20, 60], y=[60, 100] overlaps the aligned pill in both
         // directions (keep-out y=[52, 108]), splitting items across y=[0..36] and y=[108..144].
         var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
         var pillSegments: List<IntRect> = emptyList()
@@ -202,6 +202,67 @@ class CutoutAwareColumnTest {
         assertThat(item0Rtl.top).isEqualTo(6.dp)
         assertThat(item1Rtl.left).isEqualTo(20.dp)
         assertThat(item1Rtl.top).isEqualTo(114.dp)
+    }
+
+    @Test
+    fun wideColumn_centerCutoutOutsideAlignedPill_doesNotSplitSideAlignedPillInLtrOrRtl() {
+        // In a 360dp-wide column with Alignment.Start and pillMinWidth = 40dp:
+        // - In LTR, the aligned pill occupies physical x=[0, 40].
+        // - In RTL, the aligned pill occupies physical x=[320, 360].
+        // A center hole-punch cutout at physical x=[160, 200], y=[60, 100] does not overlap the
+        // aligned pill in either direction and must not split the pill.
+        // An asymmetric cutout at physical x=[320, 360], y=[60, 100] overlaps only in RTL
+        // (where Alignment.Start places the pill at x=[320, 360]) and not in LTR (x=[0, 40]).
+        var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
+        var cutouts by mutableStateOf(
+            listOf(IntRect(left = 160, top = 60, right = 200, bottom = 100))
+        )
+        var pillSegments: List<IntRect> = emptyList()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
+                CutoutAwareColumn(
+                    modifier = Modifier.width(360.dp),
+                    verticalSpacing = 0.dp,
+                    cutoutClearance = 8.dp,
+                    pillVerticalPadding = 6.dp,
+                    pillMinWidth = 40.dp,
+                    horizontalAlignment = Alignment.Start,
+                    cutoutRectsOverride = cutouts,
+                    onPillSegmentsPlaced = { pillSegments = it }
+                ) {
+                    Box(Modifier.size(width = 40.dp, height = 24.dp).testTag("item0"))
+                    Box(Modifier.size(width = 40.dp, height = 24.dp).testTag("item1"))
+                }
+            }
+        }
+
+        // Center cutout [160, 200] is ignored in LTR (pill at [0, 40]).
+        assertThat(pillSegments).containsExactly(
+            IntRect(left = 0, top = 0, right = 40, bottom = 60)
+        )
+
+        // Center cutout [160, 200] is also ignored in RTL (pill at [320, 360]).
+        layoutDirection = LayoutDirection.Rtl
+        composeTestRule.waitForIdle()
+        assertThat(pillSegments).containsExactly(
+            IntRect(left = 320, top = 0, right = 360, bottom = 60)
+        )
+
+        // Right-edge physical cutout [320, 360] splits the RTL start-aligned pill at [320, 360],
+        // but does not split the LTR start-aligned pill at [0, 40].
+        cutouts = listOf(IntRect(left = 320, top = 60, right = 360, bottom = 100))
+        composeTestRule.waitForIdle()
+        assertThat(pillSegments).containsExactly(
+            IntRect(left = 320, top = 0, right = 360, bottom = 36),
+            IntRect(left = 320, top = 108, right = 360, bottom = 144)
+        ).inOrder()
+
+        layoutDirection = LayoutDirection.Ltr
+        composeTestRule.waitForIdle()
+        assertThat(pillSegments).containsExactly(
+            IntRect(left = 0, top = 0, right = 40, bottom = 60)
+        )
     }
 
     @Test
@@ -993,8 +1054,9 @@ class CutoutAwareColumnTest {
             android.graphics.Rect(10, 120, 38, 160)
         )
 
-        // When windowAnchor is null, offsets default to (0, 0) and RTL mirrors around
-        // rtlReferenceWidth.
+        // When both cutoutRectsOverride and windowAnchor are null (before onGloballyPositioned),
+        // resolveLocalCutoutRects returns emptyList() so offset containers do not falsely split
+        // around (0, 0) cutouts on frame 0.
         assertThat(
             resolveLocalCutoutRects(
                 cutoutRectsOverride = null,
@@ -1003,10 +1065,7 @@ class CutoutAwareColumnTest {
                 isRtl = false,
                 rtlReferenceWidth = 48
             )
-        ).containsExactly(
-            IntRect(left = 4, top = 10, right = 44, bottom = 50),
-            IntRect(left = 10, top = 120, right = 38, bottom = 160)
-        ).inOrder()
+        ).isEmpty()
 
         assertThat(
             resolveLocalCutoutRects(
@@ -1016,10 +1075,7 @@ class CutoutAwareColumnTest {
                 isRtl = true,
                 rtlReferenceWidth = 60
             )
-        ).containsExactly(
-            IntRect(left = 16, top = 10, right = 56, bottom = 50),
-            IntRect(left = 22, top = 120, right = 50, bottom = 160)
-        ).inOrder()
+        ).isEmpty()
 
         // When cutoutRectsOverride is provided, windowCutoutRects and windowAnchor are bypassed.
         val overrideRects = listOf(
