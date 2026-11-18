@@ -594,12 +594,10 @@ object CaptureScaffoldDefaults {
         modifier: Modifier = Modifier
     ) {
         val disableAnimations = LocalDisableAnimations.current
-        val elapsedTimeModifier =
-            remember(modifier) { modifier.testTag(ELAPSED_TIME_TAG) }
         if (disableAnimations) {
             if (isRecording) {
                 ElapsedTimeText(
-                    modifier = elapsedTimeModifier,
+                    modifier = modifier,
                     elapsedTimeUiStateProvider = elapsedTimeUiStateProvider
                 )
             }
@@ -616,7 +614,7 @@ object CaptureScaffoldDefaults {
                     )
                 ) {
                     ElapsedTimeText(
-                        modifier = elapsedTimeModifier,
+                        modifier = modifier,
                         elapsedTimeUiStateProvider = elapsedTimeUiStateProvider
                     )
                 }
@@ -630,7 +628,7 @@ object CaptureScaffoldDefaults {
                 )
             ) {
                 ElapsedTimeText(
-                    modifier = elapsedTimeModifier,
+                    modifier = modifier,
                     elapsedTimeUiStateProvider = elapsedTimeUiStateProvider
                 )
             }
@@ -1001,7 +999,6 @@ fun CaptureScaffold(
             }
         }
     }
-    val currentElapsedTimeOccupying by rememberUpdatedState(isElapsedTimeOccupyingSlot)
     val currentCaptureMode = activeCaptureMode.value
     LaunchedEffect(currentCaptureMode) {
         if (currentCaptureMode != null) {
@@ -1010,7 +1007,7 @@ fun CaptureScaffold(
             if (previous != null &&
                 previous != currentCaptureMode &&
                 !isVideoRecordingActive.value &&
-                currentElapsedTimeOccupying.value
+                isElapsedTimeOccupyingSlot.value
             ) {
                 elapsedTimeResetEpoch++
             }
