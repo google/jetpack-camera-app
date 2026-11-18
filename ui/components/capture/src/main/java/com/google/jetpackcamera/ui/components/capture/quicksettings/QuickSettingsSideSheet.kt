@@ -622,7 +622,8 @@ private fun QuickSettingsSideSheetPreviewContent(
     showMoreSettingsButton: Boolean = false,
     sheetPadding: PaddingValues =
         PaddingValues(vertical = QuickSettingsSideSheetTokens.OuterVerticalPadding),
-    maxSheetWidth: Dp = QuickSettingsSideSheetTokens.MaxSheetWidth
+    maxSheetWidth: Dp = QuickSettingsSideSheetTokens.MaxSheetWidth,
+    sheetContainerDirection: LayoutDirection = LocalLayoutDirection.current
 ) {
     MaterialTheme(
         colorScheme = darkColorScheme()
@@ -673,18 +674,14 @@ private fun QuickSettingsSideSheetPreviewContent(
             onNavigateToSettings = {},
             showMoreSettingsButton = showMoreSettingsButton,
             sheetPadding = sheetPadding,
-            maxSheetWidth = maxSheetWidth
+            maxSheetWidth = maxSheetWidth,
+            sheetContainerDirection = sheetContainerDirection
         )
     }
 }
 
 @Preview(
     name = "LTR - Dark",
-    uiMode = Configuration.UI_MODE_NIGHT_YES
-)
-@Preview(
-    name = "RTL - Dark",
-    locale = "ar",
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Preview(
@@ -695,6 +692,21 @@ private fun QuickSettingsSideSheetPreviewContent(
 @Composable
 private fun QuickSettingsSideSheetPreview() {
     QuickSettingsSideSheetPreviewContent(showMoreSettingsButton = false)
+}
+
+@Preview(
+    name = "RTL - Dark",
+    locale = "ar",
+    uiMode = Configuration.UI_MODE_NIGHT_YES
+)
+@Composable
+private fun QuickSettingsSideSheetRtlPreview() {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        QuickSettingsSideSheetPreviewContent(
+            showMoreSettingsButton = false,
+            sheetContainerDirection = LayoutDirection.Ltr
+        )
+    }
 }
 
 @Preview(
@@ -723,12 +735,22 @@ private fun QuickSettingsSideSheetTabletPreview() {
     name = "With More Settings - LTR - Dark",
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
+@Composable
+private fun QuickSettingsSideSheetWithMoreSettingsPreview() {
+    QuickSettingsSideSheetPreviewContent(showMoreSettingsButton = true)
+}
+
 @Preview(
     name = "With More Settings - RTL - Dark",
     locale = "ar",
     uiMode = Configuration.UI_MODE_NIGHT_YES
 )
 @Composable
-private fun QuickSettingsSideSheetWithMoreSettingsPreview() {
-    QuickSettingsSideSheetPreviewContent(showMoreSettingsButton = true)
+private fun QuickSettingsSideSheetWithMoreSettingsRtlPreview() {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        QuickSettingsSideSheetPreviewContent(
+            showMoreSettingsButton = true,
+            sheetContainerDirection = LayoutDirection.Ltr
+        )
+    }
 }
