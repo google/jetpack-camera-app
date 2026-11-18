@@ -17,13 +17,20 @@ package com.google.jetpackcamera.ui.components.capture
 
 import android.content.Context
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -31,6 +38,7 @@ import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -39,6 +47,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
+import androidx.compose.ui.unit.DpOffset
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
@@ -259,6 +268,56 @@ class CaptureScreenComponentsTest {
         composeTestRule.onNodeWithTag(FOCUS_METERING_INDICATOR_TAG)
             .assertContentDescriptionEquals("Focused")
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun focusMeteringIndicator_followsTransformUpdatedWhenViewfinderIsPlaced() {
+        var viewfinderScale by mutableFloatStateOf(1f)
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                val coordinateTransformer = remember { MutableCoordinateTransformer() }
+                Box(Modifier.fillMaxSize()) {
+                    // Like the viewfinder, update the transform when placed, e.g. after the
+                    // window rotates. The transform maps viewfinder to surface coordinates.
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .layout { measurable, constraints ->
+                                val placeable = measurable.measure(constraints)
+                                layout(placeable.width, placeable.height) {
+                                    coordinateTransformer.transformMatrix = Matrix().apply {
+                                        scale(1f / viewfinderScale, 1f / viewfinderScale)
+                                    }
+                                    placeable.place(0, 0)
+                                }
+                            }
+                    )
+                    FocusMeteringIndicator(
+                        focusMeteringUiState = FocusMeteringUiState.Specified(
+                            surfaceCoordinates = TEST_COORDINATES,
+                            status = FocusMeteringUiState.Status.SUCCESS
+                        ),
+                        coordinateTransformer = coordinateTransformer
+                    )
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.runOnUiThread { viewfinderScale = 2f }
+        // Check the frame in which the viewfinder updates the transform.
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        val bounds = composeTestRule.onNodeWithTag(FOCUS_METERING_INDICATOR_TAG)
+            .getUnclippedBoundsInRoot()
+        val expectedCenter = with(composeTestRule.density) {
+            DpOffset((TEST_COORDINATES.x * 2).toDp(), (TEST_COORDINATES.y * 2).toDp())
+        }
+        assertThat(((bounds.left + bounds.right) / 2).value)
+            .isWithin(1f).of(expectedCenter.x.value)
+        assertThat(((bounds.top + bounds.bottom) / 2).value)
+            .isWithin(1f).of(expectedCenter.y.value)
     }
 
     @Test
