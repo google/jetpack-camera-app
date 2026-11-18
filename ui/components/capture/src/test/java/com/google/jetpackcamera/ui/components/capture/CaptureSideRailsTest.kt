@@ -650,7 +650,7 @@ class CaptureSideRailsTest {
     }
 
     @Test
-    fun startSideRail_topBarLeadingContent_ordersCorrectly_preservesRtlAndState_andRespectsBudget() {
+    fun startSideRail_topBarLeadingContent_ordersAndPreservesState_withinBudget() {
         val leadingTag = "TopBarLeadingContent"
         var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
         var showLeading by mutableStateOf(true)
