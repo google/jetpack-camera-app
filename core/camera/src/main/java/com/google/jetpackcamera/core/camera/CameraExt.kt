@@ -299,6 +299,7 @@ val CameraInfo.supportedImageFormats: Set<ImageOutputFormat>
         .mapNotNull(Int::toAppImageFormat)
         .toSet()
 
+internal fun UseCaseGroup.getPreview() = getUseCaseOrNull<Preview>()
 fun UseCaseGroup.getVideoCapture() = getUseCaseOrNull<VideoCapture<Recorder>>()
 fun UseCaseGroup.getImageCapture() = getUseCaseOrNull<ImageCapture>()
 
