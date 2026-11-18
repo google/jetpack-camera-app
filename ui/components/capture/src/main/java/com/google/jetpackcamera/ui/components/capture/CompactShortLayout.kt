@@ -50,11 +50,11 @@ private object CompactShortTokens {
     // harmoniously without clipping or overlap in condensed short windows (< 480dp on both axes,
     // such as 360x360dp or 320x340dp with visible multi-window status bars).
     const val RAIL_WIDTH_FRACTION = 0.22f
-    const val INDICATOR_MAX_HEIGHT_FRACTION = 0.20f
-    const val QUICK_SETTINGS_BUTTON_FRACTION = 0.16f
-    const val SHUTTER_DIAMETER_FRACTION = 0.22f
-    const val SECONDARY_ACTION_FRACTION = 0.15f
-    const val MODE_TOGGLE_HEIGHT_FRACTION = 0.15f
+    const val INDICATOR_MAX_HEIGHT_FRACTION = 0.22f
+    const val QUICK_SETTINGS_BUTTON_FRACTION = 0.20f
+    const val SHUTTER_DIAMETER_FRACTION = 0.25f
+    const val SECONDARY_ACTION_FRACTION = 0.20f
+    const val MODE_TOGGLE_HEIGHT_FRACTION = 0.20f
     const val CENTER_HUD_HEIGHT_FRACTION = 0.12f
 }
 
