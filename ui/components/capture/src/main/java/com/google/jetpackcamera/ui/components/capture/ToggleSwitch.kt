@@ -225,7 +225,8 @@ private class DragCancelTrackingInteractionSource(
  * @param controlSize Track size variant: [ControlSize.Standard] uses `116x64.dp` horizontal or
  *   `64x116.dp` vertical; any other size uses the mini track (`92x48.dp` horizontal or `48x92.dp`
  *   vertical).
- * @param iconRotationDegrees Clockwise rotation in degrees applied around each icon's center.
+ * @param iconRotationDegrees Provider for clockwise rotation in degrees applied around each
+ *   icon's center in the draw phase.
  * @param showShadow Whether to draw the elevation drop shadow around the track.
  * @param trackColor Fill color of the pill track.
  * @param thumbColor Fill color of the circular thumb when [enabled].
@@ -254,7 +255,7 @@ fun ToggleSwitch(
     enabled: Boolean = true,
     orientation: Orientation = Orientation.Horizontal,
     controlSize: ControlSize = ControlSize.Standard,
-    iconRotationDegrees: Float = 0f,
+    iconRotationDegrees: () -> Float = { 0f },
     showShadow: Boolean = true,
     trackColor: Color = Color.White.copy(alpha = ToggleSwitchTokens.DefaultTrackAlpha),
     thumbColor: Color = MaterialTheme.colorScheme.primaryFixedDim,
@@ -733,7 +734,7 @@ private fun DrawScope.drawSwitchContent(
     progress: Float,
     trackColor: Color,
     thumbColor: Color,
-    iconRotationDegrees: Float,
+    iconRotationDegrees: () -> Float,
     startIconPainter: Painter?,
     endIconPainter: Painter?,
     offColorFilter: ColorFilter,
@@ -801,7 +802,7 @@ private fun DrawScope.drawSwitchContent(
         drawClippedSwitchIcons(
             thumbClipPath = thumbClipPath,
             iconSizePx = dims.iconSizePx,
-            iconRotationDegrees = iconRotationDegrees,
+            iconRotationDegrees = iconRotationDegrees(),
             startIconPainter = startIconPainter,
             startIconCenterX = startIconCenterX,
             startIconCenterY = startIconCenterY,
@@ -1160,7 +1161,7 @@ private fun ToggleSwitchIconRotation90Preview() {
             endIcon = R.drawable.ic_videocam_outline,
             checked = false,
             onCheckedChange = {},
-            iconRotationDegrees = 90f
+            iconRotationDegrees = { 90f }
         )
     }
 }

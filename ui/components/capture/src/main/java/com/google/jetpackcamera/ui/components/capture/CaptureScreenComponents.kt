@@ -651,7 +651,8 @@ fun AmplitudeToggleButton(
  * @param orientation the primary axis of the toggle track and drag gesture.
  * @param controlSize the track size variant; any size other than [ControlSize.Standard] uses the
  *   mini track (`92x48.dp` or `48x92.dp`).
- * @param iconRotationDegrees clockwise rotation in degrees applied around each icon's center.
+ * @param iconRotationDegrees provider for clockwise rotation in degrees applied around each
+ *   icon's center in the draw phase.
  */
 // TODO: Confirm final vertical ordering with UX.
 @Composable
@@ -662,7 +663,7 @@ fun CaptureModeToggleButton(
     modifier: Modifier = Modifier,
     orientation: Orientation = Orientation.Horizontal,
     controlSize: ControlSize = ControlSize.Standard,
-    iconRotationDegrees: Float = 0f
+    iconRotationDegrees: () -> Float = { 0f }
 ) {
     // Captures image (start/top), else captures video (end/bottom).
     val toggleState = remember(uiState.selectedCaptureMode) {
@@ -1769,7 +1770,8 @@ private fun FlipCameraButtonPreview() {
  * @param enabled whether video capture is selectable. When `false`, the toggle is shown disabled.
  * @param orientation the primary axis of the toggle track and drag gesture.
  * @param controlSize the track size variant.
- * @param iconRotationDegrees clockwise rotation in degrees applied around each icon's center.
+ * @param iconRotationDegrees provider for clockwise rotation in degrees applied around each
+ *   icon's center in the draw phase.
  * @param darkTheme whether to wrap the preview in a dark Material 3 color scheme.
  */
 @Composable
@@ -1778,7 +1780,7 @@ internal fun PreviewCaptureModeToggleButton(
     enabled: Boolean = true,
     orientation: Orientation = Orientation.Horizontal,
     controlSize: ControlSize = ControlSize.Standard,
-    iconRotationDegrees: Float = 0f,
+    iconRotationDegrees: () -> Float = { 0f },
     darkTheme: Boolean = true
 ) {
     val disabledRationale = object : DisableRationale {
@@ -1882,6 +1884,6 @@ private fun CaptureModeToggleVerticalMiniPreview() {
 private fun CaptureModeToggleIconRotation90Preview() {
     PreviewCaptureModeToggleButton(
         selectedCaptureMode = CaptureMode.IMAGE_ONLY,
-        iconRotationDegrees = 90f
+        iconRotationDegrees = { 90f }
     )
 }

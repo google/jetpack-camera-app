@@ -606,7 +606,7 @@ class ToggleSwitchTest {
                         onCheckedChange = { checked = it },
                         startIcon = R.drawable.ic_camera_alt_filled,
                         endIcon = R.drawable.ic_videocam_outline,
-                        iconRotationDegrees = 90f,
+                        iconRotationDegrees = { 90f },
                         modifier = Modifier.testTag(SWITCH_TAG)
                     )
                 }
@@ -792,7 +792,7 @@ class ToggleSwitchTest {
                 onToggleWhenDisabled = {},
                 orientation = Orientation.Vertical,
                 controlSize = ControlSize.Mini,
-                iconRotationDegrees = 90f
+                iconRotationDegrees = { 90f }
             )
         }
 
