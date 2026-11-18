@@ -18,6 +18,7 @@ package com.google.jetpackcamera.core.camera
 import android.graphics.Rect
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
+import android.os.Build
 import android.util.Size
 import androidx.annotation.OptIn
 import androidx.camera.camera2.interop.CaptureRequestOptions
@@ -29,6 +30,7 @@ import com.google.jetpackcamera.model.VideoQuality
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 @OptIn(ExperimentalCamera2Interop::class)
 @RunWith(RobolectricTestRunner::class)
@@ -109,6 +111,7 @@ class CameraSessionTest {
     }
 
     @Test
+    @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
     fun updateLowLightBoostAeMode_lowLightBoostWithAeModeSupport_setsLowLightBoostAeMode() {
         val builder = CaptureRequestOptions.Builder()
 
@@ -122,6 +125,7 @@ class CameraSessionTest {
     }
 
     @Test
+    @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
     fun updateLowLightBoostAeMode_lowLightBoostWithCameraEffect_clearsAeMode() {
         val builder = CaptureRequestOptions.Builder().setCaptureRequestOption(
             CaptureRequest.CONTROL_AE_MODE,
@@ -138,6 +142,7 @@ class CameraSessionTest {
     }
 
     @Test
+    @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
     fun updateLowLightBoostAeMode_otherFlashMode_clearsAeMode() {
         val builder = CaptureRequestOptions.Builder()
         builder.updateLowLightBoostAeMode(
@@ -155,6 +160,7 @@ class CameraSessionTest {
     }
 
     @Test
+    @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
     fun updateLowLightBoostAeMode_keepsOtherOptions() {
         val builder = CaptureRequestOptions.Builder().setCaptureRequestOption(
             CaptureRequest.SENSOR_TEST_PATTERN_MODE,
