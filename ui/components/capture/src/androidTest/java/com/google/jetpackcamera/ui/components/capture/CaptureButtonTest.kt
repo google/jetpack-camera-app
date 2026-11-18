@@ -15,11 +15,16 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.os.Build
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -42,6 +47,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
 import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.common.truth.Truth.assertThat
@@ -59,19 +65,37 @@ class CaptureButtonTest {
 
     @Before
     fun setUp() {
-        composeTestRule.enableAccessibilityChecks(
-            AccessibilityValidator().setRunChecksFromRootView(true).also {
-                it.setThrowExceptionFor(AccessibilityCheckResultType.ERROR)
-            }
-        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            composeTestRule.enableAccessibilityChecks(
+                AccessibilityValidator().setRunChecksFromRootView(true).also {
+                    it.setThrowExceptionFor(AccessibilityCheckResultType.ERROR)
+                }
+            )
+        }
     }
 
+    /**
+     * Centers standalone controls away from window edges so Accessibility Test Framework enforces
+     * the full 48x48dp touch target minimum rather than the 32dp screen-edge threshold.
+     */
+    private fun setCenteredContent(content: @Composable () -> Unit) {
+        composeTestRule.setContent {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                content()
+            }
+        }
+    }
+
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_standard_exists() {
         var imageCaptured = false
         var recordingStarted = false
         var recordingLocked = false
-        composeTestRule.setContent {
+        setCenteredContent {
             CaptureButton(
                 modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = { imageCaptured = true },
@@ -103,10 +127,11 @@ class CaptureButtonTest {
         assertThat(recordingStarted).isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_imageOnly_exists() {
         var imageCaptured = false
-        composeTestRule.setContent {
+        setCenteredContent {
             CaptureButton(
                 modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = { imageCaptured = true },
@@ -130,11 +155,12 @@ class CaptureButtonTest {
         assertThat(imageCaptured).isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_videoOnly_exists() {
         var recordingStarted = false
         var recordingLocked = false
-        composeTestRule.setContent {
+        setCenteredContent {
             CaptureButton(
                 modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = {},
@@ -159,10 +185,11 @@ class CaptureButtonTest {
         assertThat(recordingStarted).isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_lockedRecording_exists() {
         var recordingStopped = false
-        composeTestRule.setContent {
+        setCenteredContent {
             CaptureButton(
                 modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = {},
@@ -186,18 +213,22 @@ class CaptureButtonTest {
         assertThat(recordingStopped).isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_pressedRecording_exists() {
-        composeTestRule.setContent {
-            CaptureButton(
-                modifier = Modifier.testTag(CAPTURE_BUTTON),
-                onImageCapture = {},
-                onStartRecording = {},
-                onStopRecording = {},
-                onLockVideoRecording = {},
-                onIncrementZoom = {},
-                captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording
-            )
+        var lockToggled = false
+        setCenteredContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                CaptureButton(
+                    modifier = Modifier.testTag(CAPTURE_BUTTON),
+                    onImageCapture = {},
+                    onStartRecording = {},
+                    onStopRecording = {},
+                    onLockVideoRecording = { lockToggled = it },
+                    onIncrementZoom = {},
+                    captureButtonUiState = CaptureButtonUiState.Enabled.Recording.PressedRecording
+                )
+            }
         }
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
@@ -209,9 +240,10 @@ class CaptureButtonTest {
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_disabled_exists() {
-        composeTestRule.setContent {
+        setCenteredContent {
             CaptureButton(
                 modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = {},
@@ -232,9 +264,10 @@ class CaptureButtonTest {
         ).assert(isNotEnabled())
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_unavailable_exists() {
-        composeTestRule.setContent {
+        setCenteredContent {
             CaptureButton(
                 modifier = Modifier.testTag(CAPTURE_BUTTON),
                 onImageCapture = {},

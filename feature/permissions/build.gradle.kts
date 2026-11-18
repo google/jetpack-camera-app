@@ -49,10 +49,20 @@ android {
         buildConfig = true
         compose = true
     }
+    @Suppress("UnstableApiUsage")
     testOptions {
         unitTests {
             isReturnDefaultValues = true
             isIncludeAndroidResources = true
+        }
+        managedDevices {
+            localDevices {
+                create("pixel8Api34") {
+                    device = "Pixel 8"
+                    apiLevel = 34
+                    systemImageSource = "aosp_atd"
+                }
+            }
         }
     }
 }
@@ -100,6 +110,8 @@ dependencies {
     testImplementation(libs.truth)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.compose.accessibility)
+    androidTestImplementation(libs.accessibility.test.framework)
 }
 // Allow references to generated code
 kapt {
