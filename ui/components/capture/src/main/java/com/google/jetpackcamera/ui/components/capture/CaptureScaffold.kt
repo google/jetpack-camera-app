@@ -54,6 +54,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.AudioStreamState
@@ -65,6 +69,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScaffoldContent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
@@ -436,6 +441,7 @@ object CaptureScaffoldDefaults {
     /** Compact layouts that present Quick Settings in a bottom sheet. */
     private val BottomSheetQuickSettingsLayouts =
         setOf("CompactPortraitLayout", "CompactShortLayout")
+    private val QuickSettingsVerticalPadding = 20.dp
 
     /**
      * Default shutter / capture button wired to [CaptureController], sized for [controlSize] via
@@ -543,14 +549,29 @@ object CaptureScaffoldDefaults {
         if (!isRecording && uiState is CaptureModeToggleUiState.Available) {
             // TODO(#635): Replace vertical placeholder with vertical CaptureModeToggleButton.
             if (orientation == Orientation.Vertical) {
+                val isVideoSelected = uiState.selectedCaptureMode == CaptureMode.VIDEO_ONLY
                 val enabled = uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
                     uiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY) &&
                     uiState.selectedCaptureMode != CaptureMode.STANDARD
-                val placeholderLabel = if (uiState.selectedCaptureMode == CaptureMode.VIDEO_ONLY) {
-                    "Video"
-                } else {
-                    "Photo"
-                }
+                val placeholderLabel = stringResource(
+                    if (isVideoSelected) {
+                        R.string.quick_settings_text_capture_mode_video_only
+                    } else {
+                        R.string.quick_settings_text_capture_mode_image_only
+                    }
+                )
+                val resolvedStateDescription = stringResource(
+                    when {
+                        isVideoSelected && enabled ->
+                            R.string.capture_mode_video_recording_content_description
+                        isVideoSelected && !enabled ->
+                            R.string.capture_mode_video_recording_content_description_disabled
+                        !isVideoSelected && enabled ->
+                            R.string.capture_mode_image_capture_content_description
+                        else ->
+                            R.string.capture_mode_image_capture_content_description_disabled
+                    }
+                )
                 PlaceholderControlBox(
                     label = placeholderLabel,
                     width = if (controlSize != ControlSize.Standard) {
@@ -563,33 +584,38 @@ object CaptureScaffoldDefaults {
                     } else {
                         CaptureSlotTokens.ModeToggleStandardWidth
                     },
-                    modifier = modifier.clickable(
-                        role = Role.Switch,
-                        onClick = {
-                            if (enabled) {
-                                val nextMode =
-                                    if (uiState.selectedCaptureMode == CaptureMode.VIDEO_ONLY) {
+                    modifier = modifier
+                        .semantics {
+                            stateDescription = resolvedStateDescription
+                            toggleableState = ToggleableState(isVideoSelected)
+                        }
+                        .clickable(
+                            role = Role.Switch,
+                            onClick = {
+                                if (enabled) {
+                                    val nextMode = if (isVideoSelected) {
                                         CaptureMode.IMAGE_ONLY
                                     } else {
                                         CaptureMode.VIDEO_ONLY
                                     }
-                                quickSettingsController?.setCaptureMode(nextMode)
-                            } else {
-                                val disabledReason: DisableRationale? =
-                                    (
-                                        uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
-                                            SingleSelectableUiState.Disabled<CaptureMode>
-                                        )?.disabledReason
-                                        ?: (
-                                            uiState.findSelectableStateFor(CaptureMode.IMAGE_ONLY)
+                                    quickSettingsController?.setCaptureMode(nextMode)
+                                } else {
+                                    val disabledReason: DisableRationale? =
+                                        (
+                                            uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY)
                                                 as? SingleSelectableUiState.Disabled<CaptureMode>
                                             )?.disabledReason
-                                disabledReason?.let {
-                                    snackBarController?.enqueueDisabledHdrToggleSnackBar(it)
+                                            ?: (
+                                                uiState.findSelectableStateFor(
+                                                    CaptureMode.IMAGE_ONLY
+                                                ) as? SingleSelectableUiState.Disabled<CaptureMode>
+                                                )?.disabledReason
+                                    disabledReason?.let {
+                                        snackBarController?.enqueueDisabledHdrToggleSnackBar(it)
+                                    }
                                 }
                             }
-                        }
-                    ),
+                        ),
                     color = CaptureSlotTokens.ModeToggleColor,
                     testTag = CAPTURE_MODE_TOGGLE_BUTTON
                 )
@@ -698,8 +724,9 @@ object CaptureScaffoldDefaults {
     ) {
         // TODO(#649): Replace vertical placeholder with VerticalIndicatorPill once #649 merges.
         if (orientation == Orientation.Vertical) {
+            val hasVideoQuality = uiState().videoQuality != VideoQuality.UNSPECIFIED
             PlaceholderControlBox(
-                label = "Ind",
+                label = "",
                 width = CaptureSlotTokens.IndicatorCrossAxisSize,
                 height = if (controlSize != ControlSize.Standard) {
                     CaptureSlotTokens.IndicatorMiniMainAxisSize
@@ -708,7 +735,7 @@ object CaptureScaffoldDefaults {
                 },
                 modifier = modifier,
                 color = CaptureSlotTokens.IndicatorColor,
-                testTag = VIDEO_QUALITY_TAG
+                testTag = if (hasVideoQuality) VIDEO_QUALITY_TAG else null
             )
             return
         }
@@ -762,7 +789,7 @@ object CaptureScaffoldDefaults {
                     quickSettingsController = controller,
                     onNavigateToSettings = onNavigateToSettings,
                     modifier = modifier
-                        .padding(vertical = 20.dp)
+                        .padding(vertical = QuickSettingsVerticalPadding)
                         .testTag(QUICK_SETTINGS_BOTTOM_SHEET),
                     showMoreSettingsButton = showMoreSettingsButton
                 )

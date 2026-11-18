@@ -44,6 +44,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutMode
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
@@ -97,6 +98,7 @@ class AdaptiveCaptureLayoutTest {
         slots: CaptureSlots? = null,
         onModeObserved: (CameraLayoutMode) -> Unit = {},
         onActiveLayoutObserved: (String) -> Unit = {},
+        onToolbarControlSizeObserved: (ControlSize) -> Unit = {},
         viewfinderContent: @Composable (Modifier) -> Unit = { vfMod ->
             PlaceholderViewfinder(modifier = vfMod)
         }
@@ -148,6 +150,7 @@ class AdaptiveCaptureLayoutTest {
                     )
                 },
                 captureModeToggle = { modeMod ->
+                    onToolbarControlSizeObserved(controlSize)
                     Box(
                         modeMod
                             .size(
@@ -233,16 +236,19 @@ class AdaptiveCaptureLayoutTest {
     fun slimDisplay_sw320dp_w320dp_h640dp_resolvesToCompactSlimUsingCompactLayout() {
         var observedMode: CameraLayoutMode? = null
         var observedLayout: String? = null
+        var observedToolbarControlSize: ControlSize? = null
 
         composeTestRule.setContent {
             OrchestratedLayoutUnderTest(
                 onModeObserved = { observedMode = it },
-                onActiveLayoutObserved = { observedLayout = it }
+                onActiveLayoutObserved = { observedLayout = it },
+                onToolbarControlSizeObserved = { observedToolbarControlSize = it }
             )
         }
         composeTestRule.waitForIdle()
 
         assertCompactLayoutTopology(observedMode, observedLayout, CameraLayoutMode.COMPACT_SLIM)
+        assertThat(observedToolbarControlSize).isEqualTo(ControlSize.Mini)
     }
 
     @Config(qualifiers = "sw800dp-w480dp-h800dp-port-mdpi")
@@ -382,7 +388,8 @@ class AdaptiveCaptureLayoutTest {
                 flashModeUiState = FlashModeUiState.Unavailable,
                 flipLensUiState = FlipLensUiState.Unavailable,
                 hdrUiState = HdrUiState.Unavailable
-            )
+            ),
+            videoQuality = VideoQuality.FHD
         )
 
         composeTestRule.setContent {

@@ -93,6 +93,8 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
  *   tallest viewfinder to clear a persistent navigation bar, and `false` otherwise or on dispose.
  * @param errorDialog the camera error alert dialog composable.
+ * @param isErrorDialogShowing whether a modal camera error dialog is currently visible above the
+ *   capture chrome.
  */
 @Composable
 fun CaptureScaffoldLayout(
@@ -118,7 +120,8 @@ fun CaptureScaffoldLayout(
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
-    errorDialog: @Composable (Modifier) -> Unit = {}
+    errorDialog: @Composable (Modifier) -> Unit = {},
+    isErrorDialogShowing: Boolean = false
 ) {
     CaptureScaffoldLayout(
         modifier = modifier,
@@ -144,6 +147,7 @@ fun CaptureScaffoldLayout(
         topBarTrailingContent = topBarTrailingContent,
         onRequiresImmersiveChange = onRequiresImmersiveChange,
         errorDialog = errorDialog,
+        isErrorDialogShowing = isErrorDialogShowing,
         slots = null
     )
 }

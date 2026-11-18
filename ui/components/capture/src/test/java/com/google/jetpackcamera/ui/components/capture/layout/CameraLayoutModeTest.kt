@@ -206,6 +206,27 @@ class CameraLayoutModeTest {
         assertThat(stepWidth(600.dp)).isEqualTo(CameraLayoutMode.FOLDABLE)
         assertThat(stepWidth(593.dp)).isEqualTo(CameraLayoutMode.FOLDABLE)
         assertThat(stepWidth(592.dp)).isEqualTo(CameraLayoutMode.COMPACT)
+
+        // Horizontal COMPACT window with height in [480dp, 486dp] (e.g., 483dp) widened past 607dp
+        // transitions to FOLDABLE / TABLET_LANDSCAPE when previousHeightDp is tracked.
+        var horizontalMode: CameraLayoutMode? = null
+        var previousHeight = Dp.Unspecified
+        fun stepHorizontalWidth(width: Dp, height: Dp = 483.dp): CameraLayoutMode {
+            horizontalMode = classifyCameraLayoutMode(
+                widthDp = width,
+                heightDp = height,
+                isFullScreenCompactPhone = false,
+                previousMode = horizontalMode,
+                previousHeightDp = previousHeight
+            )
+            previousHeight = height
+            return checkNotNull(horizontalMode)
+        }
+
+        assertThat(stepHorizontalWidth(580.dp)).isEqualTo(CameraLayoutMode.COMPACT)
+        assertThat(stepHorizontalWidth(606.dp)).isEqualTo(CameraLayoutMode.COMPACT)
+        assertThat(stepHorizontalWidth(608.dp)).isEqualTo(CameraLayoutMode.FOLDABLE)
+        assertThat(stepHorizontalWidth(900.dp)).isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
     }
 
     @Test
@@ -400,5 +421,20 @@ class CameraLayoutModeTest {
                 isInMultiWindowMode = false
             )
         ).isFalse()
+
+        // Physical edge-to-edge phone where BoxWithConstraints includes system bar insets
+        // (e.g., 412x915dp full window vs. 412x867dp Configuration.screenHeightDp).
+        assertThat(
+            isFullScreenCompactPhoneWindow(
+                widthDp = 412.dp,
+                heightDp = 915.dp,
+                smallestScreenWidthDp = 412,
+                screenWidthDp = 412,
+                screenHeightDp = 867,
+                isInMultiWindowMode = false,
+                windowContainerWidthDp = 412f,
+                windowContainerHeightDp = 915f
+            )
+        ).isTrue()
     }
 }
