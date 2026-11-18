@@ -179,30 +179,33 @@ fun rememberGravityRotationState(
     animateQuarterTurns: Boolean = true
 ): State<Float> {
     val targetClockwiseDegrees = deviceRotation.toGravityRotationDegrees(windowRotation)
-    var continuousTarget by remember { mutableFloatStateOf(targetClockwiseDegrees.toFloat()) }
-    var previousWindowRotation by remember { mutableStateOf(windowRotation) }
-
-    val windowRotationChanged = previousWindowRotation != windowRotation
-    if (windowRotationChanged) {
-        previousWindowRotation = windowRotation
+    val holder = remember {
+        GravityRotationStateHolder(
+            continuousTarget = targetClockwiseDegrees.toFloat(),
+            previousWindowRotation = windowRotation
+        )
     }
 
-    val currentMod = ((continuousTarget % 360f) + 360f) % 360f
+    val windowRotationChanged = holder.previousWindowRotation != windowRotation
+    if (windowRotationChanged) {
+        holder.previousWindowRotation = windowRotation
+    }
+
+    val currentMod = ((holder.continuousTarget % 360f) + 360f) % 360f
     val rawDelta = ((targetClockwiseDegrees - currentMod + 540f) % 360f) - 180f
     val isHalfTurnFlip = rawDelta == -180f || rawDelta == 180f
     val delta = if (rawDelta == -180f) 180f else rawDelta
-    var snapCurrentTransition by remember { mutableStateOf(false) }
-    if (delta != 0f || windowRotationChanged) {
-        snapCurrentTransition = windowRotationChanged || isHalfTurnFlip
-        continuousTarget += delta
+    val snapCurrentTransition = windowRotationChanged || isHalfTurnFlip
+    if (delta != 0f) {
+        holder.continuousTarget += delta
     }
 
     val disableAnimations = LocalDisableAnimations.current
     if (!animateQuarterTurns || disableAnimations) {
-        return rememberUpdatedState(continuousTarget)
+        return rememberUpdatedState(holder.continuousTarget)
     }
     return animateFloatAsState(
-        targetValue = continuousTarget,
+        targetValue = holder.continuousTarget,
         animationSpec = if (snapCurrentTransition) {
             snap()
         } else {
@@ -214,6 +217,11 @@ fun rememberGravityRotationState(
         label = "GravityRotationDegrees"
     )
 }
+
+private class GravityRotationStateHolder(
+    var continuousTarget: Float,
+    var previousWindowRotation: DeviceRotation
+)
 
 /**
  * Rotates a square or circular icon/button in-place around its center in the draw/layer phase so it

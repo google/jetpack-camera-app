@@ -18,7 +18,10 @@ package com.google.jetpackcamera.model
 import android.view.Surface
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class DeviceRotationTest {
 
     @Test
@@ -88,6 +91,33 @@ class DeviceRotationTest {
                 windowRotation = DeviceRotation.Rotated270
             )
         ).isEqualTo(0)
+
+        // Exhaustively verify all 16 (deviceRotation x windowRotation) combinations.
+        val expectedDegrees = mapOf(
+            (DeviceRotation.Natural to DeviceRotation.Natural) to 0,
+            (DeviceRotation.Natural to DeviceRotation.Rotated90) to 90,
+            (DeviceRotation.Natural to DeviceRotation.Rotated180) to 0,
+            (DeviceRotation.Natural to DeviceRotation.Rotated270) to 270,
+            (DeviceRotation.Rotated90 to DeviceRotation.Natural) to 270,
+            (DeviceRotation.Rotated90 to DeviceRotation.Rotated90) to 0,
+            (DeviceRotation.Rotated90 to DeviceRotation.Rotated180) to 90,
+            (DeviceRotation.Rotated90 to DeviceRotation.Rotated270) to 0,
+            (DeviceRotation.Rotated180 to DeviceRotation.Natural) to 0,
+            (DeviceRotation.Rotated180 to DeviceRotation.Rotated90) to 270,
+            (DeviceRotation.Rotated180 to DeviceRotation.Rotated180) to 0,
+            (DeviceRotation.Rotated180 to DeviceRotation.Rotated270) to 90,
+            (DeviceRotation.Rotated270 to DeviceRotation.Natural) to 90,
+            (DeviceRotation.Rotated270 to DeviceRotation.Rotated90) to 0,
+            (DeviceRotation.Rotated270 to DeviceRotation.Rotated180) to 270,
+            (DeviceRotation.Rotated270 to DeviceRotation.Rotated270) to 0
+        )
+        for (deviceRotation in DeviceRotation.entries) {
+            for (windowRotation in DeviceRotation.entries) {
+                assertThat(
+                    deviceRotation.toGravityRotationDegrees(windowRotation = windowRotation)
+                ).isEqualTo(expectedDegrees.getValue(deviceRotation to windowRotation))
+            }
+        }
     }
 
     @Test
