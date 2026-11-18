@@ -107,6 +107,9 @@ private const val DISABLED_CONTENT_ALPHA = 0.38f
 private const val SETTLE_DAMPING_RATIO = 0.8f
 private const val SETTLE_STIFFNESS = 380f
 
+/** How far, in pixels, the row can be from an anchor and still be at rest on that item. */
+private const val AT_REST_TOLERANCE_PX = 0.5f
+
 /**
  * How long the carousel waits, after committing a sub-mode and once the row stops moving, for the
  * selected sub-mode to change to it before returning to the selected sub-mode.
@@ -347,8 +350,13 @@ fun CaptureModeCarousel(
             if (settledId != lastSettledId || wasUserMovingRow) {
                 lastSettledId = settledId
                 wasUserMovingRow = false
-                if (settledId != (snapshot.pendingCommitId ?: snapshot.selectedId)) {
-                    commit(settledId)
+                // The item is read from the offset rather than from the settled value, which is
+                // updated only after the fling that ends the movement returns.
+                val restingId = state.itemAtRest()
+                if (restingId != null &&
+                    restingId != (snapshot.pendingCommitId ?: snapshot.selectedId)
+                ) {
+                    commit(restingId)
                     return@collectLatest
                 }
             }
@@ -555,6 +563,17 @@ private data class CarouselSnapshot(
  *   selected sub-mode changes away from [id] and back.
  */
 private data class PendingCommit(val id: CaptureSubModeId, val awaitsEarlierSelection: Boolean)
+
+/**
+ * The item whose anchor the row is at, or `null` if the row is between anchors or its offset is not
+ * yet initialized.
+ */
+private fun <T> AnchoredDraggableState<T>.itemAtRest(): T? {
+    val offset = offset
+    if (offset.isNaN()) return null
+    val closest = anchors.closestAnchor(offset) ?: return null
+    return closest.takeIf { abs(anchors.positionOf(it) - offset) <= AT_REST_TOLERANCE_PX }
+}
 
 /** Runs [block] with this count incremented, so that the count reports how many such blocks run. */
 private inline fun <R> MutableIntState.countWhile(block: () -> R): R {
