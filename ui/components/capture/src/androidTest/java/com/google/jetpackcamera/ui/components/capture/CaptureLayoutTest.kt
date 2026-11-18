@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.content.Context
+import android.os.Build
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,6 +44,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
 import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
 import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.common.truth.Truth.assertThat
@@ -62,11 +64,13 @@ class CaptureLayoutTest {
 
     @Before
     fun setUp() {
-        composeTestRule.enableAccessibilityChecks(
-            AccessibilityValidator().setRunChecksFromRootView(true).also {
-                it.setThrowExceptionFor(AccessibilityCheckResultType.ERROR)
-            }
-        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            composeTestRule.enableAccessibilityChecks(
+                AccessibilityValidator()
+                    .setRunChecksFromRootView(true)
+                    .setThrowExceptionFor(AccessibilityCheckResultType.ERROR)
+            )
+        }
     }
 
     private fun getResString(@StringRes resId: Int): String =
@@ -104,6 +108,7 @@ class CaptureLayoutTest {
         )
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureScaffoldLayout_dragHandle_hasButtonRoleAndAccessibilityLabel() {
         composeTestRule.setContent {
@@ -150,12 +155,10 @@ class CaptureLayoutTest {
         assertThat(onDismissCalled).isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureScaffoldLayout_scrim_displayedWhenExpanded_andClickCallsDismiss() {
         var onDismissCalled = false
-        val targetDescription = getResString(
-            R.string.quick_settings_btn_close_expanded_settings_description
-        )
 
         composeTestRule.setContent {
             val state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
@@ -165,11 +168,21 @@ class CaptureLayoutTest {
             )
         }
 
+        val scrimDescription = getResString(R.string.quick_settings_scrim_description)
+        val dismissLabel = getResString(
+            R.string.quick_settings_btn_close_expanded_settings_description
+        )
+
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
             .assertIsDisplayed()
-            .assertContentDescriptionEquals(targetDescription)
+            .assertContentDescriptionEquals(scrimDescription)
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.TraversalIndex, 1f))
+            .assert(
+                SemanticsMatcher("onClickLabel equals $dismissLabel") { node ->
+                    node.config.getOrNull(SemanticsActions.OnClick)?.label == dismissLabel
+                }
+            )
             .performClick()
 
         assertThat(onDismissCalled).isTrue()
@@ -202,6 +215,7 @@ class CaptureLayoutTest {
         assertThat(onDismissCalled).isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureScaffoldLayout_scrim_doesNotExistWhenHidden() {
         composeTestRule.setContent {

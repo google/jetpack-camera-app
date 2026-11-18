@@ -331,6 +331,8 @@ fun CaptureScaffoldLayout(
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val dismissQuickSettingsLabel =
         stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
+    val quickSettingsScrimDescription =
+        stringResource(R.string.quick_settings_scrim_description)
 
     CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
         Box(modifier = modifier.fillMaxSize()) {
@@ -512,10 +514,11 @@ fun CaptureScaffoldLayout(
                                 .fillMaxSize()
                                 .testTag(QUICK_SETTINGS_SCRIM)
                                 .semantics {
-                                    contentDescription = dismissQuickSettingsLabel
+                                    contentDescription = quickSettingsScrimDescription
                                     traversalIndex = 1f
                                 }
                                 .clickable(
+                                    onClickLabel = dismissQuickSettingsLabel,
                                     role = Role.Button,
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
