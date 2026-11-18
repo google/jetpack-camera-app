@@ -83,9 +83,10 @@ private enum class ShutterClusterSlotId {
  *
  * Tagged with [START_SIDE_RAIL_TAG] and provides a vertical [PreviewOverlaySlotScope] (propagating
  * [Orientation.Vertical] and [controlSize] to [CaptureSlotScope]) to its children. Stacks
- * [CaptureSlots.topBar] at the top, [CaptureSlots.zoomControls] in the center (at
- * [centerVerticalFraction]), and [CaptureSlots.quickSettingsButton] at the bottom in strict
- * top-to-bottom order across both LTR and RTL locales while preserving the caller's
+ * optional [CaptureSlots.topBarLeadingContent] directly above [CaptureSlots.topBar] in the top
+ * section (callers own any vertical spacing between those two slots), [CaptureSlots.zoomControls]
+ * in the center (at [centerVerticalFraction]), and [CaptureSlots.quickSettingsButton] at the bottom
+ * in strict top-to-bottom order across both LTR and RTL locales while preserving the caller's
  * `LocalLayoutDirection` inside each child slot.
  *
  * @param slots [CaptureSlots] supplying the indicator, zoom, and Quick Settings controls.
@@ -140,21 +141,15 @@ internal fun StartSideRail(
         minSectionGap = minSectionGap,
         centerVerticalFraction = centerVerticalFraction,
         topContent = {
-            val leadingContent = slots.topBarLeadingContent
-            if (leadingContent != null) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val leadingContent = slots.topBarLeadingContent
+                if (leadingContent != null) {
                     OverlapAwareCaptureSlot(
                         orientation = Orientation.Vertical,
                         controlSize = controlSize,
                         content = leadingContent
                     )
-                    OverlapAwareCaptureSlot(
-                        orientation = Orientation.Vertical,
-                        controlSize = controlSize,
-                        content = slots.topBar
-                    )
                 }
-            } else {
                 OverlapAwareCaptureSlot(
                     orientation = Orientation.Vertical,
                     controlSize = controlSize,
@@ -451,7 +446,10 @@ private fun VerticalRailLayout(
  * `flipCameraButton -> captureButton -> imageWell` strictly top-to-bottom.
  *
  * Collapses `0x0` omitted slots without adding extra gaps and compresses the inter-control gap
- * proportionally when constrained by short window heights.
+ * proportionally down to [Tokens.MinShutterClusterGap] (`8.dp`) when constrained by short window
+ * heights, omitting `imageWell` and then `flipCameraButton` if remaining height falls below
+ * [Tokens.MinSecondaryControlHeight] (`48.dp`). Caps `captureButton`'s width contribution to
+ * `clusterWidth` at [CaptureButtonDefaults.diameterFor].
  */
 @Composable
 private fun VerticalRailShutterCluster(
@@ -495,9 +493,10 @@ private fun VerticalRailShutterCluster(
         val capturePlaceable: Placeable?
         val activePlaceables = if (constraints.hasBoundedHeight) {
             var remainingHeight = constraints.maxHeight
+            var placedCount = 0
             fun measureSlot(id: ShutterClusterSlotId, isPrimary: Boolean): Placeable? {
                 val measurable = measurables.firstOrNull { it.layoutId == id } ?: return null
-                val reservedGapPx = if (isPrimary) 0 else minGapPx
+                val reservedGapPx = if (placedCount == 0) 0 else minGapPx
                 val maxSlotHeight = (remainingHeight - reservedGapPx).coerceAtLeast(0)
                 if (!isPrimary && maxSlotHeight < minSecondaryHeightPx) {
                     return null
@@ -513,6 +512,7 @@ private fun VerticalRailShutterCluster(
                 if (placeable.height > 0) {
                     remainingHeight =
                         (remainingHeight - placeable.height - reservedGapPx).coerceAtLeast(0)
+                    placedCount++
                     return placeable
                 }
                 return null
@@ -554,11 +554,10 @@ private fun VerticalRailShutterCluster(
         val gapCount = (activePlaceables.size - 1).coerceAtLeast(0)
         val totalChildrenHeight = activePlaceables.sumOf { it.height }
         val targetTotalGapPx = targetGapPx * gapCount
-        val minTotalGapPx = minGapPx * gapCount
 
         val actualTotalGapPx = if (constraints.hasBoundedHeight && gapCount > 0) {
             val maxAllowedGapPx = (constraints.maxHeight - totalChildrenHeight).coerceAtLeast(0)
-            targetTotalGapPx.coerceIn(minOf(minTotalGapPx, maxAllowedGapPx), maxAllowedGapPx)
+            minOf(targetTotalGapPx, maxAllowedGapPx)
         } else {
             targetTotalGapPx
         }
