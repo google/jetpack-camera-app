@@ -188,6 +188,10 @@ internal fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifi
         Button(
             modifier = Modifier.testTag(SETTINGS_BUTTON),
             onClick = onNavigateToSettings,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primaryFixed,
+                contentColor = MaterialTheme.colorScheme.onPrimaryFixed
+            ),
             content = { Text(text = stringResource(R.string.quick_settings_more_text)) }
         )
     }

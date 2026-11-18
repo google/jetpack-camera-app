@@ -279,9 +279,6 @@ internal fun QuickSettingsSideSheet(
     val settleSpec: AnimationSpec<Float> =
         if (disableAnimations) snap() else MaterialTheme.motionScheme.defaultSpatialSpec()
     var isComposed by remember { mutableStateOf(isOpen) }
-    if (isOpen) {
-        isComposed = true
-    }
 
     LaunchedEffect(isOpen) {
         if (isOpen) {
@@ -296,7 +293,7 @@ internal fun QuickSettingsSideSheet(
         }
     }
 
-    if (!isComposed) {
+    if (!isOpen && !isComposed) {
         return
     }
 
@@ -385,25 +382,6 @@ internal fun QuickSettingsSideSheet(
     }
 
     CompositionLocalProvider(LocalLayoutDirection provides sheetContainerDirection) {
-        if (isOpen && sheetState.targetValue == SideSheetValue.Expanded) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(scrimColor)
-                    .testTag(QUICK_SETTINGS_SCRIM)
-                    .semantics {
-                        contentDescription = dismissDescription
-                        traversalIndex = 1f
-                    }
-                    .clickable(
-                        role = Role.Button,
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = { currentOnDismissRequest() }
-                    )
-            )
-        }
-
         Box(
             modifier = modifier
                 .fillMaxSize()
@@ -423,6 +401,25 @@ internal fun QuickSettingsSideSheet(
                 .semantics { isTraversalGroup = true },
             contentAlignment = contentAlignment
         ) {
+            if (isOpen && sheetState.targetValue == SideSheetValue.Expanded) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(scrimColor)
+                        .testTag(QUICK_SETTINGS_SCRIM)
+                        .semantics {
+                            contentDescription = dismissDescription
+                            traversalIndex = 1f
+                        }
+                        .clickable(
+                            role = Role.Button,
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { currentOnDismissRequest() }
+                        )
+                )
+            }
+
             Surface(
                 modifier = Modifier
                     .windowInsetsPadding(windowInsets)
@@ -506,6 +503,7 @@ internal fun QuickSettingsSideSheet(
                             Box(
                                 modifier = Modifier
                                     .weight(1f, fill = false)
+                                    .align(Alignment.Top)
                                     // Undo the container's overshoot stretch for the content.
                                     .graphicsLayer {
                                         val overshoot = overshootPastExpanded(
