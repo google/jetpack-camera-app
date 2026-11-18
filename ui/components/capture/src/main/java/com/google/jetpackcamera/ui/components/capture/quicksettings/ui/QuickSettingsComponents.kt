@@ -46,6 +46,7 @@ import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.testTag
@@ -106,7 +107,14 @@ import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 //
 // ////////////////////////////////////////////////////
 /**
- * Button to toggle open quick settings.
+ * Circular medium icon button (`56.dp × 56.dp` at full scale) that toggles the quick settings
+ * panel.
+ *
+ * The container background adapts to viewfinder overlap via [LocalCameraControlBackgroundStyle]
+ * (`20%` white over a black background, `60%` black over the viewfinder). When disabled, the
+ * container keeps its overlap-aware background color while the icon dims to `38%` opacity. Both
+ * container and icon scale down uniformly when the adaptive layout solver compacts the bottom
+ * toolbar row.
  *
  * @param isOpen Whether the quick settings panel is currently open.
  * @param onClick The behavior for when this button is clicked.
@@ -125,9 +133,7 @@ fun ToggleQuickSettingsButton(
     val toolbarScale = layoutSolution?.toolbarHeight?.let { toolbarHeight ->
         (toolbarHeight / CameraLayoutDefaults.BottomToolbarHeight).coerceIn(0f, 1f)
     } ?: 1f
-    val baseButtonSize = IconButtonDefaults.mediumContainerSize(
-        IconButtonDefaults.IconButtonWidthOption.Narrow
-    )
+    val baseButtonSize = IconButtonDefaults.mediumContainerSize()
     val buttonSize = DpSize(
         width = baseButtonSize.width * toolbarScale,
         height = baseButtonSize.height * toolbarScale
@@ -729,4 +735,46 @@ private fun PreviewSettingRowDark() {
             }
         }
     }
+}
+
+/**
+ * Shows a [ToggleQuickSettingsButton] over a gray gradient, using the
+ * [LocalCameraControlBackgroundStyle] provided by the caller.
+ *
+ * @param enabled whether the button is interactive. When `false`, the container keeps its
+ * overlap-aware background color while the icon is dimmed.
+ */
+@Composable
+private fun PreviewToggleQuickSettingsButton(enabled: Boolean = true) {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        Box(
+            modifier = Modifier
+                .background(Brush.verticalGradient(colors = listOf(Color.Gray, Color.DarkGray)))
+                .padding(8.dp)
+        ) {
+            ToggleQuickSettingsButton(
+                isOpen = false,
+                onClick = {},
+                enabled = enabled
+            )
+        }
+    }
+}
+
+/**
+ * Preview of the [ToggleQuickSettingsButton] in its enabled state.
+ */
+@Preview
+@Composable
+internal fun ToggleQuickSettingsButtonEnabledPreview() {
+    PreviewToggleQuickSettingsButton(enabled = true)
+}
+
+/**
+ * Preview of the [ToggleQuickSettingsButton] in its disabled state.
+ */
+@Preview
+@Composable
+internal fun ToggleQuickSettingsButtonDisabledPreview() {
+    PreviewToggleQuickSettingsButton(enabled = false)
 }
