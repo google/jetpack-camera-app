@@ -27,10 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
-<<<<<<< HEAD
 import androidx.compose.ui.Alignment
-=======
->>>>>>> kim/adaptive/debug-layout-readout
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.onSizeChanged

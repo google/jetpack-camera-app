@@ -45,18 +45,16 @@ private object CompactShortTokens {
     val RailHorizontalPaddingTotal = 16.dp
     val MinRailSlotWidthFloor = 36.dp
     val MinCenterHudWidthFloor = 48.dp
-    val QuickSettingsCardMaxWidth = 320.dp
 
     // Proportional height fractions of the usable inner rail height so controls scale down
     // harmoniously without clipping or overlap in condensed short windows (< 480dp on both axes,
     // such as 360x360dp or 320x340dp with visible multi-window status bars).
     const val RAIL_WIDTH_FRACTION = 0.22f
-    const val INDICATOR_MAX_HEIGHT_FRACTION = 0.20f
-    const val ZOOM_MAX_HEIGHT_FRACTION = 0.45f
-    const val QUICK_SETTINGS_BUTTON_FRACTION = 0.16f
-    const val SHUTTER_DIAMETER_FRACTION = 0.22f
-    const val SECONDARY_ACTION_FRACTION = 0.15f
-    const val MODE_TOGGLE_HEIGHT_FRACTION = 0.15f
+    const val INDICATOR_MAX_HEIGHT_FRACTION = 0.22f
+    const val QUICK_SETTINGS_BUTTON_FRACTION = 0.20f
+    const val SHUTTER_DIAMETER_FRACTION = 0.25f
+    const val SECONDARY_ACTION_FRACTION = 0.20f
+    const val MODE_TOGGLE_HEIGHT_FRACTION = 0.20f
     const val CENTER_HUD_HEIGHT_FRACTION = 0.12f
 }
 
@@ -70,8 +68,9 @@ private object CompactShortTokens {
  * [BoxWithConstraints], wraps [slots] with proportional `Modifier.sizeIn` caps so controls never
  * clip or overlap vertically, provides [LocalActiveCaptureLayout] = `"CompactShortLayout"`, and
  * delegates to [SideRailCaptureScaffold] with `isCompactHeight = true`, condensed `8.dp` chrome
- * padding, scoped [LocalCaptureRtlPolicy] (`mirrorSideRails`), and an in-hierarchy floating Quick
- * Settings card (`maxCardWidth <= 320.dp`).
+ * padding, and scoped [LocalCaptureRtlPolicy] (`mirrorSideRails`). Quick Settings opens in the
+ * [SideRailCaptureScaffold] bottom sheet, as on the other side-rail layouts. The image well and
+ * zoom bar are hidden because they cannot fit legibly.
  *
  * @param slots [CaptureSlots] supplying the side-rail controls, HUD overlays, Quick Settings
  *   content, snackbar, and error dialog.
@@ -82,8 +81,8 @@ private object CompactShortTokens {
  * @param controlsVisible Whether the camera control slots should be composed and visible.
  * @param isErrorDialogShowing Whether a modal camera error dialog is currently visible above the
  *   capture chrome.
- * @param onDismissQuickSettings Callback invoked when Quick Settings is dismissed via scrim tap or
- *   system back/escape.
+ * @param onDismissQuickSettings Callback invoked when Quick Settings is dismissed via back press,
+ *   scrim tap, or the bottom sheet drag handle.
  * @param overlay Optional overlay composable drawn above the viewfinder and controls.
  * @param screenFlashOverlay Full-bleed screen flash composable drawn above all chrome and system
  *   bar areas.
@@ -114,7 +113,7 @@ internal fun CompactShortLayout(
             (maxHeight - verticalInsets).coerceAtLeast(CompactShortTokens.ZeroSize)
 
         val railSlotMaxWidth = min(
-            CaptureSlotTokens.ModeToggleCompactWidth,
+            CaptureSlotTokens.ModeToggleMiniWidth,
             (availableWidth * CompactShortTokens.RAIL_WIDTH_FRACTION)
                 .coerceAtLeast(CompactShortTokens.MinRailSlotWidthFloor)
         )
@@ -128,36 +127,13 @@ internal fun CompactShortLayout(
                 estimatedRailFootprint = estimatedRailFootprint
             )
         }
-        val cardMaxWidth = min(
-            CompactShortTokens.QuickSettingsCardMaxWidth,
-            (availableWidth - CompactShortTokens.CondensedChromePadding * 2)
-                .coerceAtLeast(CompactShortTokens.ZeroSize)
-        )
-        val cardMaxHeight = (availableHeight - CompactShortTokens.CondensedChromePadding * 2)
-            .coerceAtLeast(CompactShortTokens.ZeroSize)
-
-        val config = remember(cardMaxWidth, cardMaxHeight) {
-            SideRailPostureConfig(
-                activeLayoutName = "CompactShortLayout",
-                isCompactHeight = true,
-                railTopPadding = CompactShortTokens.CondensedChromePadding,
-                railBottomPadding = CompactShortTokens.CondensedChromePadding,
-                railHorizontalPadding = CompactShortTokens.CondensedChromePadding,
-                railMinSectionGap = CompactShortTokens.CondensedMinSectionGap,
-                centerVerticalFraction = 0.50f,
-                hudVerticalPadding = CompactShortTokens.CondensedChromePadding,
-                quickSettingsCardMaxWidth = cardMaxWidth,
-                quickSettingsCardMaxHeight = cardMaxHeight,
-                clearRailsForQuickSettings = false
-            )
-        }
 
         SideRailCaptureScaffold(
             slots = condensedSlots,
             viewfinder = viewfinder,
             modifier = Modifier.fillMaxSize(),
             state = state,
-            config = config,
+            config = CompactShortConfig,
             controlsVisible = controlsVisible,
             isErrorDialogShowing = isErrorDialogShowing,
             onDismissQuickSettings = onDismissQuickSettings,
@@ -166,6 +142,21 @@ internal fun CompactShortLayout(
         )
     }
 }
+
+/**
+ * Side-rail configuration for [CompactShortLayout]: condensed chrome padding and compact-height
+ * controls.
+ */
+private val CompactShortConfig = SideRailPostureConfig(
+    activeLayoutName = "CompactShortLayout",
+    isCompactHeight = true,
+    railTopPadding = CompactShortTokens.CondensedChromePadding,
+    railBottomPadding = CompactShortTokens.CondensedChromePadding,
+    railHorizontalPadding = CompactShortTokens.CondensedChromePadding,
+    railMinSectionGap = CompactShortTokens.CondensedMinSectionGap,
+    centerVerticalFraction = 0.50f,
+    hudVerticalPadding = CompactShortTokens.CondensedChromePadding
+)
 
 private fun CaptureSlots.withCondensedSizeCaps(
     availableWidth: Dp,
@@ -177,12 +168,8 @@ private fun CaptureSlots.withCondensedSizeCaps(
         .coerceAtLeast(CompactShortTokens.ZeroSize)
 
     val indicatorMaxHeight = min(
-        CaptureSlotTokens.IndicatorCompactMainAxisSize,
+        CaptureSlotTokens.IndicatorMiniMainAxisSize,
         innerRailHeight * CompactShortTokens.INDICATOR_MAX_HEIGHT_FRACTION
-    )
-    val zoomMaxHeight = min(
-        CaptureSlotTokens.ZoomCompactMainAxisSize,
-        innerRailHeight * CompactShortTokens.ZOOM_MAX_HEIGHT_FRACTION
     )
     val quickSettingsButtonMaxSize = min(
         min(
@@ -193,20 +180,20 @@ private fun CaptureSlots.withCondensedSizeCaps(
     )
     val shutterMaxDiameter = min(
         min(
-            CaptureSlotTokens.ShutterCompactDiameter,
+            CaptureSlotTokens.ShutterMiniDiameter,
             innerRailHeight * CompactShortTokens.SHUTTER_DIAMETER_FRACTION
         ),
         railSlotMaxWidth
     )
     val secondaryActionMaxSize = min(
         min(
-            CaptureSlotTokens.SecondaryActionCompactSize,
+            CaptureSlotTokens.SecondaryActionMiniSize,
             innerRailHeight * CompactShortTokens.SECONDARY_ACTION_FRACTION
         ),
         railSlotMaxWidth
     )
     val modeToggleMaxHeight = min(
-        CaptureSlotTokens.ModeToggleCompactHeight,
+        CaptureSlotTokens.ModeToggleMiniHeight,
         innerRailHeight * CompactShortTokens.MODE_TOGGLE_HEIGHT_FRACTION
     )
 
@@ -228,14 +215,19 @@ private fun CaptureSlots.withCondensedSizeCaps(
                 slot = original.topBar
             )
         },
-        zoomControls = { mod ->
-            ConstrainedSlot(
-                modifier = mod,
-                maxWidth = railSlotMaxWidth,
-                maxHeight = zoomMaxHeight,
-                slot = original.zoomControls
-            )
+        topBarLeadingContent = original.topBarLeadingContent?.let { leading ->
+            { mod ->
+                ConstrainedSlot(
+                    modifier = mod,
+                    maxWidth = quickSettingsButtonMaxSize,
+                    maxHeight = quickSettingsButtonMaxSize,
+                    slot = leading
+                )
+            }
         },
+        // Hidden: condensed short windows cannot fit a legible zoom bar in the start rail. Restore
+        // once a condensed zoom control is available for this layout.
+        zoomControls = {},
         quickSettingsButton = { mod ->
             ConstrainedSlot(
                 modifier = mod,
@@ -260,14 +252,9 @@ private fun CaptureSlots.withCondensedSizeCaps(
                 slot = original.flipCameraButton
             )
         },
-        imageWell = { mod ->
-            ConstrainedSlot(
-                modifier = mod,
-                maxWidth = secondaryActionMaxSize,
-                maxHeight = secondaryActionMaxSize,
-                slot = original.imageWell
-            )
-        },
+        // Hidden: condensed short windows cannot fit the image well alongside the flip button,
+        // shutter, and capture mode toggle in the end rail.
+        imageWell = {},
         captureModeToggle = { mod ->
             ConstrainedSlot(
                 modifier = mod,

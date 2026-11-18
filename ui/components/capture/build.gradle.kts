@@ -39,10 +39,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    @Suppress("UnstableApiUsage")
     testOptions {
         unitTests {
             isReturnDefaultValues = true
             isIncludeAndroidResources = true
+        }
+        managedDevices {
+            localDevices {
+                create("pixel8Api34") {
+                    device = "Pixel 8"
+                    apiLevel = 34
+                    systemImageSource = "aosp_atd"
+                }
+            }
         }
     }
 
@@ -124,6 +134,7 @@ dependencies {
 
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
+    implementation(project(":ui:components"))
     implementation(project(":ui:controller"))
     implementation(project(":core:camera"))
     implementation(project(":core:common"))

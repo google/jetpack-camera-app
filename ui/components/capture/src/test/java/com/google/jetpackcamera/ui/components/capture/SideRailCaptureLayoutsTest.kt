@@ -16,6 +16,8 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.view.View
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
@@ -35,6 +38,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.isDialog
@@ -42,7 +46,7 @@ import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -62,8 +66,8 @@ import org.robolectric.annotation.Config
 /**
  * Unit tests for [FoldableLayout], [TabletPortraitLayout], [TabletLandscapeLayout], and
  * [CompactPortraitLayout] verifying full-bleed viewfinder geometry, portrait tablet lower thumb
- * zone (`0.70f`), rail-cleared [QuickSettingsOverlayCard] non-overlap, [CaptureRtlPolicy] modes,
- * live multi-window `statusBars` clearance, and [LocalActiveCaptureLayout] reporting.
+ * zone (`0.70f`), the Quick Settings bottom sheet and its dismissal, [CaptureRtlPolicy] modes, live
+ * multi-window `statusBars` clearance, and [LocalActiveCaptureLayout] reporting.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(qualifiers = "w852dp-h883dp")
@@ -142,6 +146,41 @@ class SideRailCaptureLayoutsTest {
         assertThat(elapsedBounds.right.value).isLessThan(endRail.left.value)
     }
 
+    @Test
+    fun foldableLayout_fixedMediumRails_centerControls48dpFromEdgesAndClear3By4Viewfinder() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                FoldableLayout(
+                    slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
+                    viewfinder = { vfModifier ->
+                        Box(modifier = vfModifier.testTag(PREVIEW_DISPLAY))
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        // Both rails are a fixed 96dp wide and anchored to the window edges.
+        val startRail = boundsOf(START_SIDE_RAIL_TAG)
+        val endRail = boundsOf(END_SIDE_RAIL_TAG)
+        assertThat(startRail.right.value - startRail.left.value).isWithin(TOLERANCE).of(96f)
+        assertThat(endRail.right.value - endRail.left.value).isWithin(TOLERANCE).of(96f)
+
+        // Controls sit on a stable column 48dp from each edge.
+        val zoom = boundsOf(ZOOM_BUTTON_ROW_TAG)
+        val shutter = boundsOf(CAPTURE_BUTTON)
+        assertThat((zoom.left.value + zoom.right.value) / 2f).isWithin(TOLERANCE).of(48f)
+        assertThat((shutter.left.value + shutter.right.value) / 2f)
+            .isWithin(TOLERANCE)
+            .of(852f - 48f)
+
+        // ControlSize.Medium sizes the shutter at 72dp, which clears the ~95dp black bar beside a
+        // 3:4 viewfinder (883 * 3 / 4 = 662.25dp wide, centered).
+        assertThat(shutter.right.value - shutter.left.value).isWithin(TOLERANCE).of(72f)
+        val viewfinderRight = (852f + 883f * 3f / 4f) / 2f
+        assertThat(shutter.left.value).isAtLeast(viewfinderRight)
+    }
+
     @Config(qualifiers = "w800dp-h1280dp")
     @Test
     fun tabletPortraitLayout_shiftsZoomAndShutterIntoLowerThumbZoneWithoutCollision() {
@@ -187,89 +226,101 @@ class SideRailCaptureLayoutsTest {
     }
 
     @Test
-    fun foldableLayout_quickSettingsOverlayCard_clearsBothSideRailsAndHasSingleSheetTag() {
+    fun foldableLayout_quickSettings_opensSingleBottomSheetAndScrimTapDismisses() {
         val state = CaptureScaffoldState(isInitiallyExpanded = false)
+        var dismissCount = 0
 
         composeTestRule.setContent {
             MaterialTheme {
                 FoldableLayout(
                     slots = PlaceholderCaptureSlots.sideRail(tagQuickSettingsOverlay = true),
                     viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
-                    state = state
+                    state = state,
+                    onDismissQuickSettings = { dismissCount++ }
                 )
             }
         }
         composeTestRule.waitForIdle()
-
-        composeTestRule
-            .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-            .assertDoesNotExist()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertDoesNotExist()
+        assertThat(composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_SCRIM).fetchSemanticsNodes())
+            .isEmpty()
 
         composeTestRule.runOnIdle { state.showQuickSettings() }
         composeTestRule.waitForIdle()
 
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-            .assertIsDisplayed()
-            .assert(!isPopup())
-            .assert(!isDialog())
-            .assert(!hasAnyAncestor(isPopup()))
-            .assert(!hasAnyAncestor(isDialog()))
-        assertThat(
-            composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_BOTTOM_SHEET).fetchSemanticsNodes()
-        ).hasSize(1)
-
-        val startRail = boundsOf(START_SIDE_RAIL_TAG)
-        val endRail = boundsOf(END_SIDE_RAIL_TAG)
-        val cardBounds = boundsOf(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-
-        // Card clears both StartSideRail and EndSideRail by >= 12dp and respects 380dp max width.
-        assertThat(cardBounds.left.value).isAtLeast(startRail.right.value + 12f - TOLERANCE)
-        assertThat(cardBounds.right.value).isAtMost(endRail.left.value - 12f + TOLERANCE)
-        assertThat(cardBounds.right.value - cardBounds.left.value).isAtMost(380f + TOLERANCE)
-        assertThat(cardBounds.bottom.value).isWithin(TOLERANCE).of(883f - 24f)
-
+        assertSingleInHierarchyBottomSheet()
         // Background camera chrome is pruned from accessibility while Quick Settings is open.
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(hiddenFromA11yAncestor)
 
-        // Scrim tap dismisses CaptureScaffoldState.isQuickSettingsOpen.
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).performClick()
+        // Tapping the exposed scrim above the sheet dismisses Quick Settings.
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).performTouchInput {
+            click(Offset(right - 10f, top + 10f))
+        }
         composeTestRule.waitForIdle()
         assertThat(state.isQuickSettingsOpen).isFalse()
-        composeTestRule
-            .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-            .assertDoesNotExist()
+        assertThat(dismissCount).isEqualTo(1)
     }
 
     @Config(qualifiers = "w800dp-h1280dp")
     @Test
-    fun tabletPortraitLayout_quickSettingsOverlayCard_clearsBothSideRailsAt800x1280() {
+    fun tabletPortraitLayout_quickSettings_opensSingleBottomSheetAndBackPressDismisses() {
         val state = CaptureScaffoldState(isInitiallyExpanded = true)
+        var dismissCount = 0
+        lateinit var backDispatcher: OnBackPressedDispatcher
 
         composeTestRule.setContent {
+            backDispatcher = LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
             MaterialTheme {
                 TabletPortraitLayout(
                     slots = PlaceholderCaptureSlots.sideRail(tagQuickSettingsOverlay = true),
                     viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
-                    state = state
+                    state = state,
+                    onDismissQuickSettings = { dismissCount++ }
                 )
             }
         }
         composeTestRule.waitForIdle()
 
-        val startRail = boundsOf(START_SIDE_RAIL_TAG)
-        val endRail = boundsOf(END_SIDE_RAIL_TAG)
-        val cardBounds = boundsOf(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
+        assertSingleInHierarchyBottomSheet()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(hiddenFromA11yAncestor)
 
-        assertThat(cardBounds.left.value).isAtLeast(startRail.right.value + 12f - TOLERANCE)
-        assertThat(cardBounds.right.value).isAtMost(endRail.left.value - 12f + TOLERANCE)
-        assertThat(cardBounds.right.value - cardBounds.left.value).isAtMost(412f + TOLERANCE)
-        assertThat(cardBounds.bottom.value).isWithin(TOLERANCE).of(1280f - 48f)
+        composeTestRule.runOnUiThread { backDispatcher.onBackPressed() }
+        composeTestRule.waitForIdle()
+        assertThat(state.isQuickSettingsOpen).isFalse()
+        assertThat(dismissCount).isEqualTo(1)
     }
 
     @Config(qualifiers = "w1280dp-h800dp")
     @Test
-    fun tabletLandscapeLayout_rtlPolicies_scopeRailAndCardPlacementAndRestoreLocaleDirection() {
+    fun tabletLandscapeLayout_quickSettings_opensSingleBottomSheetAndScrimTapDismisses() {
+        val state = CaptureScaffoldState(isInitiallyExpanded = true)
+        var dismissCount = 0
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                TabletLandscapeLayout(
+                    slots = PlaceholderCaptureSlots.sideRail(tagQuickSettingsOverlay = true),
+                    viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+                    state = state,
+                    onDismissQuickSettings = { dismissCount++ }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertSingleInHierarchyBottomSheet()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(hiddenFromA11yAncestor)
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).performTouchInput {
+            click(Offset(right - 10f, top + 10f))
+        }
+        composeTestRule.waitForIdle()
+        assertThat(state.isQuickSettingsOpen).isFalse()
+        assertThat(dismissCount).isEqualTo(1)
+    }
+
+    @Config(qualifiers = "w1280dp-h800dp")
+    @Test
+    fun tabletLandscapeLayout_rtlPolicies_scopeRailPlacementAndRestoreLocaleDirection() {
         var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
         var rtlPolicy by mutableStateOf(CaptureRtlPolicy(mirrorSideRails = false))
         val state = CaptureScaffoldState(isInitiallyExpanded = false)
@@ -371,7 +422,7 @@ class SideRailCaptureLayoutsTest {
         assertThat(boundsOf(END_SIDE_RAIL_TAG).right.value).isWithin(TOLERANCE).of(1280f)
 
         // 1. RTL with default CaptureRtlPolicy(false, false): rails stay on physical left/right
-        // while QuickSettingsOverlayCard clears StartSideRail on the left and restores RTL inside!
+        // while every slot, including the Quick Settings sheet content, keeps the RTL locale.
         observedDirections.clear()
         layoutDirection = LayoutDirection.Rtl
         rtlPolicy = CaptureRtlPolicy(mirrorSideRails = false, mirrorCompactBottomBar = false)
@@ -380,12 +431,10 @@ class SideRailCaptureLayoutsTest {
 
         val unmirroredStartRail = boundsOf(START_SIDE_RAIL_TAG)
         val unmirroredEndRail = boundsOf(END_SIDE_RAIL_TAG)
-        val unmirroredCard = boundsOf(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
         assertThat(unmirroredStartRail.left.value).isWithin(TOLERANCE).of(0f)
         assertThat(unmirroredEndRail.right.value).isWithin(TOLERANCE).of(1280f)
-        assertThat(unmirroredCard.left.value)
-            .isAtLeast(unmirroredStartRail.right.value + 12f - TOLERANCE)
-        assertThat(unmirroredCard.right.value).isLessThan(1280f / 2f)
+        assertSingleInHierarchyBottomSheet()
+        assertThat(observedDirections).containsKey("quickSettingsOverlay")
 
         observedDirections.forEach { (slotName, dir) ->
             assertWithMessage("Slot $slotName must receive LayoutDirection.Rtl")
@@ -400,21 +449,16 @@ class SideRailCaptureLayoutsTest {
         }
 
         // 2. RTL with mirrored CaptureRtlPolicy(true, true): StartSideRail swaps to physical right
-        // and QuickSettingsOverlayCard anchors beside StartSideRail on the right without overlap!
+        // and EndSideRail to physical left.
         observedDirections.clear()
         rtlPolicy = CaptureRtlPolicy(mirrorSideRails = true, mirrorCompactBottomBar = true)
         composeTestRule.waitForIdle()
 
         val mirroredStartRail = boundsOf(START_SIDE_RAIL_TAG)
         val mirroredEndRail = boundsOf(END_SIDE_RAIL_TAG)
-        val mirroredCard = boundsOf(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
         assertThat(mirroredStartRail.right.value).isWithin(TOLERANCE).of(1280f)
         assertThat(mirroredEndRail.left.value).isWithin(TOLERANCE).of(0f)
-        assertThat(mirroredCard.right.value)
-            .isAtMost(mirroredStartRail.left.value - 12f + TOLERANCE)
-        assertThat(mirroredCard.left.value)
-            .isAtLeast(mirroredEndRail.right.value + 12f - TOLERANCE)
-        assertThat(mirroredCard.left.value).isGreaterThan(1280f / 2f)
+        assertSingleInHierarchyBottomSheet()
 
         observedDirections.forEach { (slotName, dir) ->
             assertWithMessage("Slot $slotName must receive LayoutDirection.Rtl when mirrored")
@@ -702,14 +746,15 @@ class SideRailCaptureLayoutsTest {
         }
         composeTestRule.waitForIdle()
 
-        // Error dialog supersedes Quick Settings card and prunes background accessibility.
+        // Error dialog supersedes Quick Settings: the sheet scrim is removed and background
+        // accessibility is pruned.
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertIsDisplayed()
         composeTestRule.runOnIdle { showErrorDialog = true }
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithTag(CAMERA_ERROR_DIALOG_TAG).assertIsDisplayed()
-        composeTestRule
-            .onNodeWithTag(QUICK_SETTINGS_OVERLAY_CARD_PLACEHOLDER_TAG)
-            .assertDoesNotExist()
+        assertThat(composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_SCRIM).fetchSemanticsNodes())
+            .isEmpty()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(hiddenFromA11yAncestor)
 
         // controlsVisible = false removes side rails while keeping viewfinder visible.
@@ -724,6 +769,23 @@ class SideRailCaptureLayoutsTest {
         composeTestRule.onNodeWithTag(START_SIDE_RAIL_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(END_SIDE_RAIL_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).assertIsDisplayed()
+    }
+
+    /**
+     * Asserts that exactly one Quick Settings sheet is displayed in the composition hierarchy, not
+     * in a popup or dialog window, with its drag handle.
+     */
+    private fun assertSingleInHierarchyBottomSheet() {
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+            .assertIsDisplayed()
+            .assert(!isPopup())
+            .assert(!isDialog())
+            .assert(!hasAnyAncestor(isPopup()))
+            .assert(!hasAnyAncestor(isDialog()))
+        assertThat(
+            composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_BOTTOM_SHEET).fetchSemanticsNodes()
+        ).hasSize(1)
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).assertIsDisplayed()
     }
 
     private fun dispatchStatusBarInsets(view: View, statusBarHeightPx: Int, visible: Boolean) {

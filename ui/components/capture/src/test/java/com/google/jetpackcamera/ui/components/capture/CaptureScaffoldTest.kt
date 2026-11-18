@@ -23,6 +23,7 @@ import android.util.Range
 import android.view.Surface
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
@@ -32,10 +33,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -221,6 +224,45 @@ class CaptureScaffoldTest {
         composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertIsDisplayed()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON).assertDoesNotExist()
+    }
+
+    @Test
+    fun quickSettingsDefaults_compactLayoutsGetScrollableSheetContent_othersGetBareContent() {
+        var activeLayout by mutableStateOf("CompactShortLayout")
+        val quickSettingsController = FakeQuickSettingsController()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalActiveCaptureLayout provides activeLayout) {
+                // Shorter than the content, so sheet content must scroll to stay reachable.
+                Box(modifier = Modifier.height(SHORT_QUICK_SETTINGS_HEIGHT)) {
+                    CaptureScaffoldDefaults.QuickSettings(
+                        uiState = availableQuickSettingsUiState,
+                        controller = quickSettingsController,
+                        onNavigateToSettings = {}
+                    )
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
+
+        activeLayout = "CompactPortraitLayout"
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
+
+        // TODO(#648): Foldable and tablet layouts temporarily use the scrollable bottom sheet
+        // content until #648 introduces the Quick Settings side sheet.
+        activeLayout = "FoldableLayout"
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
+
+        activeLayout = "TabletLandscapeLayout"
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
+
+        activeLayout = "UnknownNonSheetLayout"
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(!hasScrollAction())
     }
 
     @Test
@@ -677,7 +719,7 @@ class CaptureScaffoldTest {
         composeTestRule.runOnIdle { isRecording = false }
         composeTestRule.waitForIdle()
         assertThat(activity.requestedOrientation)
-            .isEqualTo(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+            .isEqualTo(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR)
     }
 
     @Test
@@ -744,8 +786,39 @@ class CaptureScaffoldTest {
         assertThat(clicked).isTrue()
     }
 
+    @Test
+    fun captureScaffold_rendersTopBarLeadingContentWhenProvided() {
+        var showLeading by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                CaptureScaffold(
+                    captureUiState = { LOADING_CAPTURE_UI_STATE_SKELETON },
+                    surfaceRequest = null,
+                    topBarLeadingContent = if (showLeading) {
+                        { slotModifier ->
+                            Box(slotModifier.size(48.dp).testTag(TOP_BAR_LEADING_TAG))
+                        }
+                    } else {
+                        null
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(TOP_BAR_LEADING_TAG).assertDoesNotExist()
+
+        composeTestRule.runOnIdle { showLeading = true }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(TOP_BAR_LEADING_TAG).assertIsDisplayed()
+    }
+
     private companion object {
         const val TOP_START_BUTTON_TAG = "test_top_start_button"
+        const val TOP_BAR_LEADING_TAG = "test_top_bar_leading"
         const val ICON_BUTTON_TAG = "test_icon_button"
+        val SHORT_QUICK_SETTINGS_HEIGHT = 120.dp
     }
 }

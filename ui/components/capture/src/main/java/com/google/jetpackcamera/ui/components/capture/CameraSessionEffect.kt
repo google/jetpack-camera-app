@@ -152,10 +152,15 @@ fun CameraSessionEffect(
         val activity = LocalActivity.current ?: remember(context) { context.findSessionActivity() }
         DisposableEffect(activity, isRecording) {
             if (activity != null && isRecording) {
-                val previousOrientation = activity.requestedOrientation
                 activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LOCKED
                 onDispose {
-                    activity.requestedOrientation = previousOrientation
+                    val config = activity.resources.configuration
+                    activity.requestedOrientation =
+                        if (!activity.isInMultiWindowMode && config.smallestScreenWidthDp < 600) {
+                            ActivityInfo.SCREEN_ORIENTATION_NOSENSOR
+                        } else {
+                            ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                        }
                 }
             } else {
                 onDispose {}

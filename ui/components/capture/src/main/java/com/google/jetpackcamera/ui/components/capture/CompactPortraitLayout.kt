@@ -16,9 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -42,21 +40,13 @@ import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
 import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.BottomSheetScaffold
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.minimumInteractiveComponentSize
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -77,15 +67,12 @@ import androidx.compose.ui.layout.layoutId
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
@@ -112,8 +99,6 @@ val LocalActiveCaptureLayout: ProvidableCompositionLocal<String> =
  * Dimension and spacing constants used by [CompactPortraitLayout].
  */
 internal object CompactPortraitTokens {
-    val SheetPeekHeight = 0.dp
-    val SheetTopCornerRadius = 28.dp
     val DefaultMinTouchTarget = 48.dp
     val ZeroInset = 0.dp
 
@@ -221,6 +206,9 @@ internal fun Modifier.suppressBackgroundForModal(isModalOpen: Boolean): Modifier
  *   capture chrome.
  * @param includeStatusBarsInTopBar Whether live visible `WindowInsets.statusBars` top padding is
  *   included in the top indicator bar so multi-window status bars never overlap status indicators.
+ * @param isSlim Whether the window is classified as a slim compact posture
+ *   ([com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutMode.COMPACT_SLIM]), in
+ *   which case the lower controls row requests mini control sizes so they fit the narrow width.
  * @param onDismissQuickSettings Callback invoked when Quick Settings is dismissed via the drag
  *   handle or scrim.
  * @param onRequiresImmersiveChange Callback notified when the portrait layout solver requires or
@@ -229,7 +217,7 @@ internal fun Modifier.suppressBackgroundForModal(isModalOpen: Boolean): Modifier
  * @param screenFlashOverlay Full-bleed screen flash composable drawn above all chrome and system
  *   bar areas.
  */
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun CompactPortraitLayout(
     slots: CaptureSlots,
@@ -241,6 +229,7 @@ internal fun CompactPortraitLayout(
     controlsVisible: Boolean = true,
     isErrorDialogShowing: Boolean = false,
     includeStatusBarsInTopBar: Boolean = true,
+    isSlim: Boolean = false,
     onDismissQuickSettings: () -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
@@ -258,39 +247,12 @@ internal fun CompactPortraitLayout(
     val snackBar = slots.snackBar
     val topStartContent = slots.topStartContent
     val viewfinderTopEndContent = slots.viewfinderTopEndContent
+    val topBarLeadingContent = slots.topBarLeadingContent
     val topBarTrailingContent = slots.topBarTrailingContent
     val errorDialog = slots.errorDialog
-    val bottomSheetState = rememberBottomSheetState(
-        initialValue = if (state.isQuickSettingsOpen) SheetValue.Expanded else SheetValue.Hidden,
-        confirmValueChange = { targetValue ->
-            if (targetValue == SheetValue.Hidden) {
-                state.dismissQuickSettings()
-            } else if (targetValue == SheetValue.Expanded) {
-                state.showQuickSettings()
-            }
-            true
-        }
-    )
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = bottomSheetState,
-        snackbarHostState = state.snackbarHostState
-    )
-    LaunchedEffect(state.isQuickSettingsOpen) {
-        if (state.isQuickSettingsOpen) {
-            if (bottomSheetState.targetValue != SheetValue.Expanded) {
-                bottomSheetState.expand()
-            }
-        } else {
-            if (bottomSheetState.isVisible || bottomSheetState.targetValue != SheetValue.Hidden) {
-                bottomSheetState.hide()
-            }
-        }
-    }
 
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val localeDirection = LocalLayoutDirection.current
-    val dismissQuickSettingsLabel =
-        stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
     val handleDismissQuickSettings = {
         state.dismissQuickSettings()
         onDismissQuickSettings()
@@ -298,12 +260,6 @@ internal fun CompactPortraitLayout(
 
     SeamlessRotationAnimationEffect()
 
-    val isSheetVisible = state.isQuickSettingsOpen ||
-        bottomSheetState.isVisible ||
-        bottomSheetState.targetValue == SheetValue.Expanded
-    var isErrorDialogPlaced by remember { mutableStateOf(false) }
-    val isErrorModalActive = isErrorDialogShowing || isErrorDialogPlaced
-    val isModalOpen = isSheetVisible || isErrorModalActive
     val externalVfMetrics = remember { ExternalViewfinderMetrics() }
 
     BoxWithConstraints(
@@ -418,7 +374,7 @@ internal fun CompactPortraitLayout(
                 metrics = externalVfMetrics,
                 modifier = Modifier
                     .fillMaxSize()
-                    .suppressBackgroundForModal(isModalOpen)
+                    .suppressBackgroundForModal(state.isQuickSettingsOpen || isErrorDialogShowing)
             )
         }
 
@@ -435,39 +391,23 @@ internal fun CompactPortraitLayout(
                     .fillMaxSize()
                     .counterRotateToPortrait(effectiveWindowRotation)
             ) {
-                BottomSheetScaffold(
+                QuickSettingsBottomSheetScaffold(
                     modifier = Modifier.fillMaxSize(),
-                    scaffoldState = scaffoldState,
-                    containerColor = Color.Transparent,
-                    sheetPeekHeight = CompactPortraitTokens.SheetPeekHeight,
-                    sheetDragHandle = {
-                        BottomSheetDefaults.DragHandle(
-                            modifier = Modifier
-                                .testTag(QUICK_SETTINGS_DRAG_HANDLE)
-                                .minimumInteractiveComponentSize()
-                                .clickable(
-                                    role = Role.Button,
-                                    onClickLabel = dismissQuickSettingsLabel,
-                                    onClick = handleDismissQuickSettings
-                                )
-                        )
-                    },
-                    sheetShape = RoundedCornerShape(
-                        topStart = CompactPortraitTokens.SheetTopCornerRadius,
-                        topEnd = CompactPortraitTokens.SheetTopCornerRadius
-                    ),
-                    sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                    state = state,
+                    onDismissQuickSettings = onDismissQuickSettings,
                     sheetContent = {
                         CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
                             OverlapAwareCaptureSlot(
                                 orientation = Orientation.Vertical,
-                                isCompact = false,
+                                controlSize = ControlSize.Standard,
                                 content = slots.quickSettingsOverlay
                             )
                         }
-                    },
-                    snackbarHost = {}
-                ) {
+                    }
+                ) { isSheetVisible ->
+                    var isErrorDialogPlaced by remember { mutableStateOf(false) }
+                    val isErrorModalActive = isErrorDialogShowing || isErrorDialogPlaced
+                    val isModalOpen = isSheetVisible || isErrorModalActive
                     BoxWithConstraints(
                         modifier = Modifier.fillMaxSize()
                     ) {
@@ -483,6 +423,7 @@ internal fun CompactPortraitLayout(
                                 windowHeight = maxHeight,
                                 windowRotation = effectiveWindowRotation,
                                 includeStatusBarsInTopBar = includeStatusBarsInTopBar,
+                                isSlim = isSlim,
                                 controlsVisible = controlsVisible,
                                 precomputedSolution = portraitSolution,
                                 modifier = Modifier.suppressBackgroundForModal(isModalOpen),
@@ -491,6 +432,7 @@ internal fun CompactPortraitLayout(
                                 viewfinderTopEndContent = viewfinderTopEndContent,
                                 onRequiresImmersiveChange = onRequiresImmersiveChange,
                                 indicatorRow = indicatorRow,
+                                topBarLeadingContent = topBarLeadingContent,
                                 topBarTrailingContent = topBarTrailingContent,
                                 elapsedTimeDisplay = elapsedTimeDisplay,
                                 zoomControls = zoomLevelDisplay,
@@ -530,6 +472,7 @@ internal fun CompactPortraitLayout(
                                     topBarTopPadding = topBarTopPadding,
                                     windowRotation = effectiveWindowRotation,
                                     indicatorRow = indicatorRow,
+                                    topBarLeadingContent = topBarLeadingContent,
                                     topBarTrailingContent = topBarTrailingContent
                                 )
                                 Box {
@@ -556,6 +499,7 @@ internal fun CompactPortraitLayout(
                                 if (controlsVisible) {
                                     VerticalMaterialControls(
                                         windowRotation = effectiveWindowRotation,
+                                        isSlim = isSlim,
                                         captureButton = captureButton,
                                         imageWell = imageWell,
                                         flipCameraButton = flipCameraButton,
@@ -589,21 +533,7 @@ internal fun CompactPortraitLayout(
                         }
 
                         if (isSheetVisible && !isErrorModalActive) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .testTag(QUICK_SETTINGS_SCRIM)
-                                    .semantics {
-                                        contentDescription = dismissQuickSettingsLabel
-                                        traversalIndex = 1f
-                                    }
-                                    .clickable(
-                                        role = Role.Button,
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                        onClick = handleDismissQuickSettings
-                                    )
-                            )
+                            QuickSettingsSheetScrim(onDismiss = handleDismissQuickSettings)
                         }
 
                         CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
@@ -789,6 +719,7 @@ private fun CompactTopBarBox(
     topBarHeight: Dp,
     topBarTopPadding: Dp,
     indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)?,
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     modifier: Modifier = Modifier,
     windowRotation: DeviceRotation = LocalWindowRotation.current
@@ -808,9 +739,10 @@ private fun CompactTopBarBox(
                 .padding(horizontal = CompactPortraitTokens.LowerSectionHorizontalPadding),
             contentAlignment = Alignment.CenterStart
         ) {
-            OverlapAwareStyleProvider(orientation = Orientation.Horizontal) {
-                indicatorRow(Modifier)
-            }
+            TopBarLeadingAndIndicatorsRow(
+                topBarLeadingContent = topBarLeadingContent,
+                indicatorRow = indicatorRow
+            )
             OverlapAwareStyleProvider(
                 modifier = Modifier.align(Alignment.CenterEnd),
                 orientation = Orientation.Horizontal
@@ -821,11 +753,50 @@ private fun CompactTopBarBox(
     }
 }
 
+/**
+ * Lays out the optional [topBarLeadingContent] directly adjacent to [indicatorRow] inside the top
+ * status/indicator bar, flowing the leading content past any overlapping corner display cutout.
+ *
+ * @param topBarLeadingContent optional leading slot content scoped to [PreviewOverlaySlotScope].
+ * @param indicatorRow top status indicator row content scoped to [PreviewOverlaySlotScope].
+ * @param modifier [Modifier] applied to the outer row.
+ * @param cutoutRectsOverride synthetic cutout rectangles in local coordinates for deterministic
+ *   unit testing; when empty, the host window's display cutout is used.
+ */
+@Composable
+internal fun TopBarLeadingAndIndicatorsRow(
+    topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)?,
+    indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    modifier: Modifier = Modifier,
+    cutoutRectsOverride: List<IntRect> = emptyList()
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (topBarLeadingContent != null) {
+            OverlapAwareStyleProvider(orientation = Orientation.Horizontal) {
+                val slotScope = this
+                CutoutAwareRow(
+                    modifier = Modifier.wrapContentWidth(align = Alignment.Start),
+                    horizontalSpacing = 0.dp,
+                    cutoutRectsOverride = cutoutRectsOverride.ifEmpty { null }
+                ) {
+                    slotScope.topBarLeadingContent(Modifier)
+                }
+            }
+        }
+        OverlapAwareStyleProvider(orientation = Orientation.Horizontal) {
+            indicatorRow(Modifier)
+        }
+    }
+}
+
 @Composable
 private fun CompactCaptureRow(
     bottomBarDirection: LayoutDirection,
     localeDirection: LayoutDirection,
-    isCompact: Boolean,
+    controlSize: ControlSize,
     imageWell: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     flipCameraButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
@@ -849,7 +820,7 @@ private fun CompactCaptureRow(
                     CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
                         OverlapAwareStyleProvider(
                             orientation = Orientation.Horizontal,
-                            isCompact = isCompact
+                            controlSize = controlSize
                         ) {
                             imageWell(Modifier)
                         }
@@ -860,7 +831,7 @@ private fun CompactCaptureRow(
             CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
                 OverlapAwareStyleProvider(
                     orientation = Orientation.Horizontal,
-                    isCompact = isCompact
+                    controlSize = controlSize
                 ) {
                     captureButton(Modifier)
                 }
@@ -875,7 +846,7 @@ private fun CompactCaptureRow(
                 CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
                     OverlapAwareStyleProvider(
                         orientation = Orientation.Horizontal,
-                        isCompact = isCompact
+                        controlSize = controlSize
                     ) {
                         flipCameraButton(Modifier)
                     }
@@ -885,55 +856,79 @@ private fun CompactCaptureRow(
     }
 }
 
+/**
+ * Lower controls row hosting the Quick Settings toggle at the start and the capture mode toggle
+ * switch in the center.
+ *
+ * The start and end slots are sized to their content (the end slot mirrors the start slot's width
+ * so the center stays visually centered), and the center slot receives all remaining width rather
+ * than an equal third. This keeps the capture mode toggle from being squeezed in slim panes such
+ * as 1/3 split-screen windows.
+ */
 @Composable
 private fun CompactBottomToolbar(
     bottomBarDirection: LayoutDirection,
     localeDirection: LayoutDirection,
-    isCompact: Boolean,
+    controlSize: ControlSize,
     quickSettingsToggleButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     captureModeToggleSwitch: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     modifier: Modifier = Modifier
 ) {
     CompositionLocalProvider(LocalLayoutDirection provides bottomBarDirection) {
-        Row(
+        Layout(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(horizontal = CompactPortraitTokens.LowerSectionHorizontalPadding),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                    OverlapAwareStyleProvider(
-                        orientation = Orientation.Horizontal,
-                        isCompact = isCompact
-                    ) {
-                        quickSettingsToggleButton(Modifier)
+            content = {
+                Box(contentAlignment = Alignment.CenterStart) {
+                    CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                        OverlapAwareStyleProvider(
+                            orientation = Orientation.Horizontal,
+                            controlSize = controlSize
+                        ) {
+                            quickSettingsToggleButton(Modifier)
+                        }
+                    }
+                }
+
+                Box(contentAlignment = Alignment.Center) {
+                    CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                        OverlapAwareStyleProvider(
+                            orientation = Orientation.Horizontal,
+                            controlSize = controlSize
+                        ) {
+                            captureModeToggleSwitch(Modifier)
+                        }
                     }
                 }
             }
+        ) { measurables, constraints ->
+            val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+            val startPlaceable = measurables[0].measure(looseConstraints)
+            // Reserve the start slot's width on both sides so the center slot stays centered.
+            val sideWidth = startPlaceable.width
+            val centerMaxWidth = (constraints.maxWidth - sideWidth * 2).coerceAtLeast(0)
+            val centerPlaceable =
+                measurables[1].measure(looseConstraints.copy(maxWidth = centerMaxWidth))
 
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                    OverlapAwareStyleProvider(
-                        orientation = Orientation.Horizontal,
-                        isCompact = isCompact
-                    ) {
-                        captureModeToggleSwitch(Modifier)
-                    }
-                }
+            val contentHeight = maxOf(startPlaceable.height, centerPlaceable.height)
+            val layoutHeight = if (constraints.hasBoundedHeight) {
+                contentHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
+            } else {
+                maxOf(contentHeight, constraints.minHeight)
             }
+            val layoutWidth = constraints.maxWidth
 
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.CenterEnd
-            ) {}
+            layout(layoutWidth, layoutHeight) {
+                startPlaceable.placeRelative(
+                    x = 0,
+                    y = (layoutHeight - startPlaceable.height) / 2
+                )
+                centerPlaceable.placeRelative(
+                    x = (layoutWidth - centerPlaceable.width) / 2,
+                    y = (layoutHeight - centerPlaceable.height) / 2
+                )
+            }
         }
     }
 }
@@ -941,6 +936,8 @@ private fun CompactBottomToolbar(
 /**
  * Constraint-solved portrait handheld layout placing the viewfinder and bottom control bands via
  * [CameraLayoutSolver].
+ *
+ * When [isSlim] is `true`, the lower controls row requests mini control sizes.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -952,6 +949,7 @@ internal fun AdaptivePortraitCaptureLayout(
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     onRequiresImmersiveChange: (Boolean) -> Unit,
     indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
+    topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)?,
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     elapsedTimeDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
@@ -966,6 +964,7 @@ internal fun AdaptivePortraitCaptureLayout(
     windowRotation: DeviceRotation = LocalWindowRotation.current,
     includeStatusBarsInTopBar: Boolean = true,
     precomputedSolution: CameraLayoutSolution? = null,
+    isSlim: Boolean = false,
     snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     val localeDirection = LocalLayoutDirection.current
@@ -1052,6 +1051,7 @@ internal fun AdaptivePortraitCaptureLayout(
                     windowRotation = windowRotation,
                     modifier = Modifier.layoutId(CaptureSlotId.TopBar),
                     indicatorRow = indicatorRow,
+                    topBarLeadingContent = topBarLeadingContent,
                     topBarTrailingContent = topBarTrailingContent
                 )
 
@@ -1078,7 +1078,7 @@ internal fun AdaptivePortraitCaptureLayout(
                     CompactCaptureRow(
                         bottomBarDirection = bottomBarDirection,
                         localeDirection = localeDirection,
-                        isCompact = false,
+                        controlSize = ControlSize.Standard,
                         imageWell = imageWell,
                         captureButton = captureButton,
                         flipCameraButton = flipCameraButton,
@@ -1099,7 +1099,7 @@ internal fun AdaptivePortraitCaptureLayout(
                     CompactBottomToolbar(
                         bottomBarDirection = bottomBarDirection,
                         localeDirection = localeDirection,
-                        isCompact = false,
+                        controlSize = if (isSlim) ControlSize.Mini else ControlSize.Standard,
                         quickSettingsToggleButton = quickSettingsToggleButton,
                         captureModeToggleSwitch = captureModeToggleSwitch,
                         modifier = Modifier.layoutId(CaptureSlotId.BottomToolbar)
@@ -1229,12 +1229,16 @@ internal fun AdaptivePortraitCaptureLayout(
 /**
  * Compressed-capable vertical bottom control stack used for non-handheld compact panes (such as
  * squarer split-screen windows narrower than `600.dp`).
+ *
+ * The lower controls row requests mini control sizes on short screens or when [isSlim] is
+ * `true`.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun VerticalMaterialControls(
     modifier: Modifier = Modifier,
     windowRotation: DeviceRotation = LocalWindowRotation.current,
+    isSlim: Boolean = false,
     captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     imageWell: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
@@ -1262,6 +1266,9 @@ internal fun VerticalMaterialControls(
             .asPaddingValues()
             .calculateBottomPadding()
         val isShortScreen = maxHeight < CompactPortraitTokens.ShortScreenThreshold
+        val controlSize = if (isShortScreen) ControlSize.Mini else ControlSize.Standard
+        val toolbarControlSize =
+            if (isShortScreen || isSlim) ControlSize.Mini else ControlSize.Standard
         val maxBottomPad = max(
             CompactPortraitTokens.TargetBottomClearance - navBarBottom,
             CompactPortraitTokens.MinNavMargin
@@ -1288,14 +1295,14 @@ internal fun VerticalMaterialControls(
 
                 OverlapAwareStyleProvider(
                     orientation = Orientation.Horizontal,
-                    isCompact = isShortScreen
+                    controlSize = controlSize
                 ) {
                     elapsedTimeDisplay(Modifier)
                 }
 
                 OverlapAwareStyleProvider(
                     orientation = Orientation.Horizontal,
-                    isCompact = isShortScreen
+                    controlSize = controlSize
                 ) {
                     zoomControls(Modifier)
                 }
@@ -1306,7 +1313,7 @@ internal fun VerticalMaterialControls(
                     CompactCaptureRow(
                         bottomBarDirection = bottomBarDirection,
                         localeDirection = localeDirection,
-                        isCompact = isShortScreen,
+                        controlSize = controlSize,
                         imageWell = imageWell,
                         captureButton = captureButton,
                         flipCameraButton = flipCameraButton,
@@ -1322,7 +1329,7 @@ internal fun VerticalMaterialControls(
                 ) {
                     OverlapAwareStyleProvider(
                         orientation = Orientation.Horizontal,
-                        isCompact = isShortScreen
+                        controlSize = controlSize
                     ) {
                         captureModeCarousel(Modifier)
                     }
@@ -1331,7 +1338,7 @@ internal fun VerticalMaterialControls(
                 CompactBottomToolbar(
                     bottomBarDirection = bottomBarDirection,
                     localeDirection = localeDirection,
-                    isCompact = isShortScreen,
+                    controlSize = toolbarControlSize,
                     quickSettingsToggleButton = quickSettingsToggleButton,
                     captureModeToggleSwitch = captureModeToggleSwitch,
                     modifier = Modifier.height(CompactPortraitTokens.LowerSectionHeight)

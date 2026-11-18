@@ -1040,7 +1040,8 @@ class CameraXCameraSystem(
                 ) {
                     imageFormat
                 } else {
-                    // TODO: Consider preserving user preference for HDR instead of permanently resetting to JPEG here when switching lenses.
+                    // TODO: Consider preserving user preference for HDR instead of permanently
+                    //  resetting to JPEG here when switching lenses.
                     ImageOutputFormat.JPEG
                 }
 

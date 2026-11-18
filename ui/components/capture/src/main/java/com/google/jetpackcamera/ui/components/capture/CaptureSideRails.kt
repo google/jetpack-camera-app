@@ -18,10 +18,12 @@ package com.google.jetpackcamera.ui.components.capture
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
@@ -32,6 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import kotlin.math.roundToInt
 
 /**
@@ -49,10 +52,17 @@ private object Tokens {
 
     val StandardShutterClusterGap = 48.dp
     val CompactShutterClusterGap = 20.dp
+    val MinShutterClusterGap = 8.dp
+    val MinSecondaryControlHeight = 48.dp
 
     val PreviewStandardRailHeight = 800.dp
     val PreviewTabletPortraitRailHeight = 1280.dp
     val PreviewCompactRailHeight = 360.dp
+    val PreviewTabletPortraitTopPadding = 32.dp
+    val PreviewTabletPortraitBottomPadding = 48.dp
+    val PreviewTabletPortraitHorizontalPadding = 24.dp
+    val PreviewTabletPortraitMinSectionGap = 16.dp
+    const val PREVIEW_TABLET_PORTRAIT_CENTER_FRACTION = 0.70f
     val PreviewBackgroundColor = Color(0xFF121212)
 }
 
@@ -72,19 +82,26 @@ private enum class ShutterClusterSlotId {
  * Start-aligned vertical control rail for landscape, foldable, and tablet capture layouts.
  *
  * Tagged with [START_SIDE_RAIL_TAG] and provides a vertical [PreviewOverlaySlotScope] (propagating
- * [Orientation.Vertical] and [isCompactHeight] to [CaptureSlotScope]) to its children. Stacks
- * [CaptureSlots.topBar] at the top, [CaptureSlots.zoomControls] in the center (at
- * [centerVerticalFraction]), and [CaptureSlots.quickSettingsButton] at the bottom in strict
- * top-to-bottom order across both LTR and RTL locales while preserving the caller's
+ * [Orientation.Vertical] and [controlSize] to [CaptureSlotScope]) to its children. Stacks
+ * optional [CaptureSlots.topBarLeadingContent] directly above [CaptureSlots.topBar] in the top
+ * section (callers own any vertical spacing between those two slots), [CaptureSlots.zoomControls]
+ * in the center (at [centerVerticalFraction]), and [CaptureSlots.quickSettingsButton] at the bottom
+ * in strict top-to-bottom order across both LTR and RTL locales while preserving the caller's
  * `LocalLayoutDirection` inside each child slot.
  *
  * @param slots [CaptureSlots] supplying the indicator, zoom, and Quick Settings controls.
- * @param modifier [Modifier] applied to the rail container.
+ * @param modifier [Modifier] applied to the rail container. When given a bounded `maxHeight`
+ *   (such as `.fillMaxHeight()` or `.height(...)`), the rail fills that height; when height is
+ *   unbounded, the rail wraps the intrinsic heights and minimum gaps of its active sections.
  * @param isCompactHeight Whether compact vertical padding, section gaps, and slot sizing hints are
  *   enabled for short windows.
+ * @param controlSize Control size variant requested for the rail's controls; defaults to
+ *   [ControlSize.Mini] when [isCompactHeight] is `true` and [ControlSize.Standard] otherwise.
  * @param topPadding Top inset inside the rail before the top indicator section.
  * @param bottomPadding Bottom inset inside the rail below the Quick Settings button.
  * @param horizontalPadding Horizontal padding applied on both sides of the rail content.
+ * @param railWidth Fixed rail width; when specified, controls are centered on the rail
+ *   regardless of their measured width instead of the rail hugging its widest control.
  * @param minSectionGap Minimum collision-free vertical gap enforced between adjacent sections.
  * @param centerVerticalFraction Target vertical midpoint fraction (`0f..1f`) for the center zoom
  *   section (`0.5f` for vertically centered rails; `0.70f` for tall portrait tablet thumb zones),
@@ -95,6 +112,7 @@ internal fun StartSideRail(
     slots: CaptureSlots,
     modifier: Modifier = Modifier,
     isCompactHeight: Boolean = false,
+    controlSize: ControlSize = if (isCompactHeight) ControlSize.Mini else ControlSize.Standard,
     topPadding: Dp = if (isCompactHeight) {
         Tokens.CompactVerticalPadding
     } else {
@@ -106,6 +124,7 @@ internal fun StartSideRail(
         Tokens.StandardVerticalPadding
     },
     horizontalPadding: Dp = Tokens.HorizontalPadding,
+    railWidth: Dp = Dp.Unspecified,
     minSectionGap: Dp = if (isCompactHeight) {
         Tokens.CompactMinSectionGap
     } else {
@@ -118,26 +137,37 @@ internal fun StartSideRail(
         topPadding = topPadding,
         bottomPadding = bottomPadding,
         horizontalPadding = horizontalPadding,
+        railWidth = railWidth,
         minSectionGap = minSectionGap,
         centerVerticalFraction = centerVerticalFraction,
         topContent = {
-            OverlapAwareCaptureSlot(
-                orientation = Orientation.Vertical,
-                isCompact = isCompactHeight,
-                content = slots.topBar
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val leadingContent = slots.topBarLeadingContent
+                if (leadingContent != null) {
+                    OverlapAwareCaptureSlot(
+                        orientation = Orientation.Vertical,
+                        controlSize = controlSize,
+                        content = leadingContent
+                    )
+                }
+                OverlapAwareCaptureSlot(
+                    orientation = Orientation.Vertical,
+                    controlSize = controlSize,
+                    content = slots.topBar
+                )
+            }
         },
         centerContent = {
             OverlapAwareCaptureSlot(
                 orientation = Orientation.Vertical,
-                isCompact = isCompactHeight,
+                controlSize = controlSize,
                 content = slots.zoomControls
             )
         },
         bottomContent = {
             OverlapAwareCaptureSlot(
                 orientation = Orientation.Vertical,
-                isCompact = isCompactHeight,
+                controlSize = controlSize,
                 content = slots.quickSettingsButton
             )
         }
@@ -149,20 +179,26 @@ internal fun StartSideRail(
  * layouts.
  *
  * Tagged with [END_SIDE_RAIL_TAG] and provides a vertical [PreviewOverlaySlotScope] (propagating
- * [Orientation.Vertical] and [isCompactHeight] to [CaptureSlotScope]) to its children. Places
+ * [Orientation.Vertical] and [controlSize] to [CaptureSlotScope]) to its children. Places
  * [CaptureSlots.elapsedTimeDisplay] at the top when [showElapsedTimeInRail] is `true`, renders a
  * collision-free vertical cluster of `flipCameraButton -> captureButton -> imageWell` around
  * [centerVerticalFraction], and anchors [CaptureSlots.captureModeToggle] at the bottom in strict
  * top-to-bottom order across both LTR and RTL locales.
  *
  * @param slots [CaptureSlots] supplying the shutter cluster, elapsed timer, and mode toggle.
- * @param modifier [Modifier] applied to the rail container.
+ * @param modifier [Modifier] applied to the rail container. When given a bounded `maxHeight`
+ *   (such as `.fillMaxHeight()` or `.height(...)`), the rail fills that height; when height is
+ *   unbounded, the rail wraps the intrinsic heights and minimum gaps of its active sections.
  * @param isCompactHeight Whether compact vertical spacing and compact slot hints are active.
+ * @param controlSize Control size variant requested for the rail's controls; defaults to
+ *   [ControlSize.Mini] when [isCompactHeight] is `true` and [ControlSize.Standard] otherwise.
  * @param showElapsedTimeInRail Whether [CaptureSlots.elapsedTimeDisplay] is hosted in the top slot
  *   of this rail.
  * @param topPadding Top inset inside the rail before the optional top timer section.
  * @param bottomPadding Bottom inset inside the rail below the capture mode toggle.
  * @param horizontalPadding Horizontal padding applied on both sides of the rail content.
+ * @param railWidth Fixed rail width; when specified, controls are centered on the rail
+ *   regardless of their measured width instead of the rail hugging its widest control.
  * @param minSectionGap Minimum collision-free vertical gap enforced between adjacent sections.
  * @param centerVerticalFraction Target vertical midpoint fraction (`0f..1f`) for the shutter
  *   cluster (`0.5f` for vertically centered rails; `0.70f` for tall portrait tablet thumb zones),
@@ -173,6 +209,7 @@ internal fun EndSideRail(
     slots: CaptureSlots,
     modifier: Modifier = Modifier,
     isCompactHeight: Boolean = false,
+    controlSize: ControlSize = if (isCompactHeight) ControlSize.Mini else ControlSize.Standard,
     showElapsedTimeInRail: Boolean = false,
     topPadding: Dp = if (isCompactHeight) {
         Tokens.CompactVerticalPadding
@@ -185,6 +222,7 @@ internal fun EndSideRail(
         Tokens.StandardVerticalPadding
     },
     horizontalPadding: Dp = Tokens.HorizontalPadding,
+    railWidth: Dp = Dp.Unspecified,
     minSectionGap: Dp = if (isCompactHeight) {
         Tokens.CompactMinSectionGap
     } else {
@@ -197,13 +235,14 @@ internal fun EndSideRail(
         topPadding = topPadding,
         bottomPadding = bottomPadding,
         horizontalPadding = horizontalPadding,
+        railWidth = railWidth,
         minSectionGap = minSectionGap,
         centerVerticalFraction = centerVerticalFraction,
         topContent = {
             if (showElapsedTimeInRail) {
                 OverlapAwareCaptureSlot(
                     orientation = Orientation.Vertical,
-                    isCompact = isCompactHeight,
+                    controlSize = controlSize,
                     content = slots.elapsedTimeDisplay
                 )
             }
@@ -211,13 +250,14 @@ internal fun EndSideRail(
         centerContent = {
             VerticalRailShutterCluster(
                 slots = slots,
-                isCompactHeight = isCompactHeight
+                isCompactHeight = isCompactHeight,
+                controlSize = controlSize
             )
         },
         bottomContent = {
             OverlapAwareCaptureSlot(
                 orientation = Orientation.Vertical,
-                isCompact = isCompactHeight,
+                controlSize = controlSize,
                 content = slots.captureModeToggle
             )
         }
@@ -227,11 +267,13 @@ internal fun EndSideRail(
 /**
  * Collision-free 3-band vertical rail layout (Top, Center, Bottom).
  *
- * Measures Top and Bottom first, constrains Center's `maxHeight` to the remaining vertical budget
- * minus [minSectionGap] buffers, positions Center around [centerVerticalFraction] clamped to
- * `[minCenterY, maxCenterY]`, and places all sections using explicit `place(x, y)` coordinates so
- * RTL layout direction never alters vertical ordering while child composables retain the ambient
- * `LocalLayoutDirection`.
+ * When `constraints.hasBoundedHeight` is `true`, the rail fills `constraints.maxHeight`, measures
+ * Top and Bottom first, constrains Center's `maxHeight` to the remaining vertical budget minus
+ * [minSectionGap] buffers, and positions Center around [centerVerticalFraction] clamped to
+ * `[minCenterY, maxCenterY]`. When height is unbounded, the rail wraps the intrinsic heights of
+ * active sections plus [minSectionGap] and vertical padding. Places all sections using explicit
+ * `place(x, y)` coordinates so RTL layout direction never alters vertical ordering while child
+ * composables retain the ambient `LocalLayoutDirection`.
  */
 @Composable
 private fun VerticalRailLayout(
@@ -239,6 +281,7 @@ private fun VerticalRailLayout(
     topPadding: Dp,
     bottomPadding: Dp,
     horizontalPadding: Dp,
+    railWidth: Dp,
     minSectionGap: Dp,
     centerVerticalFraction: Float,
     topContent: @Composable () -> Unit,
@@ -265,7 +308,10 @@ private fun VerticalRailLayout(
         val gapPx = minSectionGap.roundToPx()
         val clampedFraction = centerVerticalFraction.coerceIn(0f, 1f)
 
-        val innerMaxWidth = if (constraints.hasBoundedWidth) {
+        val fixedRailWidthPx = if (railWidth.isSpecified) railWidth.roundToPx() else null
+        // A fixed-width rail centers its controls on a stable column regardless of their measured
+        // footprint, so controls are measured without a width cap and may overflow symmetrically.
+        val innerMaxWidth = if (fixedRailWidthPx == null && constraints.hasBoundedWidth) {
             (constraints.maxWidth - horizontalPadPx * 2).coerceAtLeast(0)
         } else {
             Constraints.Infinity
@@ -341,10 +387,12 @@ private fun VerticalRailLayout(
             centerPlaceable?.width ?: 0,
             bottomPlaceable?.width ?: 0
         )
-        val railWidth = maxOf(
-            MinSideRailWidth.roundToPx(),
-            maxContentWidth + horizontalPadPx * 2
-        ).coerceIn(constraints.minWidth, constraints.maxWidth)
+        val railWidthPx = (
+            fixedRailWidthPx ?: maxOf(
+                MinSideRailWidth.roundToPx(),
+                maxContentWidth + horizontalPadPx * 2
+            )
+            ).coerceIn(constraints.minWidth, constraints.maxWidth)
 
         val topY = topPadPx
         val minBottomY = topPlaceable?.let { topY + it.height + gapPx } ?: topPadPx
@@ -361,10 +409,10 @@ private fun VerticalRailLayout(
             }
         } ?: minCenterY
 
-        layout(railWidth, railHeight) {
+        layout(railWidthPx, railHeight) {
             topPlaceable?.let { placeable ->
                 placeable.place(
-                    x = (railWidth - placeable.width) / 2,
+                    x = (railWidthPx - placeable.width) / 2,
                     y = topY
                 )
             }
@@ -378,14 +426,14 @@ private fun VerticalRailLayout(
                     minCenterY
                 }
                 placeable.place(
-                    x = (railWidth - placeable.width) / 2,
+                    x = (railWidthPx - placeable.width) / 2,
                     y = centerY
                 )
             }
 
             bottomPlaceable?.let { placeable ->
                 placeable.place(
-                    x = (railWidth - placeable.width) / 2,
+                    x = (railWidthPx - placeable.width) / 2,
                     y = bottomY
                 )
             }
@@ -398,12 +446,16 @@ private fun VerticalRailLayout(
  * `flipCameraButton -> captureButton -> imageWell` strictly top-to-bottom.
  *
  * Collapses `0x0` omitted slots without adding extra gaps and compresses the inter-control gap
- * proportionally when constrained by short window heights.
+ * proportionally down to [Tokens.MinShutterClusterGap] (`8.dp`) when constrained by short window
+ * heights, omitting `imageWell` and then `flipCameraButton` if remaining height falls below
+ * [Tokens.MinSecondaryControlHeight] (`48.dp`). Caps `captureButton`'s width contribution to
+ * `clusterWidth` at [CaptureButtonDefaults.diameterFor].
  */
 @Composable
 private fun VerticalRailShutterCluster(
     slots: CaptureSlots,
     isCompactHeight: Boolean,
+    controlSize: ControlSize,
     modifier: Modifier = Modifier
 ) {
     Layout(
@@ -412,19 +464,19 @@ private fun VerticalRailShutterCluster(
             OverlapAwareCaptureSlot(
                 modifier = Modifier.layoutId(ShutterClusterSlotId.FlipCamera),
                 orientation = Orientation.Vertical,
-                isCompact = isCompactHeight,
+                controlSize = controlSize,
                 content = slots.flipCameraButton
             )
             OverlapAwareCaptureSlot(
                 modifier = Modifier.layoutId(ShutterClusterSlotId.Capture),
                 orientation = Orientation.Vertical,
-                isCompact = isCompactHeight,
+                controlSize = controlSize,
                 content = slots.captureButton
             )
             OverlapAwareCaptureSlot(
                 modifier = Modifier.layoutId(ShutterClusterSlotId.ImageWell),
                 orientation = Orientation.Vertical,
-                isCompact = isCompactHeight,
+                controlSize = controlSize,
                 content = slots.imageWell
             )
         }
@@ -434,21 +486,33 @@ private fun VerticalRailShutterCluster(
         } else {
             Tokens.StandardShutterClusterGap
         }.roundToPx()
+        val minGapPx = Tokens.MinShutterClusterGap.roundToPx()
+        val minSecondaryHeightPx = Tokens.MinSecondaryControlHeight.roundToPx()
+        val nominalCaptureDiameterPx = CaptureButtonDefaults.diameterFor(controlSize).roundToPx()
 
+        val capturePlaceable: Placeable?
         val activePlaceables = if (constraints.hasBoundedHeight) {
             var remainingHeight = constraints.maxHeight
-            fun measureSlot(id: ShutterClusterSlotId): Placeable? {
+            var placedCount = 0
+            fun measureSlot(id: ShutterClusterSlotId, isPrimary: Boolean): Placeable? {
                 val measurable = measurables.firstOrNull { it.layoutId == id } ?: return null
+                val reservedGapPx = if (placedCount == 0) 0 else minGapPx
+                val maxSlotHeight = (remainingHeight - reservedGapPx).coerceAtLeast(0)
+                if (!isPrimary && maxSlotHeight < minSecondaryHeightPx) {
+                    return null
+                }
                 val placeable = measurable.measure(
                     Constraints(
                         minWidth = 0,
                         maxWidth = constraints.maxWidth,
                         minHeight = 0,
-                        maxHeight = remainingHeight
+                        maxHeight = maxSlotHeight
                     )
                 )
                 if (placeable.height > 0) {
-                    remainingHeight = (remainingHeight - placeable.height).coerceAtLeast(0)
+                    remainingHeight =
+                        (remainingHeight - placeable.height - reservedGapPx).coerceAtLeast(0)
+                    placedCount++
                     return placeable
                 }
                 return null
@@ -456,9 +520,9 @@ private fun VerticalRailShutterCluster(
 
             // Measure primary shutter first so it retains priority in extreme micro-heights, then
             // assemble in strict Flip -> Capture -> ImageWell visual order.
-            val capturePlaceable = measureSlot(ShutterClusterSlotId.Capture)
-            val flipPlaceable = measureSlot(ShutterClusterSlotId.FlipCamera)
-            val imageWellPlaceable = measureSlot(ShutterClusterSlotId.ImageWell)
+            capturePlaceable = measureSlot(ShutterClusterSlotId.Capture, isPrimary = true)
+            val flipPlaceable = measureSlot(ShutterClusterSlotId.FlipCamera, isPrimary = false)
+            val imageWellPlaceable = measureSlot(ShutterClusterSlotId.ImageWell, isPrimary = false)
             listOfNotNull(
                 flipPlaceable,
                 capturePlaceable,
@@ -471,11 +535,20 @@ private fun VerticalRailShutterCluster(
                 minHeight = 0,
                 maxHeight = Constraints.Infinity
             )
-            ShutterClusterSlotId.entries.mapNotNull { id ->
-                measurables.firstOrNull { it.layoutId == id }
-                    ?.measure(looseConstraints)
-                    ?.takeIf { it.height > 0 }
-            }
+            val flipPlaceable = measurables.firstOrNull {
+                it.layoutId == ShutterClusterSlotId.FlipCamera
+            }?.measure(looseConstraints)?.takeIf { it.height > 0 }
+            capturePlaceable = measurables.firstOrNull {
+                it.layoutId == ShutterClusterSlotId.Capture
+            }?.measure(looseConstraints)?.takeIf { it.height > 0 }
+            val imageWellPlaceable = measurables.firstOrNull {
+                it.layoutId == ShutterClusterSlotId.ImageWell
+            }?.measure(looseConstraints)?.takeIf { it.height > 0 }
+            listOfNotNull(
+                flipPlaceable,
+                capturePlaceable,
+                imageWellPlaceable
+            )
         }
 
         val gapCount = (activePlaceables.size - 1).coerceAtLeast(0)
@@ -492,8 +565,17 @@ private fun VerticalRailShutterCluster(
         val baseGapPx = if (gapCount > 0) actualTotalGapPx / gapCount else 0
         val extraGapPixels = if (gapCount > 0) actualTotalGapPx % gapCount else 0
 
-        val clusterWidth = (activePlaceables.maxOfOrNull { it.width } ?: 0)
-            .coerceIn(constraints.minWidth, constraints.maxWidth)
+        // Cap the capture button's width contribution at its nominal ring diameter so its
+        // invisible 1.375x drag-to-lock track overflows symmetrically without widening the rail.
+        val clusterWidth = (
+            activePlaceables.maxOfOrNull { placeable ->
+                if (placeable === capturePlaceable) {
+                    minOf(placeable.width, nominalCaptureDiameterPx)
+                } else {
+                    placeable.width
+                }
+            } ?: 0
+            ).coerceIn(constraints.minWidth, constraints.maxWidth)
         val clusterHeight = (totalChildrenHeight + actualTotalGapPx)
             .coerceIn(constraints.minHeight, constraints.maxHeight)
 
@@ -548,11 +630,11 @@ private fun StartSideRailTabletPortraitPreview() {
             StartSideRail(
                 slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
                 modifier = Modifier.height(Tokens.PreviewTabletPortraitRailHeight),
-                topPadding = 32.dp,
-                bottomPadding = 48.dp,
-                horizontalPadding = 24.dp,
-                minSectionGap = 16.dp,
-                centerVerticalFraction = 0.70f
+                topPadding = Tokens.PreviewTabletPortraitTopPadding,
+                bottomPadding = Tokens.PreviewTabletPortraitBottomPadding,
+                horizontalPadding = Tokens.PreviewTabletPortraitHorizontalPadding,
+                minSectionGap = Tokens.PreviewTabletPortraitMinSectionGap,
+                centerVerticalFraction = Tokens.PREVIEW_TABLET_PORTRAIT_CENTER_FRACTION
             )
         }
     }
@@ -620,11 +702,11 @@ private fun EndSideRailTabletPortraitPreview() {
             EndSideRail(
                 slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
                 modifier = Modifier.height(Tokens.PreviewTabletPortraitRailHeight),
-                topPadding = 32.dp,
-                bottomPadding = 48.dp,
-                horizontalPadding = 24.dp,
-                minSectionGap = 16.dp,
-                centerVerticalFraction = 0.70f
+                topPadding = Tokens.PreviewTabletPortraitTopPadding,
+                bottomPadding = Tokens.PreviewTabletPortraitBottomPadding,
+                horizontalPadding = Tokens.PreviewTabletPortraitHorizontalPadding,
+                minSectionGap = Tokens.PreviewTabletPortraitMinSectionGap,
+                centerVerticalFraction = Tokens.PREVIEW_TABLET_PORTRAIT_CENTER_FRACTION
             )
         }
     }

@@ -73,7 +73,7 @@ class CaptureSlotsTest {
         var dismissedCount = 0
         val overViewfinderScope = CaptureSlotScope(
             orientation = Orientation.Vertical,
-            isCompact = true,
+            controlSize = ControlSize.Mini,
             isOverViewfinder = true,
             isRecording = true,
             onDismissQuickSettings = { dismissedCount++ }
@@ -81,11 +81,11 @@ class CaptureSlotsTest {
         val offViewfinderScope = PreviewOverlaySlotScope(
             isOverViewfinder = false,
             orientation = Orientation.Horizontal,
-            isCompact = false
+            controlSize = ControlSize.Standard
         )
 
         assertThat(overViewfinderScope.orientation).isEqualTo(Orientation.Vertical)
-        assertThat(overViewfinderScope.isCompact).isTrue()
+        assertThat(overViewfinderScope.controlSize).isEqualTo(ControlSize.Mini)
         assertThat(overViewfinderScope.isOverViewfinder).isTrue()
         assertThat(overViewfinderScope.isRecording).isTrue()
         assertThat(overViewfinderScope.cameraControlContainerColor).isEqualTo(
@@ -96,7 +96,7 @@ class CaptureSlotsTest {
         assertThat(dismissedCount).isEqualTo(1)
 
         assertThat(offViewfinderScope.orientation).isEqualTo(Orientation.Horizontal)
-        assertThat(offViewfinderScope.isCompact).isFalse()
+        assertThat(offViewfinderScope.controlSize).isEqualTo(ControlSize.Standard)
         assertThat(offViewfinderScope.isOverViewfinder).isFalse()
         assertThat(offViewfinderScope.cameraControlContainerColor).isEqualTo(
             CameraControlBackgroundStyle.WHITE_20.containerColor
@@ -150,5 +150,37 @@ class CaptureSlotsTest {
         useTaggedOverlay = true
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureButtonDefaults_diameterFor_mapsEachControlSize() {
+        assertThat(CaptureButtonDefaults.diameterFor(ControlSize.Mini)).isEqualTo(56.dp)
+        assertThat(CaptureButtonDefaults.diameterFor(ControlSize.Medium)).isEqualTo(72.dp)
+        assertThat(CaptureButtonDefaults.diameterFor(ControlSize.Standard)).isEqualTo(86.dp)
+    }
+
+    @Test
+    fun placeholderShutter_sizesForEachControlSize() {
+        var controlSize by mutableStateOf(ControlSize.Standard)
+        val slots = PlaceholderCaptureSlots.sideRail()
+
+        composeTestRule.setContent {
+            Box(modifier = Modifier.sizeIn(maxWidth = 200.dp, maxHeight = 200.dp)) {
+                CaptureSlotScope(controlSize = controlSize).run {
+                    slots.captureButton(this, Modifier)
+                }
+            }
+        }
+
+        fun shutterHeight() = composeTestRule.onNodeWithTag(CAPTURE_BUTTON).getBoundsInRoot().height
+        assertThat(shutterHeight()).isEqualTo(86.dp)
+
+        controlSize = ControlSize.Medium
+        composeTestRule.waitForIdle()
+        assertThat(shutterHeight()).isEqualTo(72.dp)
+
+        controlSize = ControlSize.Mini
+        composeTestRule.waitForIdle()
+        assertThat(shutterHeight()).isEqualTo(56.dp)
     }
 }

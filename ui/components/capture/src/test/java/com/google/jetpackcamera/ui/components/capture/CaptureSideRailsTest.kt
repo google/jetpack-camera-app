@@ -23,11 +23,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -44,6 +46,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+
+private const val TOLERANCE = 0.5f
 
 /**
  * Unit tests for [StartSideRail], [EndSideRail], [CaptureSlots], and [PreviewOverlaySlotScope].
@@ -119,9 +123,9 @@ class CaptureSideRailsTest {
         assertThat(rtlQuickSettings.bottom).isAtMost(rtlRail.bottom)
 
         // Vertical coordinates must remain identical under RTL while child slots inherit RTL.
-        assertThat(rtlIndicator.top.value).isWithin(0.5f).of(ltrIndicator.top.value)
-        assertThat(rtlZoom.top.value).isWithin(0.5f).of(ltrZoom.top.value)
-        assertThat(rtlQuickSettings.top.value).isWithin(0.5f).of(ltrQuickSettings.top.value)
+        assertThat(rtlIndicator.top.value).isWithin(TOLERANCE).of(ltrIndicator.top.value)
+        assertThat(rtlZoom.top.value).isWithin(TOLERANCE).of(ltrZoom.top.value)
+        assertThat(rtlQuickSettings.top.value).isWithin(TOLERANCE).of(ltrQuickSettings.top.value)
         assertThat(indicatorDirection).isEqualTo(LayoutDirection.Rtl)
         assertThat(zoomDirection).isEqualTo(LayoutDirection.Rtl)
         assertThat(quickSettingsDirection).isEqualTo(LayoutDirection.Rtl)
@@ -199,7 +203,7 @@ class CaptureSideRailsTest {
         ltrBounds.zip(rtlBounds).forEachIndexed { index, (ltrRect, rtlRect) ->
             assertWithMessage("Vertical top for ${orderedTags[index]} should match in LTR and RTL")
                 .that(rtlRect.top.value)
-                .isWithin(0.5f)
+                .isWithin(TOLERANCE)
                 .of(ltrRect.top.value)
         }
     }
@@ -254,13 +258,13 @@ class CaptureSideRailsTest {
                     .isGreaterThan(0.dp)
                 assertWithMessage("$railLabel: $tag top must be >= 0dp")
                     .that(unclipped.top.value)
-                    .isAtLeast(-0.5f)
+                    .isAtLeast(-TOLERANCE)
                 assertWithMessage("$railLabel: $tag bottom must be <= 360dp")
                     .that(unclipped.bottom.value)
-                    .isAtMost(360.5f)
+                    .isAtMost(360f + TOLERANCE)
                 assertWithMessage("$railLabel: $tag should not be clipped vertically")
                     .that(clipped.height.value)
-                    .isWithin(0.5f)
+                    .isWithin(TOLERANCE)
                     .of(unclipped.height.value)
                 unclipped
             }
@@ -270,12 +274,15 @@ class CaptureSideRailsTest {
                         "${tags[i + 1]} top (${unclippedList[i + 1].top})"
                 )
                     .that(unclippedList[i].bottom.value)
-                    .isAtMost(unclippedList[i + 1].top.value + 0.5f)
+                    .isAtMost(unclippedList[i + 1].top.value + TOLERANCE)
             }
         }
 
         verifyRailFitsIn360dp("StartSideRail", startRailTags)
         verifyRailFitsIn360dp("EndSideRail", endRailTags)
+        val toggleBounds = boundsOf(CAPTURE_MODE_TOGGLE_BUTTON)
+        assertThat(toggleBounds.width.value).isWithin(TOLERANCE).of(48f)
+        assertThat(toggleBounds.height.value).isWithin(TOLERANCE).of(92f)
     }
 
     @Test
@@ -399,26 +406,27 @@ class CaptureSideRailsTest {
         assertThat(captureBounds.top).isGreaterThan(640.dp)
         assertThat(zoomBounds.bottom.value).isAtMost(quickSettingsBounds.top.value - 15.5f)
         assertThat(imageWellBounds.bottom.value).isAtMost(modeToggleBounds.top.value - 15.5f)
-        assertThat(startRailBounds.width).isAtLeast(96.dp) // 48dp content + 24dp * 2 padding
+        // 48dp content + 24dp * 2 padding
+        assertThat(startRailBounds.width).isAtLeast(96.dp)
     }
 
     @Test
-    fun sideRails_propagateVerticalOrientationAndCompactFlagDirectly() {
+    fun sideRails_propagateVerticalOrientationAndControlSizeDirectly() {
         var isCompactHeight by mutableStateOf(false)
         var startOrientation: Orientation? = null
-        var startCompact: Boolean? = null
+        var startControlSize: ControlSize? = null
         var endOrientation: Orientation? = null
-        var endCompact: Boolean? = null
+        var endControlSize: ControlSize? = null
 
         val scopedSlots = CaptureSlots(
             topBar = { mod ->
                 startOrientation = orientation
-                startCompact = isCompact
+                startControlSize = controlSize
                 Box(modifier = mod.size(width = 48.dp, height = 96.dp).testTag(VIDEO_QUALITY_TAG))
             },
             captureButton = { mod ->
                 endOrientation = orientation
-                endCompact = isCompact
+                endControlSize = controlSize
                 Box(modifier = mod.size(72.dp).testTag(CAPTURE_BUTTON))
             }
         )
@@ -443,8 +451,8 @@ class CaptureSideRailsTest {
 
         assertThat(startOrientation).isEqualTo(Orientation.Vertical)
         assertThat(endOrientation).isEqualTo(Orientation.Vertical)
-        assertThat(startCompact).isFalse()
-        assertThat(endCompact).isFalse()
+        assertThat(startControlSize).isEqualTo(ControlSize.Standard)
+        assertThat(endControlSize).isEqualTo(ControlSize.Standard)
 
         val startRailBounds = boundsOf(START_SIDE_RAIL_TAG)
         assertThat(startRailBounds.width).isLessThan(120.dp)
@@ -453,7 +461,258 @@ class CaptureSideRailsTest {
         isCompactHeight = true
         composeTestRule.waitForIdle()
 
-        assertThat(startCompact).isTrue()
-        assertThat(endCompact).isTrue()
+        assertThat(startControlSize).isEqualTo(ControlSize.Mini)
+        assertThat(endControlSize).isEqualTo(ControlSize.Mini)
+    }
+
+    @Test
+    fun sideRails_explicitControlSize_overridesCompactHeightDefault() {
+        var endControlSize: ControlSize? = null
+        val scopedSlots = CaptureSlots(
+            captureButton = { mod ->
+                endControlSize = controlSize
+                Box(modifier = mod.size(72.dp).testTag(CAPTURE_BUTTON))
+            }
+        )
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                EndSideRail(
+                    slots = scopedSlots,
+                    modifier = Modifier.height(800.dp),
+                    isCompactHeight = false,
+                    controlSize = ControlSize.Medium
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(endControlSize).isEqualTo(ControlSize.Medium)
+    }
+
+    @Test
+    fun sideRails_fixedRailWidth_keepsWidthAndCentersWiderControls() {
+        val scopedSlots = CaptureSlots(
+            zoomControls = { mod ->
+                Box(modifier = mod.size(width = 48.dp, height = 96.dp).testTag(ZOOM_BUTTON_ROW_TAG))
+            },
+            captureButton = { mod ->
+                // Wider than the rail, like the capture button's lock switch footprint.
+                Box(modifier = mod.size(width = 120.dp, height = 72.dp).testTag(CAPTURE_BUTTON))
+            }
+        )
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                Row(modifier = Modifier.size(800.dp)) {
+                    StartSideRail(
+                        slots = scopedSlots,
+                        modifier = Modifier.height(800.dp),
+                        railWidth = 96.dp
+                    )
+                    EndSideRail(
+                        slots = scopedSlots,
+                        modifier = Modifier.height(800.dp),
+                        railWidth = 96.dp
+                    )
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val startRail = boundsOf(START_SIDE_RAIL_TAG)
+        val endRail = boundsOf(END_SIDE_RAIL_TAG)
+        assertThat(startRail.width.value).isWithin(TOLERANCE).of(96f)
+        assertThat(endRail.width.value).isWithin(TOLERANCE).of(96f)
+
+        val zoom = boundsOf(ZOOM_BUTTON_ROW_TAG)
+        val shutter = boundsOf(CAPTURE_BUTTON)
+        assertThat((zoom.left + zoom.right).value / 2f)
+            .isWithin(TOLERANCE)
+            .of((startRail.left + startRail.right).value / 2f)
+        assertThat((shutter.left + shutter.right).value / 2f)
+            .isWithin(TOLERANCE)
+            .of((endRail.left + endRail.right).value / 2f)
+        assertThat(shutter.width.value).isWithin(TOLERANCE).of(120f)
+    }
+
+    @Test
+    fun endSideRail_unspecifiedRailWidth_capsCaptureWidthAtNominalDiameter_andCentersShutter() {
+        val slots = CaptureSlots(
+            captureButton = { mod ->
+                // Mimics CaptureButton's 1.375x LockSwitchCaptureButtonNucleus width at Standard.
+                Box(modifier = mod.size(width = 118.25.dp, height = 86.dp).testTag(CAPTURE_BUTTON))
+            }
+        )
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                EndSideRail(
+                    slots = slots,
+                    modifier = Modifier.height(800.dp),
+                    controlSize = ControlSize.Standard
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val rail = boundsOf(END_SIDE_RAIL_TAG)
+        val shutter = boundsOf(CAPTURE_BUTTON)
+        // 86.dp nominal Standard diameter + 8.dp * 2 default horizontal padding = 102.dp.
+        assertThat(rail.width.value).isWithin(TOLERANCE).of(102f)
+        assertThat(shutter.width.value).isWithin(TOLERANCE).of(118.25f)
+        assertThat((shutter.left + shutter.right).value / 2f)
+            .isWithin(TOLERANCE)
+            .of((rail.left + rail.right).value / 2f)
+    }
+
+    @Test
+    fun endSideRail_tightHeight_omitsImageWellThenFlipCamera_whileKeepingCaptureAndMinGap() {
+        var railHeight by mutableStateOf(142.dp)
+        val slots = CaptureSlots(
+            flipCameraButton = { mod ->
+                Box(modifier = mod.size(48.dp).testTag(FLIP_CAMERA_BUTTON))
+            },
+            captureButton = { mod ->
+                Box(modifier = mod.size(86.dp).testTag(CAPTURE_BUTTON))
+            },
+            imageWell = { mod ->
+                Box(modifier = mod.size(48.dp).testTag(IMAGE_WELL_TAG))
+            }
+        )
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                EndSideRail(
+                    slots = slots,
+                    modifier = Modifier.height(railHeight),
+                    topPadding = 0.dp,
+                    bottomPadding = 0.dp
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        // 142.dp fits Capture (86.dp) + min gap (8.dp) + FlipCamera (48.dp), omitting ImageWell.
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertIsNotDisplayed()
+        val flip = boundsOf(FLIP_CAMERA_BUTTON)
+        val capture = boundsOf(CAPTURE_BUTTON)
+        assertThat((capture.top - flip.bottom).value).isAtLeast(8f - TOLERANCE)
+
+        // 100.dp leaves < 48.dp after Capture (86.dp) + 8.dp gap, so FlipCamera is also omitted.
+        railHeight = 100.dp
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertIsNotDisplayed()
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertIsNotDisplayed()
+    }
+
+    @Test
+    fun endSideRail_emptyCaptureButton_tightHeight_reservesNoPhantomGap() {
+        var railHeight by mutableStateOf(48.dp)
+        val slots = CaptureSlots(
+            flipCameraButton = { mod ->
+                Box(modifier = mod.size(48.dp).testTag(FLIP_CAMERA_BUTTON))
+            },
+            imageWell = { mod ->
+                Box(modifier = mod.size(48.dp).testTag(IMAGE_WELL_TAG))
+            }
+        )
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                EndSideRail(
+                    slots = slots,
+                    modifier = Modifier.height(railHeight),
+                    topPadding = 0.dp,
+                    bottomPadding = 0.dp
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        // Single 48.dp control fits at 48.dp when captureButton is empty.
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertIsNotDisplayed()
+
+        // 104.dp = 48.dp + 8.dp + 48.dp fits both secondary controls with their single 8.dp gap.
+        railHeight = 104.dp
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertIsDisplayed()
+        val flip = boundsOf(FLIP_CAMERA_BUTTON)
+        val well = boundsOf(IMAGE_WELL_TAG)
+        assertThat((well.top - flip.bottom).value).isWithin(TOLERANCE).of(8f)
+    }
+
+    @Test
+    fun startSideRail_topBarLeadingContent_orders_preservesRtlAndState_andBudget() {
+        val leadingTag = "TopBarLeadingContent"
+        var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
+        var showLeading by mutableStateOf(true)
+        var railHeight by mutableStateOf(800.dp)
+        var topBarInstanceCount = 0
+        val rememberedTopBarIds = mutableListOf<Int>()
+
+        val baseSlots = PlaceholderCaptureSlots.sideRail()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(
+                LocalLayoutDirection provides layoutDirection,
+                LocalDisableAnimations provides true
+            ) {
+                val slots = baseSlots.copy(
+                    topBarLeadingContent = if (showLeading) {
+                        { mod -> Box(modifier = mod.size(32.dp).testTag(leadingTag)) }
+                    } else {
+                        null
+                    },
+                    topBar = { mod ->
+                        val instanceId = remember { ++topBarInstanceCount }
+                        rememberedTopBarIds.add(instanceId)
+                        baseSlots.topBar(this, mod)
+                    }
+                )
+                StartSideRail(
+                    slots = slots,
+                    modifier = Modifier.height(railHeight)
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val ltrLeading = boundsOf(leadingTag)
+        val ltrTopBar = boundsOf(VIDEO_QUALITY_TAG)
+        val ltrZoom = boundsOf(ZOOM_BUTTON_ROW_TAG)
+        val ltrQuickSettings = boundsOf(QUICK_SETTINGS_DROP_DOWN)
+        assertThat(ltrLeading.bottom).isAtMost(ltrTopBar.top)
+        assertThat(ltrTopBar.bottom).isAtMost(ltrZoom.top)
+        assertThat(ltrZoom.bottom).isAtMost(ltrQuickSettings.top)
+
+        layoutDirection = LayoutDirection.Rtl
+        composeTestRule.waitForIdle()
+
+        val rtlLeading = boundsOf(leadingTag)
+        val rtlTopBar = boundsOf(VIDEO_QUALITY_TAG)
+        assertThat(rtlLeading.top.value).isWithin(TOLERANCE).of(ltrLeading.top.value)
+        assertThat(rtlTopBar.top.value).isWithin(TOLERANCE).of(ltrTopBar.top.value)
+
+        // Dynamic null toggle must preserve topBar's remembered composition state.
+        showLeading = false
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(leadingTag).assertDoesNotExist()
+        assertThat(topBarInstanceCount).isEqualTo(1)
+
+        // Height budget interaction with leading content restored.
+        showLeading = true
+        railHeight = 200.dp
+        composeTestRule.waitForIdle()
+        val tightTopBar = boundsOf(VIDEO_QUALITY_TAG)
+        val tightZoom = boundsOf(ZOOM_BUTTON_ROW_TAG)
+        assertThat(tightTopBar.bottom).isAtMost(tightZoom.top)
     }
 }
