@@ -18,7 +18,6 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -141,7 +140,6 @@ fun CaptureModeUiState.Companion.from(
 }
 
 private fun getSupportedCaptureModes(
-    cameraAppSettings: CameraAppSettings,
     config: OptionVisibility<CaptureMode>,
     isHdrOn: Boolean,
     currentHdrDynamicRangeSupported: Boolean,
@@ -156,25 +154,21 @@ private fun getSupportedCaptureModes(
                 .filter { it in config.enabledOptions }
     }.filter { captureMode ->
         when (captureMode) {
-            // image-only supported if externalcaptureMode is NOT VideoCapture and Concurrent Camera is off
+            // image-only supported if externalcaptureMode is NOT VideoCapture
             CaptureMode.IMAGE_ONLY ->
-                externalCaptureMode != ExternalCaptureMode.VideoCapture &&
-                    cameraAppSettings
-                        .concurrentCameraMode == ConcurrentCameraMode.OFF
+                externalCaptureMode != ExternalCaptureMode.VideoCapture
 
             // video-only supported if externalcapturemode is neither imageCapture nor multipleImageCapture
             CaptureMode.VIDEO_ONLY ->
                 externalCaptureMode != ExternalCaptureMode.ImageCapture &&
                     externalCaptureMode != ExternalCaptureMode.MultipleImageCapture
 
-            // hybrid capture supported if external capture mode is standard, if HDR mode is off, and if concurrent camera is off
+            // hybrid capture supported if external capture mode is standard and if HDR mode is off
             CaptureMode.STANDARD ->
                 externalCaptureMode == ExternalCaptureMode.Standard &&
                     currentHdrDynamicRangeSupported &&
                     currentHdrImageFormatSupported &&
-                    !isHdrOn &&
-                    cameraAppSettings
-                        .concurrentCameraMode == ConcurrentCameraMode.OFF
+                    !isHdrOn
         }
     }
 }
@@ -216,7 +210,6 @@ private fun getAvailableCaptureModes(
             true
         }
     val supportedCaptureModes = getSupportedCaptureModes(
-        cameraAppSettings,
         optionVisibility,
         isHdrOn,
         currentHdrDynamicRangeSupported,
@@ -232,7 +225,6 @@ private fun getAvailableCaptureModes(
                 disabledReason = getCaptureModeDisabledReason(
                     disabledCaptureMode = mode,
                     optionVisibility = optionVisibility,
-                    concurrentCameraMode = cameraAppSettings.concurrentCameraMode,
                     externalCaptureMode = externalCaptureMode,
                     isHdrOn = isHdrOn
                 )
@@ -244,7 +236,6 @@ private fun getAvailableCaptureModes(
 private fun getCaptureModeDisabledReason(
     disabledCaptureMode: CaptureMode,
     optionVisibility: OptionVisibility<CaptureMode>,
-    concurrentCameraMode: ConcurrentCameraMode,
     externalCaptureMode: ExternalCaptureMode,
     isHdrOn: Boolean
 ): DisabledReason {
@@ -262,11 +253,6 @@ private fun getCaptureModeDisabledReason(
                 }
 
                 is OptionVisibility.Visible, OptionVisibility.Hidden -> {}
-            }
-
-            if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
-                return DisabledReason
-                    .IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA
             }
 
             return DisabledReason.UNKNOWN
@@ -310,9 +296,6 @@ private fun getCaptureModeDisabledReason(
                 }
 
                 is OptionVisibility.Visible, OptionVisibility.Hidden -> {}
-            }
-            if (concurrentCameraMode == ConcurrentCameraMode.DUAL) {
-                return DisabledReason.IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA
             }
             if (isHdrOn) {
                 return DisabledReason.HDR_SIMULTANEOUS_IMAGE_VIDEO_UNSUPPORTED

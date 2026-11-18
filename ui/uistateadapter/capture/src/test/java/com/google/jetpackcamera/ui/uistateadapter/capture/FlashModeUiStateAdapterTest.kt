@@ -18,7 +18,6 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -399,39 +398,6 @@ class FlashModeUiStateAdapterTest {
             it.value == FlashMode.LOW_LIGHT_BOOST
         }
         assertThat(llbState).isInstanceOf(SingleSelectableUiState.SelectableUi::class.java)
-    }
-
-    @Test
-    fun from_concurrentCameraDual_lowLightBoostHidden() {
-        // Given a system supporting ON and LLB, but concurrent camera is DUAL
-        val appSettings = defaultCameraAppSettings.copy(
-            flashMode = FlashMode.OFF,
-            concurrentCameraMode = ConcurrentCameraMode.DUAL
-        )
-        val systemConstraints = CameraSystemConstraints(
-            perLensConstraints = mapOf(
-                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
-                    supportedFlashModes = setOf(
-                        FlashMode.OFF,
-                        FlashMode.ON,
-                        FlashMode.LOW_LIGHT_BOOST
-                    )
-                )
-            )
-        )
-
-        // When
-        val flashModeUiState = FlashModeUiState.from(appSettings, systemConstraints)
-
-        // Then LLB is not present in available flash modes, but ON is present (keeping state Available)
-        assertThat(flashModeUiState).isInstanceOf(FlashModeUiState.Available::class.java)
-        val availableUiState = flashModeUiState as FlashModeUiState.Available
-        val hasLlb = availableUiState.availableFlashModes.any {
-            it.value == FlashMode.LOW_LIGHT_BOOST
-        }
-        assertThat(hasLlb).isFalse()
-        val hasFlashOn = availableUiState.availableFlashModes.any { it.value == FlashMode.ON }
-        assertThat(hasFlashOn).isTrue()
     }
 
     @Test
