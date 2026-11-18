@@ -267,10 +267,13 @@ class ConcurrentCameraSessionTest {
                 sessionContext.currentCameraState.first { it.isCameraRunning }
             }
             assertThat(runningState.cameraError).isNull()
+            assertThat(runningState.isPreviewLandscape).isNotNull()
             assertThat(boundPrimaryLensFacings).containsExactly(LensFacing.BACK)
 
             // Flip primaryLensFacing mid-session and verify a new SurfaceRequest is emitted.
             sessionContext.surfaceRequests.value = null
+            sessionContext.currentCameraState.value =
+                sessionContext.currentCameraState.value.copy(isPreviewLandscape = null)
             transientSettingsFlow.value = transientSettingsFlow.value?.copy(
                 primaryLensFacing = LensFacing.FRONT
             )
@@ -284,6 +287,7 @@ class ConcurrentCameraSessionTest {
                 sessionContext.currentCameraState.first { it.isCameraRunning }
             }
             assertThat(flippedRunningState.cameraError).isNull()
+            assertThat(flippedRunningState.isPreviewLandscape).isNotNull()
             assertThat(boundPrimaryLensFacings)
                 .containsExactly(LensFacing.BACK, LensFacing.FRONT)
                 .inOrder()
