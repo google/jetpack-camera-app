@@ -172,8 +172,7 @@ class CaptureSlotsTest {
             }
         }
 
-        fun shutterHeight() =
-            composeTestRule.onNodeWithTag(CAPTURE_BUTTON).getBoundsInRoot().height
+        fun shutterHeight() = composeTestRule.onNodeWithTag(CAPTURE_BUTTON).getBoundsInRoot().height
         assertThat(shutterHeight()).isEqualTo(86.dp)
 
         controlSize = ControlSize.Medium
