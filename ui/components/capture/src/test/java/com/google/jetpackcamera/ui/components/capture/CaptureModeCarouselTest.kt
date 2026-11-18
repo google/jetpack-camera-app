@@ -138,17 +138,91 @@ class CaptureModeCarouselTest {
     }
 
     @Test
-    fun carousel_whenOptionClicked_commitsSelectionOnlyAfterSettling() {
+    fun carousel_whenOptionClicked_commitsSelectionBeforeRowSettles() {
         var selectedId: CaptureSubModeId? = null
         setStatefulContent(initialSelection = CaptureSubModeId.DEFAULT) { selectedId = it }
         composeTestRule.mainClock.autoAdvance = false
 
         composeTestRule.onNodeWithTag(secondId.carouselOptionTag).performClick()
         composeTestRule.mainClock.advanceTimeByFrame()
-        assertThat(selectedId).isNull()
+        assertThat(selectedId).isEqualTo(secondId)
+        // The row has only started to move towards the tapped item.
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
+            .assertIsSelected()
 
         composeTestRule.mainClock.advanceTimeBy(SETTLE_TIMEOUT_MS)
-        assertThat(selectedId).isEqualTo(secondId)
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag).assertIsSelected()
+    }
+
+    @Test
+    fun carousel_whenFlung_commitsTargetBeforeRowSettles() {
+        val selections = mutableListOf<CaptureSubModeId>()
+        setStatefulContent(initialSelection = CaptureSubModeId.DEFAULT) { selections += it }
+        composeTestRule.mainClock.autoAdvance = false
+
+        flickTowardsNextItem()
+        repeat(FLING_IN_PROGRESS_FRAMES) { composeTestRule.mainClock.advanceTimeByFrame() }
+        assertThat(selections).containsExactly(secondId)
+        // The row has only started to move towards the item that it was flung to.
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
+            .assertIsSelected()
+
+        composeTestRule.mainClock.advanceTimeBy(SETTLE_TIMEOUT_MS)
+        assertThat(selections).containsExactly(secondId)
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag).assertIsSelected()
+    }
+
+    @Test
+    fun carousel_whenDragged_commitsOnlyAfterRelease() {
+        val selections = mutableListOf<CaptureSubModeId>()
+        setStatefulContent(initialSelection = CaptureSubModeId.DEFAULT) { selections += it }
+
+        // Drag past the next item and hold it there.
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput {
+            down(center)
+            moveBy(Offset(-(viewConfiguration.touchSlop + 4 * DRAG_DISTANCE_PX), 0f))
+        }
+        composeTestRule.mainClock.advanceTimeBy(SETTLE_TIMEOUT_MS)
+        assertThat(selections).isEmpty()
+
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput { up() }
+        composeTestRule.waitForIdle()
+        assertThat(selections).hasSize(1)
+        composeTestRule.onNodeWithTag(selections.single().carouselOptionTag).assertIsSelected()
+    }
+
+    @Test
+    fun carousel_whenReturnedToSelectedItemWhileCommitIsPending_staysOnSelectedItem() {
+        var uiState by mutableStateOf(availableState(CaptureSubModeId.DEFAULT))
+        val selections = mutableListOf<CaptureSubModeId>()
+        composeTestRule.setContent {
+            MaterialTheme {
+                // Without animations, the row is at rest after each tap, so each tap is a click.
+                CompositionLocalProvider(LocalDisableAnimations provides true) {
+                    CaptureModeCarousel(uiState = uiState, onSelectSubMode = { selections += it })
+                }
+            }
+        }
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag).performClick()
+        composeTestRule.mainClock.advanceTimeByFrame()
+        // The user returns to the selected item before the selection follows the first commit.
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag).performClick()
+        composeTestRule.mainClock.advanceTimeByFrame()
+        assertThat(selections).containsExactly(secondId, CaptureSubModeId.DEFAULT).inOrder()
+
+        // The selection for the first commit arrives, and then the selection for the second.
+        uiState = availableState(secondId)
+        composeTestRule.mainClock.advanceTimeBy(CONFIRMATION_DELAY_MS)
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
+            .assertIsSelected()
+        uiState = availableState(CaptureSubModeId.DEFAULT)
+        composeTestRule.mainClock.advanceTimeBy(SETTLE_TIMEOUT_MS)
+
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
+            .assertIsSelected()
+        assertThat(selections).containsExactly(secondId, CaptureSubModeId.DEFAULT).inOrder()
     }
 
     @Test
@@ -334,7 +408,9 @@ class CaptureModeCarouselTest {
         composeTestRule.mainClock.advanceTimeByFrame()
         composeTestRule.mainClock.advanceTimeByFrame()
         uiState = availableState(secondId)
-        advanceFramesUntil { selections.isNotEmpty() }
+        // Longer than the tap animation, and shorter than the animation followed by the wait for
+        // the selection to follow the commit.
+        composeTestRule.mainClock.advanceTimeBy(CONFIRMATION_TIMEOUT_MS)
 
         assertThat(selections).containsExactly(thirdId)
         composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).assertIsSelected()
@@ -355,9 +431,11 @@ class CaptureModeCarouselTest {
         flickTowardsNextItem()
         // Change the selection after the release, while the fling is still moving the row.
         repeat(FLING_IN_PROGRESS_FRAMES) { composeTestRule.mainClock.advanceTimeByFrame() }
-        assertThat(selections).isEmpty()
+        assertThat(selections).containsExactly(secondId)
         uiState = availableState(thirdId)
-        advanceFramesUntil { selections.isNotEmpty() }
+        // Longer than the fling, and shorter than the fling followed by the wait for the selection
+        // to follow the commit.
+        composeTestRule.mainClock.advanceTimeBy(CONFIRMATION_TIMEOUT_MS)
 
         assertThat(selections).containsExactly(secondId)
         composeTestRule.onNodeWithTag(secondId.carouselOptionTag).assertIsSelected()
@@ -411,52 +489,57 @@ class CaptureModeCarouselTest {
     }
 
     @Test
-    fun carousel_whenConfirmationTimesOutDuringTapAnimation_completesTap() {
+    fun carousel_whenTappedAgainWhileFirstCommitIsPending_completesSecondTap() {
         val selections = mutableListOf<CaptureSubModeId>()
         composeTestRule.setContent {
             MaterialTheme {
-                CaptureModeCarousel(
-                    uiState = availableState(CaptureSubModeId.DEFAULT),
-                    onSelectSubMode = { selections += it }
-                )
+                // Without animations, the row is at rest after each tap, so each tap is a click.
+                CompositionLocalProvider(LocalDisableAnimations provides true) {
+                    CaptureModeCarousel(
+                        uiState = availableState(CaptureSubModeId.DEFAULT),
+                        onSelectSubMode = { selections += it }
+                    )
+                }
             }
         }
         composeTestRule.mainClock.autoAdvance = false
 
         composeTestRule.onNodeWithTag(secondId.carouselOptionTag).performClick()
-        advanceFramesUntil { selections.isNotEmpty() }
-        val firstCommitTimeMs = composeTestRule.mainClock.currentTime
-        // Tap the next item shortly before the first commit's confirmation wait expires, so that
-        // the wait expires while the tap animation is running.
+        composeTestRule.mainClock.advanceTimeByFrame()
+        assertThat(selections).containsExactly(secondId)
+        // The selection never follows. Tap the next item shortly before the wait for it expires.
         composeTestRule.mainClock.advanceTimeBy(CONFIRMATION_TIMEOUT_MS - 3 * FRAME_MS)
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag).assertIsSelected()
         composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).performClick()
         composeTestRule.mainClock.advanceTimeByFrame()
-        assertThat(composeTestRule.mainClock.currentTime - firstCommitTimeMs)
-            .isLessThan(CONFIRMATION_TIMEOUT_MS)
-        advanceFramesUntil { selections.size == 2 }
-
         assertThat(selections).containsExactly(secondId, thirdId).inOrder()
+        // Shorter than the wait for the selection to follow the second commit.
+        composeTestRule.mainClock.advanceTimeBy(CONFIRMATION_TIMEOUT_MS - 3 * FRAME_MS)
+
         composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).assertIsSelected()
     }
 
     @Test
-    fun carousel_whenTouchedWhileSettling_cancelsSettleWithoutCommitting() {
+    fun carousel_whenTouchedWhileSettling_commitsItemThatRowComesToRestOn() {
         val selections = mutableListOf<CaptureSubModeId>()
         setStatefulContent(initialSelection = CaptureSubModeId.DEFAULT) { selections += it }
         composeTestRule.mainClock.autoAdvance = false
 
         composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).performClick()
         composeTestRule.mainClock.advanceTimeByFrame()
+        assertThat(selections).containsExactly(thirdId)
         // A touch while settling starts a drag immediately, which takes over from the settle.
         composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput { down(center) }
         composeTestRule.mainClock.advanceTimeBy(SETTLE_TIMEOUT_MS)
+        assertThat(selections).containsExactly(thirdId)
 
-        assertThat(selections).isEmpty()
-
+        // The row had barely moved, so it comes to rest on the first item, which is committed.
         composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).performTouchInput { up() }
         composeTestRule.mainClock.autoAdvance = true
         composeTestRule.waitForIdle()
-        assertThat(selections).doesNotContain(thirdId)
+        assertThat(selections).containsExactly(thirdId, CaptureSubModeId.DEFAULT).inOrder()
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
+            .assertIsSelected()
     }
 
     @Test
@@ -475,7 +558,8 @@ class CaptureModeCarouselTest {
         uiState = twoItemState(CaptureSubModeId.DEFAULT)
         composeTestRule.mainClock.advanceTimeBy(SETTLE_TIMEOUT_MS)
 
-        assertThat(selections).isEmpty()
+        // The tap committed its item before the items changed, and nothing else is committed.
+        assertThat(selections).containsExactly(thirdId)
         composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).assertDoesNotExist()
         composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
             .assertIsSelected()
@@ -562,10 +646,7 @@ class CaptureModeCarouselTest {
             MaterialTheme {
                 CaptureModeCarousel(
                     uiState = uiState,
-                    onSelectSubMode = {
-                        selections += it
-                        uiState = stateWithDisabledSecondItem(it)
-                    }
+                    onSelectSubMode = { selections += it }
                 )
             }
         }
@@ -573,8 +654,9 @@ class CaptureModeCarouselTest {
 
         composeTestRule.onNodeWithTag(thirdId.carouselOptionTag).performClick()
         composeTestRule.mainClock.advanceTimeByFrame()
-        // The same items, with an item between the start and the tapped item now disabled.
-        uiState = stateWithDisabledSecondItem(CaptureSubModeId.DEFAULT)
+        // The selection follows the tap, and an item between the start and the tapped item is now
+        // disabled.
+        uiState = stateWithDisabledSecondItem(thirdId)
         composeTestRule.mainClock.advanceTimeBy(SETTLE_TIMEOUT_MS)
 
         assertThat(selections).containsExactly(thirdId)
