@@ -50,10 +50,17 @@ private object Tokens {
 
     val StandardShutterClusterGap = 48.dp
     val CompactShutterClusterGap = 20.dp
+    val MinShutterClusterGap = 8.dp
+    val MinSecondaryControlHeight = 48.dp
 
     val PreviewStandardRailHeight = 800.dp
     val PreviewTabletPortraitRailHeight = 1280.dp
     val PreviewCompactRailHeight = 360.dp
+    val PreviewTabletPortraitTopPadding = 32.dp
+    val PreviewTabletPortraitBottomPadding = 48.dp
+    val PreviewTabletPortraitHorizontalPadding = 24.dp
+    val PreviewTabletPortraitMinSectionGap = 16.dp
+    const val PREVIEW_TABLET_PORTRAIT_CENTER_FRACTION = 0.70f
     val PreviewBackgroundColor = Color(0xFF121212)
 }
 
@@ -80,7 +87,9 @@ private enum class ShutterClusterSlotId {
  * `LocalLayoutDirection` inside each child slot.
  *
  * @param slots [CaptureSlots] supplying the indicator, zoom, and Quick Settings controls.
- * @param modifier [Modifier] applied to the rail container.
+ * @param modifier [Modifier] applied to the rail container. When given a bounded `maxHeight`
+ *   (such as `.fillMaxHeight()` or `.height(...)`), the rail fills that height; when height is
+ *   unbounded, the rail wraps the intrinsic heights and minimum gaps of its active sections.
  * @param isCompactHeight Whether compact vertical padding, section gaps, and slot sizing hints are
  *   enabled for short windows.
  * @param controlSize Control size variant requested for the rail's controls; defaults to
@@ -164,7 +173,9 @@ internal fun StartSideRail(
  * top-to-bottom order across both LTR and RTL locales.
  *
  * @param slots [CaptureSlots] supplying the shutter cluster, elapsed timer, and mode toggle.
- * @param modifier [Modifier] applied to the rail container.
+ * @param modifier [Modifier] applied to the rail container. When given a bounded `maxHeight`
+ *   (such as `.fillMaxHeight()` or `.height(...)`), the rail fills that height; when height is
+ *   unbounded, the rail wraps the intrinsic heights and minimum gaps of its active sections.
  * @param isCompactHeight Whether compact vertical spacing and compact slot hints are active.
  * @param controlSize Control size variant requested for the rail's controls; defaults to
  *   [ControlSize.Mini] when [isCompactHeight] is `true` and [ControlSize.Standard] otherwise.
@@ -243,11 +254,13 @@ internal fun EndSideRail(
 /**
  * Collision-free 3-band vertical rail layout (Top, Center, Bottom).
  *
- * Measures Top and Bottom first, constrains Center's `maxHeight` to the remaining vertical budget
- * minus [minSectionGap] buffers, positions Center around [centerVerticalFraction] clamped to
- * `[minCenterY, maxCenterY]`, and places all sections using explicit `place(x, y)` coordinates so
- * RTL layout direction never alters vertical ordering while child composables retain the ambient
- * `LocalLayoutDirection`.
+ * When `constraints.hasBoundedHeight` is `true`, the rail fills `constraints.maxHeight`, measures
+ * Top and Bottom first, constrains Center's `maxHeight` to the remaining vertical budget minus
+ * [minSectionGap] buffers, and positions Center around [centerVerticalFraction] clamped to
+ * `[minCenterY, maxCenterY]`. When height is unbounded, the rail wraps the intrinsic heights of
+ * active sections plus [minSectionGap] and vertical padding. Places all sections using explicit
+ * `place(x, y)` coordinates so RTL layout direction never alters vertical ordering while child
+ * composables retain the ambient `LocalLayoutDirection`.
  */
 @Composable
 private fun VerticalRailLayout(
@@ -457,21 +470,31 @@ private fun VerticalRailShutterCluster(
         } else {
             Tokens.StandardShutterClusterGap
         }.roundToPx()
+        val minGapPx = Tokens.MinShutterClusterGap.roundToPx()
+        val minSecondaryHeightPx = Tokens.MinSecondaryControlHeight.roundToPx()
+        val nominalCaptureDiameterPx = CaptureButtonDefaults.diameterFor(controlSize).roundToPx()
 
+        val capturePlaceable: Placeable?
         val activePlaceables = if (constraints.hasBoundedHeight) {
             var remainingHeight = constraints.maxHeight
-            fun measureSlot(id: ShutterClusterSlotId): Placeable? {
+            fun measureSlot(id: ShutterClusterSlotId, isPrimary: Boolean): Placeable? {
                 val measurable = measurables.firstOrNull { it.layoutId == id } ?: return null
+                val reservedGapPx = if (isPrimary) 0 else minGapPx
+                val maxSlotHeight = (remainingHeight - reservedGapPx).coerceAtLeast(0)
+                if (!isPrimary && maxSlotHeight < minSecondaryHeightPx) {
+                    return null
+                }
                 val placeable = measurable.measure(
                     Constraints(
                         minWidth = 0,
                         maxWidth = constraints.maxWidth,
                         minHeight = 0,
-                        maxHeight = remainingHeight
+                        maxHeight = maxSlotHeight
                     )
                 )
                 if (placeable.height > 0) {
-                    remainingHeight = (remainingHeight - placeable.height).coerceAtLeast(0)
+                    remainingHeight =
+                        (remainingHeight - placeable.height - reservedGapPx).coerceAtLeast(0)
                     return placeable
                 }
                 return null
@@ -479,9 +502,9 @@ private fun VerticalRailShutterCluster(
 
             // Measure primary shutter first so it retains priority in extreme micro-heights, then
             // assemble in strict Flip -> Capture -> ImageWell visual order.
-            val capturePlaceable = measureSlot(ShutterClusterSlotId.Capture)
-            val flipPlaceable = measureSlot(ShutterClusterSlotId.FlipCamera)
-            val imageWellPlaceable = measureSlot(ShutterClusterSlotId.ImageWell)
+            capturePlaceable = measureSlot(ShutterClusterSlotId.Capture, isPrimary = true)
+            val flipPlaceable = measureSlot(ShutterClusterSlotId.FlipCamera, isPrimary = false)
+            val imageWellPlaceable = measureSlot(ShutterClusterSlotId.ImageWell, isPrimary = false)
             listOfNotNull(
                 flipPlaceable,
                 capturePlaceable,
@@ -494,20 +517,30 @@ private fun VerticalRailShutterCluster(
                 minHeight = 0,
                 maxHeight = Constraints.Infinity
             )
-            ShutterClusterSlotId.entries.mapNotNull { id ->
-                measurables.firstOrNull { it.layoutId == id }
-                    ?.measure(looseConstraints)
-                    ?.takeIf { it.height > 0 }
-            }
+            val flipPlaceable = measurables.firstOrNull {
+                it.layoutId == ShutterClusterSlotId.FlipCamera
+            }?.measure(looseConstraints)?.takeIf { it.height > 0 }
+            capturePlaceable = measurables.firstOrNull {
+                it.layoutId == ShutterClusterSlotId.Capture
+            }?.measure(looseConstraints)?.takeIf { it.height > 0 }
+            val imageWellPlaceable = measurables.firstOrNull {
+                it.layoutId == ShutterClusterSlotId.ImageWell
+            }?.measure(looseConstraints)?.takeIf { it.height > 0 }
+            listOfNotNull(
+                flipPlaceable,
+                capturePlaceable,
+                imageWellPlaceable
+            )
         }
 
         val gapCount = (activePlaceables.size - 1).coerceAtLeast(0)
         val totalChildrenHeight = activePlaceables.sumOf { it.height }
         val targetTotalGapPx = targetGapPx * gapCount
+        val minTotalGapPx = minGapPx * gapCount
 
         val actualTotalGapPx = if (constraints.hasBoundedHeight && gapCount > 0) {
             val maxAllowedGapPx = (constraints.maxHeight - totalChildrenHeight).coerceAtLeast(0)
-            minOf(targetTotalGapPx, maxAllowedGapPx)
+            targetTotalGapPx.coerceIn(minOf(minTotalGapPx, maxAllowedGapPx), maxAllowedGapPx)
         } else {
             targetTotalGapPx
         }
@@ -515,8 +548,17 @@ private fun VerticalRailShutterCluster(
         val baseGapPx = if (gapCount > 0) actualTotalGapPx / gapCount else 0
         val extraGapPixels = if (gapCount > 0) actualTotalGapPx % gapCount else 0
 
-        val clusterWidth = (activePlaceables.maxOfOrNull { it.width } ?: 0)
-            .coerceIn(constraints.minWidth, constraints.maxWidth)
+        // Cap the capture button's width contribution at its nominal ring diameter so its
+        // invisible 1.375x drag-to-lock track overflows symmetrically without widening the rail.
+        val clusterWidth = (
+            activePlaceables.maxOfOrNull { placeable ->
+                if (placeable === capturePlaceable) {
+                    minOf(placeable.width, nominalCaptureDiameterPx)
+                } else {
+                    placeable.width
+                }
+            } ?: 0
+            ).coerceIn(constraints.minWidth, constraints.maxWidth)
         val clusterHeight = (totalChildrenHeight + actualTotalGapPx)
             .coerceIn(constraints.minHeight, constraints.maxHeight)
 
@@ -571,11 +613,11 @@ private fun StartSideRailTabletPortraitPreview() {
             StartSideRail(
                 slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
                 modifier = Modifier.height(Tokens.PreviewTabletPortraitRailHeight),
-                topPadding = 32.dp,
-                bottomPadding = 48.dp,
-                horizontalPadding = 24.dp,
-                minSectionGap = 16.dp,
-                centerVerticalFraction = 0.70f
+                topPadding = Tokens.PreviewTabletPortraitTopPadding,
+                bottomPadding = Tokens.PreviewTabletPortraitBottomPadding,
+                horizontalPadding = Tokens.PreviewTabletPortraitHorizontalPadding,
+                minSectionGap = Tokens.PreviewTabletPortraitMinSectionGap,
+                centerVerticalFraction = Tokens.PREVIEW_TABLET_PORTRAIT_CENTER_FRACTION
             )
         }
     }
@@ -643,11 +685,11 @@ private fun EndSideRailTabletPortraitPreview() {
             EndSideRail(
                 slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
                 modifier = Modifier.height(Tokens.PreviewTabletPortraitRailHeight),
-                topPadding = 32.dp,
-                bottomPadding = 48.dp,
-                horizontalPadding = 24.dp,
-                minSectionGap = 16.dp,
-                centerVerticalFraction = 0.70f
+                topPadding = Tokens.PreviewTabletPortraitTopPadding,
+                bottomPadding = Tokens.PreviewTabletPortraitBottomPadding,
+                horizontalPadding = Tokens.PreviewTabletPortraitHorizontalPadding,
+                minSectionGap = Tokens.PreviewTabletPortraitMinSectionGap,
+                centerVerticalFraction = Tokens.PREVIEW_TABLET_PORTRAIT_CENTER_FRACTION
             )
         }
     }

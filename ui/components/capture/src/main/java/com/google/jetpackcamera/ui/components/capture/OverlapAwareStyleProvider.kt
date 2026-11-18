@@ -19,6 +19,7 @@ import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
@@ -26,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -116,6 +118,14 @@ internal fun backgroundStyleFor(isOverlapping: Boolean): CameraControlBackground
     }
 
 /**
+ * CompositionLocal providing the active [ControlSize] of the enclosing [OverlapAwareStyleProvider]
+ * slot so controls that do not receive [PreviewOverlaySlotScope.controlSize] explicitly still adapt
+ * their dimensions to the hosting container.
+ */
+internal val LocalControlSize: ProvidableCompositionLocal<ControlSize> =
+    staticCompositionLocalOf { ControlSize.Standard }
+
+/**
  * Applies [LocalCameraControlBackgroundStyle] based on whether this
  * component's spatial bounds overlap with the [LocalOverlapTargetBounds].
  *
@@ -166,7 +176,10 @@ internal fun OverlapAwareStyleProvider(
             }
         }
     ) {
-        CompositionLocalProvider(LocalCameraControlBackgroundStyle provides style) {
+        CompositionLocalProvider(
+            LocalCameraControlBackgroundStyle provides style,
+            LocalControlSize provides controlSize
+        ) {
             scope.content()
         }
     }

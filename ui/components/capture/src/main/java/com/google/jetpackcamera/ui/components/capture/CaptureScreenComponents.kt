@@ -1014,7 +1014,7 @@ fun CaptureButton(
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
     onLockVideoRecording: (Boolean) -> Unit = {},
-    diameter: Dp = CaptureButtonDefaults.StandardDiameter
+    diameter: Dp = CaptureButtonDefaults.diameterFor(LocalControlSize.current)
 ) {
     val context = LocalContext.current
 
@@ -1051,16 +1051,18 @@ object CaptureButtonDefaults {
     /** Diameter of the standard capture button ring. */
     val StandardDiameter: Dp = 86.dp
 
+    // 72dp matches the foldable mocks, which don't specify exact component sizes. Confirm with
+    // design.
+
     /**
      * Diameter of the medium capture button ring, used for intermediate containers such as
      * foldable side rails.
      */
-    // 72dp matches the foldable mocks, which don't specify exact component sizes. Confirm with
-    // design.
     val MediumDiameter: Dp = 72.dp
 
-    /** Diameter of the mini capture button ring, used for tight containers. */
     // Matches the standalone "Mini shutter" component spec.
+
+    /** Diameter of the mini capture button ring, used for tight containers. */
     val MiniDiameter: Dp = 56.dp
 
     /**

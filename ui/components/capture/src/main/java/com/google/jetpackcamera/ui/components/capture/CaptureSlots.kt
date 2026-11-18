@@ -65,6 +65,7 @@ internal object CaptureSlotTokens {
     val SecondaryActionMiniSize = 48.dp
 
     val ShutterStandardDiameter = 86.dp
+
     // 72dp matches the foldable mocks, which don't specify exact component sizes. Confirm with
     // design.
     val ShutterMediumDiameter = 72.dp
@@ -439,18 +440,20 @@ internal object PlaceholderCaptureSlots {
         },
         captureModeToggle = { slotModifier ->
             val mini = isCompactHeight || controlSize != ControlSize.Standard
+            val mainAxisSize = if (mini) {
+                CaptureSlotTokens.ModeToggleMiniWidth
+            } else {
+                CaptureSlotTokens.ModeToggleStandardWidth
+            }
+            val crossAxisSize = if (mini) {
+                CaptureSlotTokens.ModeToggleMiniHeight
+            } else {
+                CaptureSlotTokens.ModeToggleStandardHeight
+            }
             PlaceholderControlBox(
                 label = "Mode",
-                width = if (mini) {
-                    CaptureSlotTokens.ModeToggleMiniWidth
-                } else {
-                    CaptureSlotTokens.ModeToggleStandardWidth
-                },
-                height = if (mini) {
-                    CaptureSlotTokens.ModeToggleMiniHeight
-                } else {
-                    CaptureSlotTokens.ModeToggleStandardHeight
-                },
+                width = if (orientation == Orientation.Vertical) crossAxisSize else mainAxisSize,
+                height = if (orientation == Orientation.Vertical) mainAxisSize else crossAxisSize,
                 modifier = slotModifier,
                 color = CaptureSlotTokens.ModeToggleColor,
                 testTag = CAPTURE_MODE_TOGGLE_BUTTON
