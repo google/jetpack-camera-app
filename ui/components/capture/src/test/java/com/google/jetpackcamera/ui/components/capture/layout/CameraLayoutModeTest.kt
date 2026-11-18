@@ -208,19 +208,28 @@ class CameraLayoutModeTest {
         assertThat(stepWidth(592.dp)).isEqualTo(CameraLayoutMode.COMPACT)
 
         // Horizontal COMPACT window with height in [480dp, 486dp] (e.g., 483dp) widened past 607dp
-        // transitions to FOLDABLE / TABLET_LANDSCAPE when previousHeightDp is tracked.
+        // transitions to FOLDABLE / TABLET_LANDSCAPE when wasHeightAtLeast480 is tracked.
         var horizontalMode: CameraLayoutMode? = null
-        var previousHeight = Dp.Unspecified
+        var wasHeightAtLeast480: Boolean? = null
         fun stepHorizontalWidth(width: Dp, height: Dp = 483.dp): CameraLayoutMode {
-            horizontalMode = classifyCameraLayoutMode(
+            val prevMode = horizontalMode
+            val nextMode = classifyCameraLayoutMode(
                 widthDp = width,
                 heightDp = height,
                 isFullScreenCompactPhone = false,
-                previousMode = horizontalMode,
-                previousHeightDp = previousHeight
+                previousMode = prevMode,
+                wasHeightAtLeast480 = wasHeightAtLeast480
             )
-            previousHeight = height
-            return checkNotNull(horizontalMode)
+            val isLargeScreen = prevMode == CameraLayoutMode.FOLDABLE ||
+                prevMode == CameraLayoutMode.TABLET_PORTRAIT ||
+                prevMode == CameraLayoutMode.TABLET_LANDSCAPE
+            wasHeightAtLeast480 = when {
+                prevMode == null -> height >= 480.dp
+                isLargeScreen || wasHeightAtLeast480 == true -> height >= 473.dp
+                else -> height >= 487.dp
+            }
+            horizontalMode = nextMode
+            return nextMode
         }
 
         assertThat(stepHorizontalWidth(580.dp)).isEqualTo(CameraLayoutMode.COMPACT)
@@ -255,25 +264,53 @@ class CameraLayoutModeTest {
     @Test
     fun classifyCameraLayoutMode_heightHysteresisSweep_respects14dpDeadbandAround480dp_wide() {
         var mode: CameraLayoutMode? = null
-        fun stepHeight(height: Dp): CameraLayoutMode {
-            mode = classifyCameraLayoutMode(
-                widthDp = 800.dp,
+        var wasHeightAtLeast480: Boolean? = null
+        fun stepSize(width: Dp = 800.dp, height: Dp): CameraLayoutMode {
+            val prevMode = mode
+            val nextMode = classifyCameraLayoutMode(
+                widthDp = width,
                 heightDp = height,
                 isFullScreenCompactPhone = false,
-                previousMode = mode
+                previousMode = prevMode,
+                wasHeightAtLeast480 = wasHeightAtLeast480
             )
-            return checkNotNull(mode)
+            val isLargeScreen = prevMode == CameraLayoutMode.FOLDABLE ||
+                prevMode == CameraLayoutMode.TABLET_PORTRAIT ||
+                prevMode == CameraLayoutMode.TABLET_LANDSCAPE
+            wasHeightAtLeast480 = when {
+                prevMode == null -> height >= 480.dp
+                isLargeScreen -> height >= 473.dp
+                prevMode == CameraLayoutMode.COMPACT_SHORT ||
+                    prevMode == CameraLayoutMode.COMPACT_SHORT_SLIM -> height >= 487.dp
+                wasHeightAtLeast480 == true -> height >= 473.dp
+                else -> height >= 487.dp
+            }
+            mode = nextMode
+            return nextMode
         }
 
         // 800x500dp has maxDim (800) >= minDim * 1.45 (725), so it resolves to TABLET_LANDSCAPE.
-        assertThat(stepHeight(500.dp)).isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
-        assertThat(stepHeight(480.dp)).isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
-        assertThat(stepHeight(473.dp)).isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
-        assertThat(stepHeight(472.dp)).isEqualTo(CameraLayoutMode.COMPACT)
+        assertThat(stepSize(height = 500.dp)).isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
+        assertThat(stepSize(height = 480.dp)).isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
+        assertThat(stepSize(height = 473.dp)).isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
+        assertThat(stepSize(height = 472.dp)).isEqualTo(CameraLayoutMode.COMPACT)
 
-        assertThat(stepHeight(480.dp)).isEqualTo(CameraLayoutMode.COMPACT)
-        assertThat(stepHeight(486.dp)).isEqualTo(CameraLayoutMode.COMPACT)
-        assertThat(stepHeight(488.dp)).isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
+        // Growing through the deadband, no-op recomposition at 480.dp, and shrinking back to 474.dp
+        // all remain COMPACT until height reaches 487.dp.
+        assertThat(stepSize(height = 480.dp)).isEqualTo(CameraLayoutMode.COMPACT)
+        assertThat(stepSize(height = 480.dp)).isEqualTo(CameraLayoutMode.COMPACT)
+        assertThat(stepSize(height = 474.dp)).isEqualTo(CameraLayoutMode.COMPACT)
+        assertThat(stepSize(height = 480.dp)).isEqualTo(CameraLayoutMode.COMPACT)
+        assertThat(stepSize(height = 486.dp)).isEqualTo(CameraLayoutMode.COMPACT)
+        assertThat(stepSize(height = 488.dp)).isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
+
+        // Horizontal drag into the deadband before widening: 580x483 -> 580x478 -> 900x478.
+        mode = null
+        wasHeightAtLeast480 = null
+        assertThat(stepSize(width = 580.dp, height = 483.dp)).isEqualTo(CameraLayoutMode.COMPACT)
+        assertThat(stepSize(width = 580.dp, height = 478.dp)).isEqualTo(CameraLayoutMode.COMPACT)
+        assertThat(stepSize(width = 900.dp, height = 478.dp))
+            .isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
     }
 
     @Test
@@ -432,9 +469,38 @@ class CameraLayoutModeTest {
                 screenWidthDp = 412,
                 screenHeightDp = 867,
                 isInMultiWindowMode = false,
-                windowContainerWidthDp = 412f,
-                windowContainerHeightDp = 915f
+                windowContainerWidthDp = 412.dp,
+                windowContainerHeightDp = 915.dp
             )
         ).isTrue()
+
+        // Sub-window pane inside an edge-to-edge phone window returns false.
+        assertThat(
+            isFullScreenCompactPhoneWindow(
+                widthDp = 412.dp,
+                heightDp = 600.dp,
+                smallestScreenWidthDp = 412,
+                screenWidthDp = 412,
+                screenHeightDp = 867,
+                isInMultiWindowMode = false,
+                windowContainerWidthDp = 412.dp,
+                windowContainerHeightDp = 915.dp
+            )
+        ).isFalse()
+
+        // Smaller floating/dialog window matching windowContainer* but below screenWidthDp/HeightDp
+        // returns false.
+        assertThat(
+            isFullScreenCompactPhoneWindow(
+                widthDp = 360.dp,
+                heightDp = 600.dp,
+                smallestScreenWidthDp = 412,
+                screenWidthDp = 412,
+                screenHeightDp = 867,
+                isInMultiWindowMode = false,
+                windowContainerWidthDp = 360.dp,
+                windowContainerHeightDp = 600.dp
+            )
+        ).isFalse()
     }
 }

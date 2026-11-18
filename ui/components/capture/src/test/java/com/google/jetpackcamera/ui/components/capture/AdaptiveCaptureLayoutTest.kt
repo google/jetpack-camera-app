@@ -47,6 +47,7 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutMode
+import com.google.jetpackcamera.ui.components.capture.layout.rememberCameraLayoutMode
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
@@ -234,6 +235,26 @@ class AdaptiveCaptureLayoutTest {
     @Config(qualifiers = "sw320dp-w320dp-h640dp-port-mdpi")
     @Test
     fun slimDisplay_sw320dp_w320dp_h640dp_resolvesToCompactSlimUsingCompactLayout() {
+        var observedMode: CameraLayoutMode? = null
+        var observedLayout: String? = null
+        var observedToolbarControlSize: ControlSize? = null
+
+        composeTestRule.setContent {
+            OrchestratedLayoutUnderTest(
+                onModeObserved = { observedMode = it },
+                onActiveLayoutObserved = { observedLayout = it },
+                onToolbarControlSizeObserved = { observedToolbarControlSize = it }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        assertCompactLayoutTopology(observedMode, observedLayout, CameraLayoutMode.COMPACT_SLIM)
+        assertThat(observedToolbarControlSize).isEqualTo(ControlSize.Mini)
+    }
+
+    @Config(qualifiers = "sw355dp-w355dp-h610dp-port-mdpi")
+    @Test
+    fun slimDisplay_nonShortAspectRatio_sw355dp_h610dp_requestsMiniToolbarControlSize() {
         var observedMode: CameraLayoutMode? = null
         var observedLayout: String? = null
         var observedToolbarControlSize: ControlSize? = null
@@ -663,5 +684,38 @@ class AdaptiveCaptureLayoutTest {
         assertCompactLayoutTopology(observedMode, observedLayout, CameraLayoutMode.COMPACT)
         assertThat(composeCount).isEqualTo(1)
         assertThat(disposeCount).isEqualTo(0)
+    }
+
+    @Config(qualifiers = "sw800dp-w1280dp-h1280dp-mdpi")
+    @Test
+    fun rememberCameraLayoutMode_heightDeadbandAround480dp_persistsStabilizedState() {
+        val windowSizeState = mutableStateOf(DpSize(800.dp, 500.dp))
+        var observedMode: CameraLayoutMode? = null
+
+        composeTestRule.setContent {
+            observedMode = rememberCameraLayoutMode(
+                widthDp = windowSizeState.value.width,
+                heightDp = windowSizeState.value.height,
+                isFullScreenCompactPhone = false
+            )
+        }
+        composeTestRule.waitForIdle()
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
+
+        windowSizeState.value = DpSize(800.dp, 472.dp)
+        composeTestRule.waitForIdle()
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
+
+        windowSizeState.value = DpSize(800.dp, 480.dp)
+        composeTestRule.waitForIdle()
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
+
+        windowSizeState.value = DpSize(800.dp, 486.dp)
+        composeTestRule.waitForIdle()
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.COMPACT)
+
+        windowSizeState.value = DpSize(800.dp, 487.dp)
+        composeTestRule.waitForIdle()
+        assertThat(observedMode).isEqualTo(CameraLayoutMode.TABLET_LANDSCAPE)
     }
 }

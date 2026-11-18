@@ -247,8 +247,17 @@ class CaptureScaffoldTest {
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
 
-        // TODO(#648): Foldable and tablet layouts get the Quick Settings side sheet instead.
+        // TODO(#648): Foldable and tablet layouts temporarily use the scrollable bottom sheet
+        // content until #648 introduces the Quick Settings side sheet.
         activeLayout = "FoldableLayout"
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
+
+        activeLayout = "TabletLandscapeLayout"
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
+
+        activeLayout = "UnknownNonSheetLayout"
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(!hasScrollAction())
     }

@@ -438,9 +438,20 @@ fun defaultCameraErrorStrings(error: CameraError): CameraErrorStrings? {
  * Public default building blocks for [CaptureScaffold] slots.
  */
 object CaptureScaffoldDefaults {
-    /** Compact layouts that present Quick Settings in a bottom sheet. */
+    /**
+     * Layouts that present Quick Settings in a bottom sheet.
+     *
+     * TODO(#648): Remove FoldableLayout, TabletLandscapeLayout, and TabletPortraitLayout once
+     *   #648 replaces their bottom sheet with the Quick Settings overlay/side sheet.
+     */
     private val BottomSheetQuickSettingsLayouts =
-        setOf("CompactPortraitLayout", "CompactShortLayout")
+        setOf(
+            "CompactPortraitLayout",
+            "CompactShortLayout",
+            "FoldableLayout",
+            "TabletLandscapeLayout",
+            "TabletPortraitLayout"
+        )
     private val QuickSettingsVerticalPadding = 20.dp
 
     /**
@@ -722,9 +733,12 @@ object CaptureScaffoldDefaults {
         orientation: Orientation = Orientation.Horizontal,
         controlSize: ControlSize = ControlSize.Standard
     ) {
+        val currentUiState by rememberUpdatedState(uiState)
         // TODO(#649): Replace vertical placeholder with VerticalIndicatorPill once #649 merges.
         if (orientation == Orientation.Vertical) {
-            val hasVideoQuality = uiState().videoQuality != VideoQuality.UNSPECIFIED
+            val hasVideoQuality by remember {
+                derivedStateOf { currentUiState().videoQuality != VideoQuality.UNSPECIFIED }
+            }
             PlaceholderControlBox(
                 label = "",
                 width = CaptureSlotTokens.IndicatorCrossAxisSize,
@@ -739,7 +753,6 @@ object CaptureScaffoldDefaults {
             )
             return
         }
-        val currentUiState by rememberUpdatedState(uiState)
         val flashModeState = remember { derivedStateOf { currentUiState().flashModeUiState } }
         val hdrState = remember { derivedStateOf { currentUiState().hdrUiState } }
         val videoQualityState = remember { derivedStateOf { currentUiState().videoQuality } }

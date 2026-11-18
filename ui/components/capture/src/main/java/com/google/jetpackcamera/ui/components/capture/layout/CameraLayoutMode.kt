@@ -36,6 +36,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.core.app.MultiWindowModeChangedInfo
 import androidx.core.util.Consumer
 import kotlin.math.abs
@@ -148,9 +149,10 @@ private val CameraLayoutMode.isSideRailLargeScreen: Boolean
  *   window (`sw < 600dp`, not in multi-window mode, with long edge `>= 480.dp`).
  * @param previousMode Previously committed [CameraLayoutMode] used to bias threshold crossings
  *   across the hysteresis deadband, or `null` on initial classification.
- * @param previousHeightDp Previously committed container height in `dp` used to disambiguate
- *   whether a horizontal [CameraLayoutMode.COMPACT] or [CameraLayoutMode.COMPACT_SLIM] window was
- *   already at least `480.dp` tall before widening, or [Dp.Unspecified] when unknown.
+ * @param wasHeightAtLeast480 Hysteresis-stabilized height state from the previous classification
+ *   indicating whether height was resolved as at least `480.dp`, used to disambiguate horizontal
+ *   [CameraLayoutMode.COMPACT] or [CameraLayoutMode.COMPACT_SLIM] windows without collapsing the
+ *   `14.dp` deadband, or `null` when unknown.
  * @return The resolved [CameraLayoutMode] for the given window dimensions.
  */
 fun classifyCameraLayoutMode(
@@ -158,8 +160,29 @@ fun classifyCameraLayoutMode(
     heightDp: Dp,
     isFullScreenCompactPhone: Boolean = false,
     previousMode: CameraLayoutMode? = null,
-    previousHeightDp: Dp = Dp.Unspecified
+    wasHeightAtLeast480: Boolean? = null
 ): CameraLayoutMode {
+    return resolveCameraLayoutModeState(
+        widthDp = widthDp,
+        heightDp = heightDp,
+        isFullScreenCompactPhone = isFullScreenCompactPhone,
+        previousMode = previousMode,
+        wasHeightAtLeast480 = wasHeightAtLeast480
+    ).mode
+}
+
+private data class CameraLayoutModeResolution(
+    val mode: CameraLayoutMode,
+    val isHeightAtLeast480: Boolean
+)
+
+private fun resolveCameraLayoutModeState(
+    widthDp: Dp,
+    heightDp: Dp,
+    isFullScreenCompactPhone: Boolean,
+    previousMode: CameraLayoutMode?,
+    wasHeightAtLeast480: Boolean?
+): CameraLayoutModeResolution {
     val minDim = minOf(widthDp, heightDp)
     val maxDim = maxOf(widthDp, heightDp)
 
@@ -174,10 +197,6 @@ fun classifyCameraLayoutMode(
         CameraLayoutMode.TABLET_PORTRAIT,
         CameraLayoutMode.TABLET_LANDSCAPE ->
             minDim < CameraLayoutModeTokens.EnterSlimThreshold
-    }
-
-    if (isFullScreenCompactPhone) {
-        return if (isSlim) CameraLayoutMode.COMPACT_SLIM else CameraLayoutMode.COMPACT
     }
 
     val isWide600 = when {
@@ -209,18 +228,19 @@ fun classifyCameraLayoutMode(
             heightDp >= CameraLayoutModeTokens.EnterAtLeast480Threshold
         previousMode == CameraLayoutMode.COMPACT ||
             previousMode == CameraLayoutMode.COMPACT_SLIM -> {
-            val wasHeightAtLeast480 = if (previousHeightDp != Dp.Unspecified) {
-                previousHeightDp >= CameraLayoutModeTokens.ShortDimensionBreakpoint
-            } else {
-                heightDp >= widthDp
-            }
-            if (wasHeightAtLeast480) {
+            val previouslyAtLeast480 = wasHeightAtLeast480 ?: (heightDp >= widthDp)
+            if (previouslyAtLeast480) {
                 heightDp >= CameraLayoutModeTokens.ExitAtLeast480Threshold
             } else {
                 heightDp >= CameraLayoutModeTokens.EnterAtLeast480Threshold
             }
         }
         else -> heightDp >= CameraLayoutModeTokens.ShortDimensionBreakpoint
+    }
+
+    if (isFullScreenCompactPhone) {
+        val mode = if (isSlim) CameraLayoutMode.COMPACT_SLIM else CameraLayoutMode.COMPACT
+        return CameraLayoutModeResolution(mode = mode, isHeightAtLeast480 = isHeightAtLeast480)
     }
 
     if (isWide600 && isHeightAtLeast480) {
@@ -244,10 +264,13 @@ fun classifyCameraLayoutMode(
         }
 
         if (isUnderFoldableSpan && isSquarerFoldableAspect) {
-            return CameraLayoutMode.FOLDABLE
+            return CameraLayoutModeResolution(
+                mode = CameraLayoutMode.FOLDABLE,
+                isHeightAtLeast480 = isHeightAtLeast480
+            )
         }
 
-        return when (previousMode) {
+        val tabletMode = when (previousMode) {
             CameraLayoutMode.TABLET_PORTRAIT ->
                 if (widthDp - heightDp >= CameraLayoutModeTokens.HysteresisHalfBand) {
                     CameraLayoutMode.TABLET_LANDSCAPE
@@ -267,9 +290,13 @@ fun classifyCameraLayoutMode(
                     CameraLayoutMode.TABLET_LANDSCAPE
                 }
         }
+        return CameraLayoutModeResolution(
+            mode = tabletMode,
+            isHeightAtLeast480 = isHeightAtLeast480
+        )
     }
 
-    return when {
+    val compactMode = when {
         !isMaxAtLeast480 ->
             if (isSlim) {
                 CameraLayoutMode.COMPACT_SHORT_SLIM
@@ -279,6 +306,10 @@ fun classifyCameraLayoutMode(
         isSlim -> CameraLayoutMode.COMPACT_SLIM
         else -> CameraLayoutMode.COMPACT
     }
+    return CameraLayoutModeResolution(
+        mode = compactMode,
+        isHeightAtLeast480 = isHeightAtLeast480
+    )
 }
 
 /**
@@ -298,8 +329,8 @@ internal fun isFullScreenCompactPhoneWindow(
     screenWidthDp: Int,
     screenHeightDp: Int,
     isInMultiWindowMode: Boolean,
-    windowContainerWidthDp: Float = Dp.Unspecified.value,
-    windowContainerHeightDp: Float = Dp.Unspecified.value
+    windowContainerWidthDp: Dp = Dp.Unspecified,
+    windowContainerHeightDp: Dp = Dp.Unspecified
 ): Boolean {
     if (isInMultiWindowMode) return false
     if (
@@ -315,13 +346,13 @@ internal fun isFullScreenCompactPhoneWindow(
         CameraLayoutModeTokens.FULL_SCREEN_DIMENSION_TOLERANCE_DP &&
         abs(heightDp.value - screenHeightDp) <=
         CameraLayoutModeTokens.FULL_SCREEN_DIMENSION_TOLERANCE_DP
-    val matchesEdgeToEdgeWindow = !windowContainerWidthDp.isNaN() &&
-        !windowContainerHeightDp.isNaN() &&
-        windowContainerWidthDp > 0f &&
-        windowContainerHeightDp > 0f &&
-        abs(widthDp.value - windowContainerWidthDp) <=
+    val matchesEdgeToEdgeWindow = windowContainerWidthDp.isSpecified &&
+        windowContainerHeightDp.isSpecified &&
+        windowContainerWidthDp > 0.dp &&
+        windowContainerHeightDp > 0.dp &&
+        abs(widthDp.value - windowContainerWidthDp.value) <=
         CameraLayoutModeTokens.FULL_SCREEN_DIMENSION_TOLERANCE_DP &&
-        abs(heightDp.value - windowContainerHeightDp) <=
+        abs(heightDp.value - windowContainerHeightDp.value) <=
         CameraLayoutModeTokens.FULL_SCREEN_DIMENSION_TOLERANCE_DP &&
         widthDp.value >=
         screenWidthDp - CameraLayoutModeTokens.FULL_SCREEN_DIMENSION_TOLERANCE_DP &&
@@ -340,14 +371,14 @@ internal fun rememberIsFullScreenCompactPhone(widthDp: Dp, heightDp: Dp): Boolea
     val density = LocalDensity.current
     val containerSize = LocalWindowInfo.current.containerSize
     val windowContainerWidthDp = if (containerSize.width > 0) {
-        with(density) { containerSize.width.toDp().value }
+        with(density) { containerSize.width.toDp() }
     } else {
-        Dp.Unspecified.value
+        Dp.Unspecified
     }
     val windowContainerHeightDp = if (containerSize.height > 0) {
-        with(density) { containerSize.height.toDp().value }
+        with(density) { containerSize.height.toDp() }
     } else {
-        Dp.Unspecified.value
+        Dp.Unspecified
     }
     val context = LocalContext.current
     val activity = LocalActivity.current ?: remember(context) { context.findActivity() }
@@ -397,23 +428,23 @@ fun rememberCameraLayoutMode(
     isFullScreenCompactPhone: Boolean = rememberIsFullScreenCompactPhone(widthDp, heightDp)
 ): CameraLayoutMode {
     val previousModeHolder = remember { PreviousLayoutModeHolder() }
-    val resolvedMode = classifyCameraLayoutMode(
+    val resolution = resolveCameraLayoutModeState(
         widthDp = widthDp,
         heightDp = heightDp,
         isFullScreenCompactPhone = isFullScreenCompactPhone,
         previousMode = previousModeHolder.mode,
-        previousHeightDp = previousModeHolder.heightDp
+        wasHeightAtLeast480 = previousModeHolder.wasHeightAtLeast480
     )
     SideEffect {
-        previousModeHolder.mode = resolvedMode
-        previousModeHolder.heightDp = heightDp
+        previousModeHolder.mode = resolution.mode
+        previousModeHolder.wasHeightAtLeast480 = resolution.isHeightAtLeast480
     }
-    return resolvedMode
+    return resolution.mode
 }
 
 private class PreviousLayoutModeHolder(
     var mode: CameraLayoutMode? = null,
-    var heightDp: Dp = Dp.Unspecified
+    var wasHeightAtLeast480: Boolean? = null
 )
 
 private tailrec fun Context.findActivity(): Activity? = when (this) {
