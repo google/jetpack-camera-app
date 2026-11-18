@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.content.Context
+import android.os.Build
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -47,7 +48,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@SdkSuppress(minSdkVersion = 34)
 @RunWith(AndroidJUnit4::class)
 class CaptureLayoutTest {
 
@@ -56,11 +56,13 @@ class CaptureLayoutTest {
 
     @Before
     fun setUp() {
-        composeTestRule.enableAccessibilityChecks(
-            AccessibilityValidator()
-                .setRunChecksFromRootView(true)
-                .setThrowExceptionFor(AccessibilityCheckResultType.ERROR)
-        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            composeTestRule.enableAccessibilityChecks(
+                AccessibilityValidator()
+                    .setRunChecksFromRootView(true)
+                    .setThrowExceptionFor(AccessibilityCheckResultType.ERROR)
+            )
+        }
     }
 
     private fun getResString(@StringRes resId: Int): String =
@@ -92,6 +94,7 @@ class CaptureLayoutTest {
         )
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureScaffoldLayout_dragHandle_hasButtonRoleAndAccessibilityLabel() {
         composeTestRule.setContent {
@@ -133,6 +136,7 @@ class CaptureLayoutTest {
         assertThat(onDismissCalled).isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureScaffoldLayout_scrim_displayedWhenExpanded_andClickCallsDismiss() {
         var onDismissCalled = false
@@ -190,6 +194,7 @@ class CaptureLayoutTest {
         assertThat(onDismissCalled).isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureScaffoldLayout_scrim_doesNotExistWhenHidden() {
         composeTestRule.setContent {

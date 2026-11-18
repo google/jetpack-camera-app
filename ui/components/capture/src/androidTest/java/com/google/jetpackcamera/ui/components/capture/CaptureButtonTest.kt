@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -57,7 +58,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@SdkSuppress(minSdkVersion = 34)
 @RunWith(AndroidJUnit4::class)
 class CaptureButtonTest {
     @get:Rule
@@ -65,11 +65,13 @@ class CaptureButtonTest {
 
     @Before
     fun setUp() {
-        composeTestRule.enableAccessibilityChecks(
-            AccessibilityValidator().setRunChecksFromRootView(true).also {
-                it.setThrowExceptionFor(AccessibilityCheckResultType.ERROR)
-            }
-        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            composeTestRule.enableAccessibilityChecks(
+                AccessibilityValidator().setRunChecksFromRootView(true).also {
+                    it.setThrowExceptionFor(AccessibilityCheckResultType.ERROR)
+                }
+            )
+        }
     }
 
     /**
@@ -87,6 +89,7 @@ class CaptureButtonTest {
         }
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_standard_exists() {
         var imageCaptured = false
@@ -124,6 +127,7 @@ class CaptureButtonTest {
         assertThat(recordingStarted).isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_imageOnly_exists() {
         var imageCaptured = false
@@ -151,6 +155,7 @@ class CaptureButtonTest {
         assertThat(imageCaptured).isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_videoOnly_exists() {
         var recordingStarted = false
@@ -180,6 +185,7 @@ class CaptureButtonTest {
         assertThat(recordingStarted).isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_lockedRecording_exists() {
         var recordingStopped = false
@@ -207,6 +213,7 @@ class CaptureButtonTest {
         assertThat(recordingStopped).isTrue()
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_pressedRecording_exists() {
         var lockToggled = false
@@ -233,6 +240,7 @@ class CaptureButtonTest {
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_disabled_exists() {
         setCenteredContent {
@@ -256,6 +264,7 @@ class CaptureButtonTest {
         ).assert(isNotEnabled())
     }
 
+    @SdkSuppress(minSdkVersion = 34)
     @Test
     fun captureButton_unavailable_exists() {
         setCenteredContent {
