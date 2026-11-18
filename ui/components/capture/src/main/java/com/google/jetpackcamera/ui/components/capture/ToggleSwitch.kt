@@ -34,6 +34,7 @@ import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.interaction.Interaction
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
@@ -60,6 +61,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
@@ -68,7 +70,6 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.addOutline
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
@@ -102,6 +103,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
@@ -316,6 +318,7 @@ fun ToggleSwitch(
 
     // --- 3. Zero-Recomposition Thumb Progress & Color Animations ---
     val thumbProgress = remember { Animatable(if (checked) 1f else 0f) }
+    val thumbClipPath = remember { Path() }
     val coroutineScope = rememberCoroutineScope()
     val dragState = remember { SwitchDragState() }
     val fitScale = remember { SwitchFitScale() }
@@ -329,7 +332,9 @@ fun ToggleSwitch(
             emptyList()
         }
     }
-    val dragInteractionSource = remember { DragCancelTrackingInteractionSource() }
+    val dragInteractionSource = remember(interactionSource) {
+        DragCancelTrackingInteractionSource(interactionSource)
+    }
     var dragSettleCount by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(enabled, orientation, isHorizontalRtl) {
@@ -449,21 +454,7 @@ fun ToggleSwitch(
     // --- 6. Canvas Drawing ---
     Canvas(
         modifier = modifier
-            .then(
-                if (toolbarScale < 1f) {
-                    Modifier
-                } else {
-                    Modifier.minimumInteractiveComponentSize()
-                }
-            )
-            .fitSwitchWithin(
-                width = dims.switchWidthDp,
-                height = dims.switchHeightDp,
-                fitScale = fitScale
-            )
-            .toggleSwitchShadow(shadowPainters)
-            .clip(CircleShape)
-            .indication(interactionSource, LocalIndication.current)
+            .minimumInteractiveComponentSize()
             .semantics {
                 role = Role.Switch
                 if (contentDescription != null) {
@@ -500,6 +491,9 @@ fun ToggleSwitch(
                 if (!isActivationKey || !interactive) {
                     false
                 } else if (event.type == KeyEventType.KeyUp) {
+                    val press = PressInteraction.Press(Offset.Zero)
+                    interactionSource.tryEmit(press)
+                    interactionSource.tryEmit(PressInteraction.Release(press))
                     if (currentEnabled) {
                         currentOnCheckedChange(!currentChecked)
                     } else {
@@ -511,9 +505,21 @@ fun ToggleSwitch(
                 }
             }
             .focusable(enabled = isInteractive, interactionSource = interactionSource)
-            .pointerInput(isInteractive) {
+            .pointerInput(isInteractive, interactionSource) {
                 if (!isInteractive) return@pointerInput
                 detectTapGestures(
+                    onPress = { offset ->
+                        val press = PressInteraction.Press(offset)
+                        interactionSource.emit(press)
+                        val released = tryAwaitRelease()
+                        interactionSource.emit(
+                            if (released) {
+                                PressInteraction.Release(press)
+                            } else {
+                                PressInteraction.Cancel(press)
+                            }
+                        )
+                    },
                     onTap = {
                         if (currentEnabled) {
                             currentOnCheckedChange(!currentChecked)
@@ -547,12 +553,19 @@ fun ToggleSwitch(
                     if (wasDragging && !wasCancelled && currentEnabled) {
                         val newCheckedState = finalProgress > 0.5f
                         if (newCheckedState != currentChecked) {
-                            currentOnCheckedChange(newCheckedState)
-                            // Defer reverting for one frame so an asynchronous StateFlow/ViewModel
-                            // update to `checked` can arrive without a 1-frame backward bounce,
-                            // while still settling back if the caller declines the change.
+                            val targetProgress = if (newCheckedState) 1f else 0f
                             coroutineScope.launch {
-                                withFrameNanos {}
+                                thumbProgress.syncToTarget(
+                                    target = targetProgress,
+                                    disableAnimations = currentDisableAnimations
+                                )
+                            }
+                            currentOnCheckedChange(newCheckedState)
+                            // Defer reverting for two frames so a StateFlow/ViewModel update to
+                            // `checked` can arrive and recompose without a backward bounce, while
+                            // still settling back if the caller declines the change.
+                            coroutineScope.launch {
+                                repeat(2) { withFrameNanos {} }
                                 if (
                                     dragState.gestureId == settledGestureId &&
                                     !dragState.isDragging &&
@@ -569,6 +582,14 @@ fun ToggleSwitch(
                     }
                 }
             )
+            .fitSwitchWithin(
+                width = dims.switchWidthDp,
+                height = dims.switchHeightDp,
+                fitScale = fitScale
+            )
+            .toggleSwitchShadow(shadowPainters)
+            .clip(CircleShape)
+            .indication(interactionSource, LocalIndication.current)
     ) {
         val progress = thumbProgress.value
         val unscaledWidthPx = if (orientation == Orientation.Horizontal) {
@@ -591,7 +612,8 @@ fun ToggleSwitch(
                 startIconPainter = startIconPainter,
                 endIconPainter = endIconPainter,
                 offColorFilter = offColorFilter,
-                onColorFilter = onColorFilter
+                onColorFilter = onColorFilter,
+                thumbClipPath = thumbClipPath
             )
         }
     }
@@ -715,7 +737,8 @@ private fun DrawScope.drawSwitchContent(
     startIconPainter: Painter?,
     endIconPainter: Painter?,
     offColorFilter: ColorFilter,
-    onColorFilter: ColorFilter
+    onColorFilter: ColorFilter,
+    thumbClipPath: Path
 ) {
     val trackCornerRadius = CornerRadius(dims.crossAxisSizePx / 2f, dims.crossAxisSizePx / 2f)
     val trackSize = if (orientation == Orientation.Horizontal) {
@@ -764,19 +787,19 @@ private fun DrawScope.drawSwitchContent(
     }
 
     // 3. Draw the Thumb (under Icons)
+    val thumbCenter = Offset(thumbCenterX, thumbCenterY)
     drawSwitchThumb(
-        center = Offset(thumbCenterX, thumbCenterY),
+        center = thumbCenter,
         radius = dims.thumbRadiusPx,
         color = thumbColor
     )
 
     // 4. Draw the Clipped Icons
     if (startIconPainter != null || endIconPainter != null) {
+        thumbClipPath.rewind()
+        thumbClipPath.addOval(Rect(center = thumbCenter, radius = dims.thumbRadiusPx))
         drawClippedSwitchIcons(
-            thumbLeft = thumbCenterX - dims.thumbRadiusPx,
-            thumbTop = thumbCenterY - dims.thumbRadiusPx,
-            thumbRight = thumbCenterX + dims.thumbRadiusPx,
-            thumbBottom = thumbCenterY + dims.thumbRadiusPx,
+            thumbClipPath = thumbClipPath,
             iconSizePx = dims.iconSizePx,
             iconRotationDegrees = iconRotationDegrees,
             startIconPainter = startIconPainter,
@@ -799,15 +822,23 @@ private suspend fun Animatable<Float, AnimationVector1D>.syncToTarget(
         snapTo(target)
     } else if (isRunning) {
         if (targetValue != target) {
+            val durationMillis =
+                (ToggleSwitchTokens.ToggleAnimationDurationMillis * abs(target - value))
+                    .roundToInt()
+                    .coerceAtLeast(1)
             animateTo(
                 targetValue = target,
-                animationSpec = tween(ToggleSwitchTokens.ToggleAnimationDurationMillis)
+                animationSpec = tween(durationMillis)
             )
         }
     } else if (value != target) {
+        val durationMillis =
+            (ToggleSwitchTokens.ToggleAnimationDurationMillis * abs(target - value))
+                .roundToInt()
+                .coerceAtLeast(1)
         animateTo(
             targetValue = target,
-            animationSpec = tween(ToggleSwitchTokens.ToggleAnimationDurationMillis)
+            animationSpec = tween(durationMillis)
         )
     }
 }
@@ -882,13 +913,11 @@ private fun DrawScope.drawSwitchTrack(color: Color, trackSize: Size, cornerRadiu
 }
 
 /**
- * Draws the start and end icons, clipping the selected tint region to the 4 edges of the thumb.
+ * Draws the start and end icons, clipping unselected and selected icon tints to the circular thumb
+ * path.
  */
 private fun DrawScope.drawClippedSwitchIcons(
-    thumbLeft: Float,
-    thumbTop: Float,
-    thumbRight: Float,
-    thumbBottom: Float,
+    thumbClipPath: Path,
     iconSizePx: Float,
     iconRotationDegrees: Float,
     startIconPainter: Painter?,
@@ -907,10 +936,7 @@ private fun DrawScope.drawClippedSwitchIcons(
             iconCenterY = startIconCenterY,
             iconSizePx = iconSizePx,
             iconRotationDegrees = iconRotationDegrees,
-            thumbLeft = thumbLeft,
-            thumbTop = thumbTop,
-            thumbRight = thumbRight,
-            thumbBottom = thumbBottom,
+            thumbClipPath = thumbClipPath,
             offColorFilter = offColorFilter,
             onColorFilter = onColorFilter
         )
@@ -922,10 +948,7 @@ private fun DrawScope.drawClippedSwitchIcons(
             iconCenterY = endIconCenterY,
             iconSizePx = iconSizePx,
             iconRotationDegrees = iconRotationDegrees,
-            thumbLeft = thumbLeft,
-            thumbTop = thumbTop,
-            thumbRight = thumbRight,
-            thumbBottom = thumbBottom,
+            thumbClipPath = thumbClipPath,
             offColorFilter = offColorFilter,
             onColorFilter = onColorFilter
         )
@@ -938,47 +961,33 @@ private fun DrawScope.drawClippedSwitchIcon(
     iconCenterY: Float,
     iconSizePx: Float,
     iconRotationDegrees: Float,
-    thumbLeft: Float,
-    thumbTop: Float,
-    thumbRight: Float,
-    thumbBottom: Float,
+    thumbClipPath: Path,
     offColorFilter: ColorFilter,
     onColorFilter: ColorFilter
 ) {
     val halfIconPx = iconSizePx / 2f
     val iconLeft = iconCenterX - halfIconPx
     val iconTop = iconCenterY - halfIconPx
-    val iconRight = iconLeft + iconSizePx
-    val iconBottom = iconTop + iconSizePx
     val iconDrawSize = Size(iconSizePx, iconSizePx)
     val iconPivot = Offset(halfIconPx, halfIconPx)
 
-    // Draw the base (unselected) icon first.
-    translate(left = iconLeft, top = iconTop) {
-        rotate(degrees = iconRotationDegrees, pivot = iconPivot) {
-            with(painter) {
-                draw(size = iconDrawSize, colorFilter = offColorFilter)
+    // Draw the unselected portion outside the circular thumb path.
+    clipPath(thumbClipPath, clipOp = ClipOp.Difference) {
+        translate(left = iconLeft, top = iconTop) {
+            rotate(degrees = iconRotationDegrees, pivot = iconPivot) {
+                with(painter) {
+                    draw(size = iconDrawSize, colorFilter = offColorFilter)
+                }
             }
         }
     }
 
-    // Clip all 4 edges to the intersection of the thumb bounds and icon bounds.
-    val clipLeft = maxOf(thumbLeft, iconLeft)
-    val clipTop = maxOf(thumbTop, iconTop)
-    val clipRight = minOf(thumbRight, iconRight)
-    val clipBottom = minOf(thumbBottom, iconBottom)
-    if (clipLeft < clipRight && clipTop < clipBottom) {
-        clipRect(
-            left = clipLeft,
-            top = clipTop,
-            right = clipRight,
-            bottom = clipBottom
-        ) {
-            translate(left = iconLeft, top = iconTop) {
-                rotate(degrees = iconRotationDegrees, pivot = iconPivot) {
-                    with(painter) {
-                        draw(size = iconDrawSize, colorFilter = onColorFilter)
-                    }
+    // Draw the selected portion inside the circular thumb path.
+    clipPath(thumbClipPath, clipOp = ClipOp.Intersect) {
+        translate(left = iconLeft, top = iconTop) {
+            rotate(degrees = iconRotationDegrees, pivot = iconPivot) {
+                with(painter) {
+                    draw(size = iconDrawSize, colorFilter = onColorFilter)
                 }
             }
         }
@@ -1040,7 +1049,7 @@ private fun ToggleSwitchLightVideoCaptureEnabledPreview() {
         Box(
             modifier = Modifier
                 .background(Color.Black)
-                .padding(8.dp)
+                .padding(16.dp)
         ) {
             ToggleSwitch(
                 startIcon = R.drawable.ic_camera_alt_outline,
@@ -1063,7 +1072,7 @@ private fun ToggleSwitchLightImageCaptureDisabledPreview() {
         Box(
             modifier = Modifier
                 .background(Color.Black)
-                .padding(8.dp)
+                .padding(16.dp)
         ) {
             ToggleSwitch(
                 startIcon = R.drawable.ic_camera_alt_filled,

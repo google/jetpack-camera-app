@@ -91,6 +91,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -1786,12 +1787,12 @@ internal fun PreviewCaptureModeToggleButton(
             SingleSelectableUiState.Disabled(CaptureMode.VIDEO_ONLY, disabledRationale)
         }
     )
-    val colorScheme = if (darkTheme) darkColorScheme() else MaterialTheme.colorScheme
+    val colorScheme = if (darkTheme) darkColorScheme() else lightColorScheme()
     MaterialTheme(colorScheme = colorScheme) {
         Box(
             modifier = Modifier
                 .background(Brush.verticalGradient(colors = listOf(Color.Gray, Color.DarkGray)))
-                .padding(8.dp)
+                .padding(16.dp)
         ) {
             CaptureModeToggleButton(
                 uiState = uiState,
