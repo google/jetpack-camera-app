@@ -52,6 +52,7 @@ import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -75,6 +76,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
@@ -273,6 +276,8 @@ fun CaptureScaffoldLayout(
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
     val dismissQuickSettingsLabel =
         stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
+    val quickSettingsScrimDescription =
+        stringResource(R.string.quick_settings_scrim_description)
     val handleDismissQuickSettings = {
         state.dismissQuickSettings()
         onDismissQuickSettings()
@@ -284,20 +289,25 @@ fun CaptureScaffoldLayout(
                 modifier = Modifier.fillMaxSize(),
                 scaffoldState = scaffoldState,
                 sheetPeekHeight = 0.dp,
-                sheetDragHandle = {
+                sheetDragHandle = null,
+                sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                sheetContent = {
+                    // Rendered inside sheetContent rather than sheetDragHandle because
+                    // StandardBottomSheet wraps non-null sheetDragHandle in its own clickable
+                    // DragHandleWithTooltip, creating duplicate clickable bounds and overriding
+                    // onDismissQuickSettings.
                     BottomSheetDefaults.DragHandle(
                         modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
                             .testTag(QUICK_SETTINGS_DRAG_HANDLE)
                             .clickable(
                                 role = Role.Button,
                                 onClickLabel = dismissQuickSettingsLabel,
                                 onClick = handleDismissQuickSettings
                             )
+                            .minimumInteractiveComponentSize()
                     )
-                },
-                sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
-                sheetContent = {
                     quickSettingsOverlay(Modifier)
                 },
                 snackbarHost = {}
@@ -426,6 +436,9 @@ fun CaptureScaffoldLayout(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .testTag(QUICK_SETTINGS_SCRIM)
+                                .semantics {
+                                    contentDescription = quickSettingsScrimDescription
+                                }
                                 .clickable(
                                     onClickLabel = dismissQuickSettingsLabel,
                                     interactionSource = remember { MutableInteractionSource() },
