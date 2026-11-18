@@ -49,6 +49,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.max
 
 /**
@@ -261,8 +262,14 @@ internal fun SideRailCaptureScaffold(
         LayoutDirection.Ltr
     }
 
-    val seededRailWidthPx = remember(config.railHorizontalPadding, density) {
-        with(density) { (MinSideRailWidth + config.railHorizontalPadding * 2).roundToPx() }
+    val seededRailWidthPx = remember(config.railWidth, config.railHorizontalPadding, density) {
+        with(density) {
+            if (config.railWidth.isSpecified) {
+                config.railWidth.roundToPx()
+            } else {
+                (MinSideRailWidth + config.railHorizontalPadding * 2).roundToPx()
+            }
+        }
     }
     var startRailWidthPx by remember(seededRailWidthPx) { mutableIntStateOf(seededRailWidthPx) }
     var endRailWidthPx by remember(seededRailWidthPx) { mutableIntStateOf(seededRailWidthPx) }
@@ -272,7 +279,6 @@ internal fun SideRailCaptureScaffold(
     var isErrorDialogPlaced by remember { mutableStateOf(false) }
     val isErrorModalActive = isErrorDialogShowing || isErrorDialogPlaced
     val isQuickSettingsVisible = state.isQuickSettingsOpen && !isErrorModalActive
-    val isModalOpen = isQuickSettingsVisible || isErrorModalActive
 
     val handleDismissQuickSettings = {
         state.dismissQuickSettings()
@@ -286,42 +292,45 @@ internal fun SideRailCaptureScaffold(
         LocalOverlapTargetBounds provides overlapTargetBounds,
         LocalActiveCaptureLayout provides config.activeLayoutName
     ) {
-        // TODO(#648): Replace the bottom sheet with QuickSettingsOverlayCard once #648 lands.
-        // The card should cover the side rails (not clear them), anchored to the left edge:
-        // vertically centered on foldables and landscape tablets; on portrait tablets, level with
-        // the lower controls.
-        QuickSettingsBottomSheetScaffold(
-            modifier = modifier.fillMaxSize(),
-            state = state,
-            onDismissQuickSettings = onDismissQuickSettings,
-            sheetContent = {
-                CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                    OverlapAwareCaptureSlot(
-                        orientation = Orientation.Vertical,
-                        controlSize = ControlSize.Standard,
-                        content = slots.quickSettingsOverlay
-                    )
-                }
-            }
-        ) { isSheetVisible ->
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            // Full-bleed centered viewfinder flush from top to bottom of the window, kept outside
+            // BottomSheetScaffold's SubcomposeLayout so SurfaceView hardware overlays stay active.
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black)
+                    .suppressBackgroundForModal(isQuickSettingsVisible || isErrorModalActive),
+                contentAlignment = Alignment.Center
             ) {
-                // Full-bleed centered viewfinder flush from top to bottom of the window.
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .suppressBackgroundForModal(isModalOpen),
-                    contentAlignment = Alignment.Center
-                ) {
+                CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                    viewfinder(Modifier.fillMaxSize())
+                }
+            }
+
+            // TODO(#648): Replace the bottom sheet with QuickSettingsOverlayCard once #648 lands.
+            // The card should cover the side rails (not clear them), anchored to the left edge:
+            // vertically centered on foldables and landscape tablets; on portrait tablets, level
+            // with the lower controls.
+            QuickSettingsBottomSheetScaffold(
+                modifier = Modifier.fillMaxSize(),
+                state = state,
+                onDismissQuickSettings = onDismissQuickSettings,
+                sheetContent = {
                     CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                        viewfinder(Modifier.fillMaxSize())
+                        OverlapAwareCaptureSlot(
+                            orientation = Orientation.Vertical,
+                            controlSize = ControlSize.Standard,
+                            content = slots.quickSettingsOverlay
+                        )
                     }
                 }
-
-                // Overlaid foreground chrome padded by live visible systemBars and displayCutout.
+            ) { isSheetVisible ->
+                val isModalOpen = isSheetVisible || isErrorModalActive
+                // Overlaid foreground chrome padded by live visible systemBars and
+                // displayCutout.
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

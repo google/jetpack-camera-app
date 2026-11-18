@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -128,6 +129,7 @@ internal fun QuickSettingsBottomSheetScaffold(
             topStart = QuickSettingsBottomSheetTokens.SheetTopCornerRadius,
             topEnd = QuickSettingsBottomSheetTokens.SheetTopCornerRadius
         ),
+        containerColor = Color.Transparent,
         sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         sheetContent = { sheetContent() },
         snackbarHost = {}
