@@ -53,6 +53,18 @@ const val ZOOM_BUTTON_1_TAG = "ZoomButton1Tag"
 const val ZOOM_BUTTON_2_TAG = "ZoomButton2Tag"
 const val ZOOM_BUTTON_5_TAG = "ZoomButton5Tag"
 
+/** Test tag for the active zoom stop indicator pill inside [ZoomBar]. */
+internal const val ZOOM_BAR_INDICATOR_TAG = "box_zoom_bar_indicator"
+
+/** Returns the test tag for the [ZoomBar] stop button corresponding to [buttonValue]. */
+internal fun getZoomButtonTestTag(buttonValue: Float): String = when {
+    buttonValue > 0f && buttonValue < 1f -> ZOOM_BUTTON_MIN_TAG
+    buttonValue == 1f -> ZOOM_BUTTON_1_TAG
+    buttonValue == 2f -> ZOOM_BUTTON_2_TAG
+    buttonValue == 5f -> ZOOM_BUTTON_5_TAG
+    else -> "ZoomButton_${buttonValue}Tag"
+}
+
 // debug component tags
 
 const val ELAPSED_TIME_TAG = "ElapsedTimeTag"
