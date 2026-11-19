@@ -75,6 +75,7 @@ import androidx.core.net.toFile
 import androidx.lifecycle.asFlow
 import com.google.jetpackcamera.core.camera.submode.CameraSessionBinding
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.core.common.ignoreResult
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
@@ -152,7 +153,7 @@ internal suspend fun runSingleCameraSession(
     // only create video use case in standard or video_only
     val videoCaptureUseCase = try {
         when (sessionSettings.captureMode) {
-            CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY -> withContext(backgroundDispatcher) {
+            CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY -> withContext(backgroundContext) {
                 createVideoUseCase(
                     cameraProvider.getCameraInfo(initialCameraSelector),
                     sessionSettings.aspectRatio,
@@ -160,8 +161,7 @@ internal suspend fun runSingleCameraSession(
                     sessionSettings.stabilizationMode,
                     sessionSettings.dynamicRange,
                     sessionSettings.videoQuality,
-                    sessionSettings.mirrorMode,
-                    backgroundDispatcher
+                    sessionSettings.mirrorMode
                 )
             }
 
@@ -219,7 +219,7 @@ internal suspend fun runSingleCameraSession(
                     // Resolving the selector (e.g. querying extension availability) and its
                     // CameraInfo can issue blocking camera metadata queries, so this is kept off
                     // the calling (typically main) thread.
-                    val (currentCameraSelector, cameraInfo) = withContext(backgroundDispatcher) {
+                    val (currentCameraSelector, cameraInfo) = withContext(backgroundContext) {
                         val activeSubModeKey = sessionSettings.activeCaptureSubMode
                         val activeBinding = activeSubModeKey
                             ?.let { captureSubModeProviders[it]?.sessionBinding }
@@ -293,7 +293,7 @@ internal suspend fun runSingleCameraSession(
                         }
                     }
                     val effect = cameraEffect
-                    val useCaseGroup = withContext(backgroundDispatcher) {
+                    val useCaseGroup = withContext(backgroundContext) {
                         createUseCaseGroup(
                             cameraInfo = cameraInfo,
                             videoCaptureUseCase = videoCaptureUseCase,
@@ -948,16 +948,16 @@ fun CameraSessionContext.createVideoUseCase(
     stabilizationMode: StabilizationMode,
     dynamicRange: DynamicRange,
     videoQuality: VideoQuality,
-    mirrorMode: MirrorMode,
-    backgroundDispatcher: CoroutineDispatcher
+    mirrorMode: MirrorMode
 ): VideoCapture<Recorder> {
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
     val recorder = Recorder.Builder()
         .setAspectRatio(
             getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
         )
-        .setExecutor(backgroundDispatcher.asExecutor())
         .apply {
+            (backgroundContext[ContinuationInterceptor] as? CoroutineDispatcher)
+                ?.let { setExecutor(it.asExecutor()).ignoreResult() }
             videoQuality.toQuality()?.let { quality ->
                 // Allow falling back to a lower or higher supported quality rather than crashing
                 // if the requested quality cannot be satisfied by the active stream combination.
