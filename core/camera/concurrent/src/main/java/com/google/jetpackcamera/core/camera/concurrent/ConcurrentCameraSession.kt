@@ -44,6 +44,7 @@ import com.google.jetpackcamera.core.camera.processFocusMeteringEvents
 import com.google.jetpackcamera.core.camera.processTransientSettingEvents
 import com.google.jetpackcamera.core.camera.processVideoControlEvents
 import com.google.jetpackcamera.core.camera.runWithConcurrent
+import com.google.jetpackcamera.core.camera.syncPreviewTargetRotationWithDisplay
 import com.google.jetpackcamera.core.camera.toCXConcurrentPreviewMirrorMode
 import com.google.jetpackcamera.core.camera.updatePreviewOrientation
 import com.google.jetpackcamera.model.CameraError
@@ -190,6 +191,12 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                         it.cameraInfo.appLensFacing == primaryCameraInfo.appLensFacing
                     }
                     updatePreviewOrientation(primaryCamera.cameraInfo, useCaseGroup)
+                    launch {
+                        syncPreviewTargetRotationWithDisplay(
+                            primaryCamera.cameraInfo,
+                            useCaseGroup
+                        )
+                    }
 
                     launch {
                         processFocusMeteringEvents(

@@ -19,24 +19,29 @@ package com.google.jetpackcamera.core.camera
 
 import android.Manifest
 import android.app.admin.DevicePolicyManager
+import android.content.ComponentCallbacks
 import android.content.ContentValues
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Rect
 import android.hardware.camera2.CameraCaptureSession
 import android.hardware.camera2.CameraMetadata
 import android.hardware.camera2.CaptureRequest
 import android.hardware.camera2.CaptureResult
 import android.hardware.camera2.TotalCaptureResult
+import android.hardware.display.DisplayManager
 import android.location.Location
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import android.provider.MediaStore
 import android.util.Log
 import android.util.Range
 import android.util.Rational
 import android.util.Size
-import android.view.Surface
+import android.view.Display
 import androidx.annotation.MainThread
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
@@ -109,7 +114,9 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
@@ -319,6 +326,9 @@ internal suspend fun runSingleCameraSession(
                     ) { camera ->
                         Log.d(TAG, "Camera session started")
                         updatePreviewOrientation(camera.cameraInfo, useCaseGroup)
+                        launch {
+                            syncPreviewTargetRotationWithDisplay(camera.cameraInfo, useCaseGroup)
+                        }
 
                         launch {
                             processFocusMeteringEvents(
@@ -742,6 +752,64 @@ internal fun CaptureRequestOptions.Builder.updateLowLightBoostAeMode(
     }
 }
 
+/**
+ * Keeps the target rotation of the [Preview] in [useCaseGroup] in sync with the rotation of the
+ * default display until cancelled.
+ *
+ * The activity handles orientation configuration changes without being recreated, so the display
+ * can rotate while the camera session is running. The viewfinder orients the preview relative to
+ * the display rotation, so the preview's target rotation must follow the display rotation.
+ */
+@InternalCameraApi
+suspend fun CameraSessionContext.syncPreviewTargetRotationWithDisplay(
+    cameraInfo: CameraInfo,
+    useCaseGroup: UseCaseGroup
+) {
+    val preview = useCaseGroup.getPreview() ?: return
+    val displayManager = context.getSystemService(DisplayManager::class.java) ?: return
+    withContext(Dispatchers.Main.immediate) {
+        fun updateTargetRotation() {
+            val displayRotation =
+                displayManager.getDisplay(Display.DEFAULT_DISPLAY)?.rotation ?: return
+            if (preview.targetRotation != displayRotation) {
+                Log.d(TAG, "Updating preview target rotation to display rotation $displayRotation")
+                preview.targetRotation = displayRotation
+                updatePreviewOrientation(cameraInfo, useCaseGroup)
+            }
+        }
+        val listener = object : DisplayManager.DisplayListener {
+            override fun onDisplayAdded(displayId: Int) {}
+            override fun onDisplayRemoved(displayId: Int) {}
+            override fun onDisplayChanged(displayId: Int) {
+                if (displayId == Display.DEFAULT_DISPLAY) {
+                    updateTargetRotation()
+                }
+            }
+        }
+        displayManager.registerDisplayListener(listener, Handler(Looper.getMainLooper()))
+        // Configuration changes are delivered before the window is laid out in the new
+        // orientation, while display events can arrive tens of milliseconds later. Update the
+        // target rotation on both, so the viewfinder receives the new transformation info before
+        // it lays out the first frame in the new orientation.
+        val componentCallbacks = object : ComponentCallbacks {
+            override fun onConfigurationChanged(newConfig: Configuration) {
+                updateTargetRotation()
+            }
+
+            @Deprecated("Deprecated in Java")
+            override fun onLowMemory() {}
+        }
+        context.registerComponentCallbacks(componentCallbacks)
+        updateTargetRotation()
+        try {
+            awaitCancellation()
+        } finally {
+            context.unregisterComponentCallbacks(componentCallbacks)
+            displayManager.unregisterDisplayListener(listener)
+        }
+    }
+}
+
 @InternalCameraApi
 fun CameraSessionContext.applyDeviceRotation(
     deviceRotation: DeviceRotation,
@@ -753,9 +821,9 @@ fun CameraSessionContext.applyDeviceRotation(
             is Preview -> {
                 // Preview's target rotation should not be updated with device rotation.
                 // Instead, preview rotation should match the display rotation.
-                // When Preview is created, it is initialized with the display rotation.
-                // This will need to be updated separately if the display rotation is not
-                // locked. Currently the app is locked to portrait orientation.
+                // When Preview is created, it is initialized with the display rotation, and it
+                // is kept in sync with the display rotation by
+                // syncPreviewTargetRotationWithDisplay().
             }
 
             is ImageCapture -> {
@@ -1012,13 +1080,6 @@ private fun createPreviewUseCase(
     previewMirrorMode: Int,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null
 ): Preview = Preview.Builder().apply {
-    // Phone landscape counter-rotates the UI and PreviewDisplay back into a canonical portrait
-    // (ROTATION_0) coordinate frame. Pin Preview's target rotation to ROTATION_0 so ViewPort crop
-    // rects and StreamSharing buffers remain aligned with the portrait viewfinder even when bound
-    // while the OS window is in landscape. Upright large-screen / multi-window layouts will drive
-    // Preview and ViewPort from a dedicated window/viewfinder rotation distinct from the sensor-
-    // based deviceRotation used for ImageCapture and VideoCapture EXIF orientation.
-    setTargetRotation(Surface.ROTATION_0)
     updateCameraStateWithCaptureResults(
         targetCameraInfo = cameraInfo,
         captureResults = captureResults
