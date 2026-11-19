@@ -106,7 +106,7 @@ fun CutoutAwareRow(
     val windowRotation = LocalWindowRotation.current
     val currentWindowInsets = LocalCurrentWindowInsets.current
     val cutoutInsets = currentWindowInsets?.displayCutout ?: WindowInsets.displayCutout
-    var rowBoundsInWindow by remember { mutableStateOf<IntRect?>(null) }
+    var rowBoundsInWindow by remember { mutableStateOf<RowWindowBounds?>(null) }
     val lockedMinX = remember { mutableMapOf<Int, Int>() }
     var pillSegments by remember { mutableStateOf<List<IntRect>>(emptyList()) }
 
@@ -122,8 +122,14 @@ fun CutoutAwareRow(
                         right = bounds.right.roundToInt(),
                         bottom = bounds.bottom.roundToInt()
                     )
-                    if (rowBoundsInWindow != intRect) {
-                        rowBoundsInWindow = intRect
+                    val rowBounds = RowWindowBounds(
+                        bounds = intRect,
+                        windowRotation = windowRotation,
+                        windowWidth = view.width,
+                        windowHeight = view.height
+                    )
+                    if (rowBoundsInWindow != rowBounds) {
+                        rowBoundsInWindow = rowBounds
                     }
                 }
                 .drawBehind {
@@ -189,7 +195,14 @@ fun CutoutAwareRow(
                 windowCutoutRects = currentWindowInsets?.displayCutoutBoundingRects
                     ?: ViewCompat.getRootWindowInsets(view)
                         ?.displayCutout?.boundingRects.orEmpty(),
-                rowBoundsInWindow = rowBoundsInWindow,
+                // The bounds are reported after the previous layout pass, so they may be for a
+                // previous window rotation, e.g. after a 180 degree rotation, which does not
+                // re-measure the row. Project them into the current window rotation.
+                rowBoundsInWindow = rowBoundsInWindow?.projectTo(
+                    windowRotation = windowRotation,
+                    windowWidth = view.width,
+                    windowHeight = view.height
+                ),
                 isRtl = isRtl,
                 rtlReferenceWidth = rtlReferenceWidth,
                 windowRotation = windowRotation,
@@ -440,4 +453,93 @@ private object CutoutRowScope : RowScope {
     override fun Modifier.alignBy(alignmentLine: HorizontalAlignmentLine): Modifier = this
     override fun Modifier.alignByBaseline(): Modifier = this
     override fun Modifier.alignBy(alignmentLineBlock: (Measured) -> Int): Modifier = this
+}
+
+/**
+ * The bounds of a [CutoutAwareRow] in window coordinates, along with the window rotation and size
+ * they were reported for.
+ */
+internal data class RowWindowBounds(
+    val bounds: IntRect,
+    val windowRotation: DeviceRotation,
+    val windowWidth: Int,
+    val windowHeight: Int
+)
+
+/**
+ * Projects these bounds into the window coordinates of the given [windowRotation] and window size.
+ *
+ * The capture layout is counter-rotated to portrait, so the position of the row in the portrait
+ * frame does not depend on the window rotation. The bounds are mapped into the portrait frame using
+ * the rotation they were reported for, and then back into window coordinates for the given
+ * rotation.
+ */
+internal fun RowWindowBounds.projectTo(
+    windowRotation: DeviceRotation,
+    windowWidth: Int,
+    windowHeight: Int
+): IntRect {
+    if (windowRotation == this.windowRotation &&
+        windowWidth == this.windowWidth &&
+        windowHeight == this.windowHeight
+    ) {
+        return bounds
+    }
+    return bounds
+        .windowToPortrait(this.windowRotation, this.windowWidth, this.windowHeight)
+        .portraitToWindow(windowRotation, windowWidth, windowHeight)
+}
+
+/** Maps a rect from window coordinates into the portrait frame of the counter-rotated layout. */
+private fun IntRect.windowToPortrait(
+    windowRotation: DeviceRotation,
+    windowWidth: Int,
+    windowHeight: Int
+): IntRect = when (windowRotation) {
+    DeviceRotation.Natural -> this
+    DeviceRotation.Rotated90 -> IntRect(
+        left = top,
+        top = windowWidth - right,
+        right = bottom,
+        bottom = windowWidth - left
+    )
+    DeviceRotation.Rotated270 -> IntRect(
+        left = windowHeight - bottom,
+        top = left,
+        right = windowHeight - top,
+        bottom = right
+    )
+    DeviceRotation.Rotated180 -> IntRect(
+        left = windowWidth - right,
+        top = windowHeight - bottom,
+        right = windowWidth - left,
+        bottom = windowHeight - top
+    )
+}
+
+/** Maps a rect from the portrait frame of the counter-rotated layout into window coordinates. */
+private fun IntRect.portraitToWindow(
+    windowRotation: DeviceRotation,
+    windowWidth: Int,
+    windowHeight: Int
+): IntRect = when (windowRotation) {
+    DeviceRotation.Natural -> this
+    DeviceRotation.Rotated90 -> IntRect(
+        left = windowWidth - bottom,
+        top = left,
+        right = windowWidth - top,
+        bottom = right
+    )
+    DeviceRotation.Rotated270 -> IntRect(
+        left = top,
+        top = windowHeight - right,
+        right = bottom,
+        bottom = windowHeight - left
+    )
+    DeviceRotation.Rotated180 -> IntRect(
+        left = windowWidth - right,
+        top = windowHeight - bottom,
+        right = windowWidth - left,
+        bottom = windowHeight - top
+    )
 }

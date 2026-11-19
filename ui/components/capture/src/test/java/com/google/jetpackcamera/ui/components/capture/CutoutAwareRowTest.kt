@@ -43,6 +43,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
@@ -344,6 +345,74 @@ class CutoutAwareRowTest {
                 fallbackViewHeight = 360
             )
         ).containsExactly(IntRect(left = 20, top = 0, right = 60, bottom = 48))
+    }
+
+    @Test
+    fun rowBoundsFromPreviousFlip_projectToCurrentRotation() {
+        // A row at (16, 10)-(1064, 150) in the portrait frame of a 1080x2404 window.
+        val windowWidth = 2404
+        val windowHeight = 1080
+        val boundsInRotated90 = IntRect(left = 2254, top = 16, right = 2394, bottom = 1064)
+        val boundsInRotated270 = IntRect(left = 10, top = 16, right = 150, bottom = 1064)
+
+        val projected = RowWindowBounds(
+            bounds = boundsInRotated90,
+            windowRotation = DeviceRotation.Rotated90,
+            windowWidth = windowWidth,
+            windowHeight = windowHeight
+        ).projectTo(DeviceRotation.Rotated270, windowWidth, windowHeight)
+
+        assertThat(projected).isEqualTo(boundsInRotated270)
+    }
+
+    @Test
+    fun rowBoundsForCurrentRotation_areUnchanged() {
+        val bounds = IntRect(left = 16, top = 10, right = 1064, bottom = 150)
+
+        val projected = RowWindowBounds(bounds, DeviceRotation.Natural, 1080, 2404)
+            .projectTo(DeviceRotation.Natural, 1080, 2404)
+
+        assertThat(projected).isEqualTo(bounds)
+    }
+
+    @Test
+    fun cutoutAfterFlip_resolvesToSameLocalRectAsBeforeFlip() {
+        // The same physical cutout, at (500, 20)-(580, 100) in the portrait frame.
+        val windowWidth = 2404
+        val windowHeight = 1080
+        val rotated90Bounds = RowWindowBounds(
+            bounds = IntRect(left = 2254, top = 16, right = 2394, bottom = 1064),
+            windowRotation = DeviceRotation.Rotated90,
+            windowWidth = windowWidth,
+            windowHeight = windowHeight
+        )
+        val cutoutInRotated90 = android.graphics.Rect(2304, 500, 2384, 580)
+        val cutoutInRotated270 = android.graphics.Rect(20, 500, 100, 580)
+
+        val before = resolveLocalCutoutRects(
+            cutoutRectsOverride = null,
+            windowCutoutRects = listOf(cutoutInRotated90),
+            rowBoundsInWindow = rotated90Bounds.bounds,
+            isRtl = false,
+            rtlReferenceWidth = 0,
+            windowRotation = DeviceRotation.Rotated90
+        )
+        // Immediately after the flip, the row bounds are still the ones reported in Rotated90.
+        val after = resolveLocalCutoutRects(
+            cutoutRectsOverride = null,
+            windowCutoutRects = listOf(cutoutInRotated270),
+            rowBoundsInWindow = rotated90Bounds.projectTo(
+                DeviceRotation.Rotated270,
+                windowWidth,
+                windowHeight
+            ),
+            isRtl = false,
+            rtlReferenceWidth = 0,
+            windowRotation = DeviceRotation.Rotated270
+        )
+
+        assertThat(before).containsExactly(IntRect(left = 484, top = 10, right = 564, bottom = 90))
+        assertThat(after).isEqualTo(before)
     }
 
     @Test
