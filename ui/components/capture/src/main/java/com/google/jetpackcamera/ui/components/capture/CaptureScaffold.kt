@@ -61,7 +61,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScaffoldContent
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
@@ -91,7 +91,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Mode-agnostic state holder for [CaptureScaffold] and [CaptureScaffoldLayout], managing Quick
- * Settings visibility (compatible with both bottom-sheet and side-rail / floating-card layouts)
+ * Settings visibility (compatible with both bottom-sheet and side-rail / side-sheet layouts)
  * and the scaffold [SnackbarHostState].
  *
  * @param isInitiallyExpanded whether the Quick Settings surface starts in the open state.
@@ -104,7 +104,7 @@ class CaptureScaffoldState(
     val snackbarHostState: SnackbarHostState = SnackbarHostState()
 ) {
     /**
-     * Whether the Quick Settings surface (bottom sheet or floating overlay card) is currently open.
+     * Whether the Quick Settings surface (bottom sheet or side sheet) is currently open.
      */
     var isQuickSettingsOpen: Boolean by mutableStateOf(isInitiallyExpanded)
         private set
@@ -640,7 +640,10 @@ object CaptureScaffoldDefaults {
     }
 
     /**
-     * Default Quick Settings content.
+     * Default Quick Settings content without container-specific insets or padding.
+     *
+     * The hosting sheet ([CaptureScaffoldLayout]'s bottom sheet or the large-screen panel) owns
+     * the navigation bar inset and bottom padding, so this content can be hosted in either.
      */
     @Composable
     fun QuickSettings(
@@ -650,8 +653,8 @@ object CaptureScaffoldDefaults {
         modifier: Modifier = Modifier,
         showMoreSettingsButton: Boolean = true
     ) {
-        if (controller != null) {
-            QuickSettingsScaffoldContent(
+        if (controller != null && uiState is QuickSettingsUiState.Available) {
+            QuickSettingsContent(
                 quickSettingsUiState = uiState,
                 onNavigateToSettings = onNavigateToSettings,
                 quickSettingsController = controller,
