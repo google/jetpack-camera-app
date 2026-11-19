@@ -27,7 +27,7 @@ import com.google.jetpackcamera.core.common.FilePathGenerator
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import javax.inject.Provider
-import kotlinx.coroutines.CoroutineDispatcher
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +43,7 @@ import kotlinx.coroutines.flow.StateFlow
 data class CameraSessionContext(
     val context: Context,
     val cameraProvider: ProcessCameraProvider,
-    val backgroundDispatcher: CoroutineDispatcher,
+    val backgroundContext: CoroutineContext,
     val screenFlashEvents: SendChannel<CameraSystem.ScreenFlashEvent>,
     val filePathGenerator: FilePathGenerator,
     val focusMeteringEvents: Channel<CameraEvent.FocusMeteringEvent>,
