@@ -99,7 +99,7 @@ private val LOADING_INDICATOR_SIZE = 50.dp
  * @param recordingSettingsSlot Slot for the recording settings section.
  * @param appSettingsSlot Slot for the general application settings section.
  */
-@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SettingsScreen(
     versionInfo: VersionInfoHolder,
@@ -118,17 +118,46 @@ fun SettingsScreen(
         )
     }
 ) {
-    val permissionStates = rememberMultiplePermissionsState(
-        permissions =
-        listOf(
-            Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
+    SettingsScreen(
+        versionInfo = versionInfo,
+        onNavigateBack = onNavigateBack,
+        permissionStates = rememberMultiplePermissionsState(
+            permissions = listOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        ),
+        viewModel = viewModel,
+        onOpenAppSettings = onOpenAppSettings,
+        cameraSettingsSlot = cameraSettingsSlot,
+        recordingSettingsSlot = recordingSettingsSlot,
+        appSettingsSlot = appSettingsSlot
     )
+}
 
+@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
+@Composable
+internal fun SettingsScreen(
+    versionInfo: VersionInfoHolder,
+    onNavigateBack: () -> Unit,
+    permissionStates: MultiplePermissionsState,
+    viewModel: SettingsViewModel = hiltViewModel(),
+    onOpenAppSettings: (() -> Unit)? = null,
+    cameraSettingsSlot: @Composable () -> Unit = { DefaultCameraSettings(viewModel = viewModel) },
+    recordingSettingsSlot: @Composable () -> Unit = {
+        DefaultRecordingSettings(viewModel = viewModel)
+    },
+    appSettingsSlot: @Composable () -> Unit = {
+        DefaultAppSettings(
+            versionInfo = versionInfo,
+            viewModel = viewModel,
+            onOpenAppSettings = onOpenAppSettings
+        )
+    }
+) {
     viewModel.setGrantedPermissions(permissionStates)
 
     val uiState by viewModel.settingsUiState.collectAsState()

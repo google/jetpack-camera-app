@@ -45,6 +45,7 @@ import com.google.jetpackcamera.core.camera.processTransientSettingEvents
 import com.google.jetpackcamera.core.camera.processVideoControlEvents
 import com.google.jetpackcamera.core.camera.runWithConcurrent
 import com.google.jetpackcamera.core.camera.toCXConcurrentPreviewMirrorMode
+import com.google.jetpackcamera.core.camera.updatePreviewOrientation
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
@@ -120,7 +121,7 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
 
             try {
                 // Keep blocking camera lookups and use case setup off the calling thread.
-                val useCaseGroup = withContext(backgroundDispatcher) {
+                val useCaseGroup = withContext(backgroundContext) {
                     val videoCapture = if (sessionSettings.captureMode != CaptureMode.IMAGE_ONLY) {
                         createVideoUseCase(
                             primaryCameraInfo,
@@ -131,8 +132,7 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                             VideoQuality.UNSPECIFIED,
                             // Use case mirror modes apply to the whole composited frame, so each
                             // camera is mirrored through its CompositionSettings below instead.
-                            MirrorMode.OFF,
-                            backgroundDispatcher
+                            MirrorMode.OFF
                         )
                     } else {
                         null
@@ -188,6 +188,7 @@ internal suspend fun CameraSessionContext.runConcurrentCameraSession(
                     val primaryCamera = cameras.first {
                         it.cameraInfo.appLensFacing == primaryCameraInfo.appLensFacing
                     }
+                    updatePreviewOrientation(primaryCamera.cameraInfo, useCaseGroup)
 
                     launch {
                         processFocusMeteringEvents(

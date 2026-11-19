@@ -16,15 +16,163 @@
 package com.google.jetpackcamera.core.camera
 
 import android.graphics.Rect
+import android.hardware.camera2.CameraMetadata
+import android.hardware.camera2.CaptureRequest
+import android.os.Build
+import android.util.Rational
 import android.util.Size
+import androidx.annotation.OptIn
+import androidx.camera.camera2.interop.CaptureRequestOptions
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.VideoQuality
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@OptIn(ExperimentalCamera2Interop::class)
 @RunWith(RobolectricTestRunner::class)
 class CameraSessionTest {
+
+    @Test
+    fun isSensorOutputLandscape_landscapeSensor_returnsExpectedOrientation() {
+        val landscapeSensorRect = Rect(0, 0, 4000, 3000)
+
+        assertThat(isSensorOutputLandscape(0, landscapeSensorRect)).isTrue()
+        assertThat(isSensorOutputLandscape(180, landscapeSensorRect)).isTrue()
+        assertThat(isSensorOutputLandscape(90, landscapeSensorRect)).isFalse()
+        assertThat(isSensorOutputLandscape(270, landscapeSensorRect)).isFalse()
+    }
+
+    @Test
+    fun isSensorOutputLandscape_portraitSensor_returnsExpectedOrientation() {
+        val portraitSensorRect = Rect(0, 0, 3000, 4000)
+
+        assertThat(isSensorOutputLandscape(0, portraitSensorRect)).isFalse()
+        assertThat(isSensorOutputLandscape(180, portraitSensorRect)).isFalse()
+        assertThat(isSensorOutputLandscape(90, portraitSensorRect)).isTrue()
+        assertThat(isSensorOutputLandscape(270, portraitSensorRect)).isTrue()
+    }
+
+    @Test
+    fun getViewPortAspectRatio_landscapeSensorRotated90Or270_returnsPortraitAspectRatio() {
+        val landscapeSensorRect = Rect(0, 0, 4000, 3000)
+
+        for (rotationDegrees in listOf(90, 270)) {
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    landscapeSensorRect,
+                    AspectRatio.THREE_FOUR
+                )
+            ).isEqualTo(Rational(3, 4))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    landscapeSensorRect,
+                    AspectRatio.NINE_SIXTEEN
+                )
+            ).isEqualTo(Rational(9, 16))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    landscapeSensorRect,
+                    AspectRatio.ONE_ONE
+                )
+            ).isEqualTo(Rational(1, 1))
+        }
+    }
+
+    @Test
+    fun getViewPortAspectRatio_landscapeSensorRotated0Or180_returnsLandscapeAspectRatio() {
+        val landscapeSensorRect = Rect(0, 0, 4000, 3000)
+
+        for (rotationDegrees in listOf(0, 180)) {
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    landscapeSensorRect,
+                    AspectRatio.THREE_FOUR
+                )
+            ).isEqualTo(Rational(4, 3))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    landscapeSensorRect,
+                    AspectRatio.NINE_SIXTEEN
+                )
+            ).isEqualTo(Rational(16, 9))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    landscapeSensorRect,
+                    AspectRatio.ONE_ONE
+                )
+            ).isEqualTo(Rational(1, 1))
+        }
+    }
+
+    @Test
+    fun getViewPortAspectRatio_portraitSensorRotated0Or180_returnsPortraitAspectRatio() {
+        val portraitSensorRect = Rect(0, 0, 3000, 4000)
+
+        for (rotationDegrees in listOf(0, 180)) {
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    portraitSensorRect,
+                    AspectRatio.THREE_FOUR
+                )
+            ).isEqualTo(Rational(3, 4))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    portraitSensorRect,
+                    AspectRatio.NINE_SIXTEEN
+                )
+            ).isEqualTo(Rational(9, 16))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    portraitSensorRect,
+                    AspectRatio.ONE_ONE
+                )
+            ).isEqualTo(Rational(1, 1))
+        }
+    }
+
+    @Test
+    fun getViewPortAspectRatio_portraitSensorRotated90Or270_returnsLandscapeAspectRatio() {
+        val portraitSensorRect = Rect(0, 0, 3000, 4000)
+
+        for (rotationDegrees in listOf(90, 270)) {
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    portraitSensorRect,
+                    AspectRatio.THREE_FOUR
+                )
+            ).isEqualTo(Rational(4, 3))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    portraitSensorRect,
+                    AspectRatio.NINE_SIXTEEN
+                )
+            ).isEqualTo(Rational(16, 9))
+            assertThat(
+                getViewPortAspectRatio(
+                    rotationDegrees,
+                    portraitSensorRect,
+                    AspectRatio.ONE_ONE
+                )
+            ).isEqualTo(Rational(1, 1))
+        }
+    }
 
     @Test
     fun getVideoQualityFromResolution_landscapeResolutions_returnsExpectedQuality() {
@@ -98,5 +246,74 @@ class CameraSessionTest {
         assertThat(getHeightFromCropRect(null, rotationDegrees = 0)).isEqualTo(0)
         assertThat(getWidthFromCropRect(null, rotationDegrees = 90)).isEqualTo(0)
         assertThat(getHeightFromCropRect(null, rotationDegrees = 90)).isEqualTo(0)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
+    fun updateLowLightBoostAeMode_lowLightBoostWithAeModeSupport_setsLowLightBoostAeMode() {
+        val builder = CaptureRequestOptions.Builder()
+
+        builder.updateLowLightBoostAeMode(
+            flashMode = FlashMode.LOW_LIGHT_BOOST,
+            supportedIlluminants = setOf(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
+        )
+
+        assertThat(builder.build().getCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE))
+            .isEqualTo(CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
+    fun updateLowLightBoostAeMode_lowLightBoostWithCameraEffect_clearsAeMode() {
+        val builder = CaptureRequestOptions.Builder().setCaptureRequestOption(
+            CaptureRequest.CONTROL_AE_MODE,
+            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+        )
+
+        builder.updateLowLightBoostAeMode(
+            flashMode = FlashMode.LOW_LIGHT_BOOST,
+            supportedIlluminants = setOf(Illuminant.LOW_LIGHT_BOOST_CAMERA_EFFECT)
+        )
+
+        assertThat(builder.build().getCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE))
+            .isNull()
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
+    fun updateLowLightBoostAeMode_otherFlashMode_clearsAeMode() {
+        val builder = CaptureRequestOptions.Builder()
+        builder.updateLowLightBoostAeMode(
+            flashMode = FlashMode.LOW_LIGHT_BOOST,
+            supportedIlluminants = setOf(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
+        )
+
+        builder.updateLowLightBoostAeMode(
+            flashMode = FlashMode.OFF,
+            supportedIlluminants = setOf(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
+        )
+
+        assertThat(builder.build().getCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE))
+            .isNull()
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
+    fun updateLowLightBoostAeMode_keepsOtherOptions() {
+        val builder = CaptureRequestOptions.Builder().setCaptureRequestOption(
+            CaptureRequest.SENSOR_TEST_PATTERN_MODE,
+            CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS
+        )
+
+        builder.updateLowLightBoostAeMode(
+            flashMode = FlashMode.LOW_LIGHT_BOOST,
+            supportedIlluminants = setOf(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
+        )
+
+        val options = builder.build()
+        assertThat(options.getCaptureRequestOption(CaptureRequest.SENSOR_TEST_PATTERN_MODE))
+            .isEqualTo(CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS)
+        assertThat(options.getCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE))
+            .isEqualTo(CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
     }
 }

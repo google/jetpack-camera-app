@@ -38,6 +38,7 @@ import android.util.Rational
 import android.util.Size
 import androidx.annotation.MainThread
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
@@ -152,7 +153,7 @@ internal suspend fun runSingleCameraSession(
     // only create video use case in standard or video_only
     val videoCaptureUseCase = try {
         when (sessionSettings.captureMode) {
-            CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY -> withContext(backgroundDispatcher) {
+            CaptureMode.STANDARD, CaptureMode.VIDEO_ONLY -> withContext(backgroundContext) {
                 createVideoUseCase(
                     cameraProvider.getCameraInfo(initialCameraSelector),
                     sessionSettings.aspectRatio,
@@ -160,8 +161,7 @@ internal suspend fun runSingleCameraSession(
                     sessionSettings.stabilizationMode,
                     sessionSettings.dynamicRange,
                     sessionSettings.videoQuality,
-                    sessionSettings.mirrorMode,
-                    backgroundDispatcher
+                    sessionSettings.mirrorMode
                 )
             }
 
@@ -219,7 +219,7 @@ internal suspend fun runSingleCameraSession(
                     // Resolving the selector (e.g. querying extension availability) and its
                     // CameraInfo can issue blocking camera metadata queries, so this is kept off
                     // the calling (typically main) thread.
-                    val (currentCameraSelector, cameraInfo) = withContext(backgroundDispatcher) {
+                    val (currentCameraSelector, cameraInfo) = withContext(backgroundContext) {
                         val activeSubModeKey = sessionSettings.activeCaptureSubMode
                         val activeBinding = activeSubModeKey
                             ?.let { captureSubModeProviders[it]?.sessionBinding }
@@ -293,7 +293,7 @@ internal suspend fun runSingleCameraSession(
                         }
                     }
                     val effect = cameraEffect
-                    val useCaseGroup = withContext(backgroundDispatcher) {
+                    val useCaseGroup = withContext(backgroundContext) {
                         createUseCaseGroup(
                             cameraInfo = cameraInfo,
                             videoCaptureUseCase = videoCaptureUseCase,
@@ -317,6 +317,8 @@ internal suspend fun runSingleCameraSession(
                         useCaseGroup
                     ) { camera ->
                         Log.d(TAG, "Camera session started")
+                        updatePreviewOrientation(camera.cameraInfo, useCaseGroup)
+
                         launch {
                             processFocusMeteringEvents(
                                 camera.cameraInfo,
@@ -652,33 +654,13 @@ private suspend fun updateCamera2RequestOptions(
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
         prevTransientSettings?.flashMode != newTransientSettings.flashMode
     ) {
-        when (newTransientSettings.flashMode) {
-            FlashMode.LOW_LIGHT_BOOST -> {
-                if (cameraConstraints?.supportedIlluminants?.contains(
-                        Illuminant.LOW_LIGHT_BOOST_AE_MODE
-                    ) == true
-                ) {
-                    Log.d(
-                        TAG,
-                        "Setting LLB with " +
-                            "CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY"
-                    )
-                    val captureRequestOptions = CaptureRequestOptions.Builder()
-                        .setCaptureRequestOption(
-                            CaptureRequest.CONTROL_AE_MODE,
-                            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
-                        )
-                        .build()
-
-                    Camera2CameraControl.from(camera.cameraControl)
-                        .addCaptureRequestOptions(captureRequestOptions)
-                }
-            }
-
-            else -> {
-                optionsBuilder.clearCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE)
-            }
-        }
+        // The AE mode is set on the shared builder rather than through a separate
+        // addCaptureRequestOptions() call, since setCaptureRequestOptions() below replaces all
+        // options previously applied through Camera2CameraControl.
+        optionsBuilder.updateLowLightBoostAeMode(
+            flashMode = newTransientSettings.flashMode,
+            supportedIlluminants = cameraConstraints?.supportedIlluminants.orEmpty()
+        )
         needsUpdate = true
     }
 
@@ -729,6 +711,33 @@ private suspend fun updateCamera2RequestOptions(
     if (needsUpdate) {
         Camera2CameraControl.from(camera.cameraControl)
             .setCaptureRequestOptions(optionsBuilder.build())
+    }
+}
+
+/**
+ * Updates the low light boost AE mode in this builder for [flashMode].
+ *
+ * For [FlashMode.LOW_LIGHT_BOOST], when [supportedIlluminants] contains
+ * [Illuminant.LOW_LIGHT_BOOST_AE_MODE], this sets [CaptureRequest.CONTROL_AE_MODE] to
+ * [CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY]. Otherwise, this clears
+ * [CaptureRequest.CONTROL_AE_MODE] so that CameraX controls the AE mode.
+ */
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@ExperimentalCamera2Interop
+internal fun CaptureRequestOptions.Builder.updateLowLightBoostAeMode(
+    flashMode: FlashMode,
+    supportedIlluminants: Set<Illuminant>
+) {
+    if (flashMode == FlashMode.LOW_LIGHT_BOOST &&
+        Illuminant.LOW_LIGHT_BOOST_AE_MODE in supportedIlluminants
+    ) {
+        Log.d(TAG, "Setting LLB with CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY")
+        setCaptureRequestOption(
+            CaptureRequest.CONTROL_AE_MODE,
+            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+        )
+    } else {
+        clearCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE)
     }
 }
 
@@ -802,9 +811,15 @@ fun createUseCaseGroup(
             TAG,
             "Setting initial device rotation to ${initialTransientSettings.deviceRotation}"
         )
+        val viewPortAspectRatio = getViewPortAspectRatio(
+            sensorRotationDegrees =
+            cameraInfo.getSensorRotationDegrees(previewUseCase.targetRotation),
+            sensorRect = cameraInfo.sensorRect,
+            aspectRatio = aspectRatio
+        )
         setViewPort(
             ViewPort.Builder(
-                Rational(aspectRatio.numerator, aspectRatio.denominator),
+                viewPortAspectRatio,
                 // Initialize rotation to Preview's rotation, which comes from Display rotation
                 previewUseCase.targetRotation
             ).build()
@@ -817,6 +832,53 @@ fun createUseCaseGroup(
 
         effect?.let { addEffect(it) }
     }.build()
+}
+
+/**
+ * Updates [CameraState.isPreviewLandscape] to match the [Preview] output orientation of
+ * [cameraInfo] in [useCaseGroup].
+ */
+@InternalCameraApi
+fun CameraSessionContext.updatePreviewOrientation(
+    cameraInfo: CameraInfo,
+    useCaseGroup: UseCaseGroup
+) {
+    val isPreviewLandscape = useCaseGroup.getPreview()?.let { preview ->
+        isSensorOutputLandscape(
+            sensorRotationDegrees = cameraInfo.getSensorRotationDegrees(preview.targetRotation),
+            sensorRect = cameraInfo.sensorRect
+        )
+    }
+    currentCameraState.update { old ->
+        old.copy(isPreviewLandscape = isPreviewLandscape)
+    }
+}
+
+/**
+ * Returns whether the camera sensor output is landscape after applying the target rotation
+ * ([sensorRotationDegrees]).
+ */
+internal fun isSensorOutputLandscape(sensorRotationDegrees: Int, sensorRect: Rect): Boolean {
+    // If the relative rotation is 0 or 180, the orientation matches the sensor's natural
+    // orientation. If the relative rotation is 90 or 270, the orientation is rotated
+    // (landscape becomes portrait, and vice versa).
+    return (sensorRotationDegrees % 180 == 0) == (sensorRect.width() >= sensorRect.height())
+}
+
+/**
+ * Computes the [ViewPort] aspect ratio oriented to match the camera sensor output after applying
+ * the target rotation ([sensorRotationDegrees]).
+ */
+internal fun getViewPortAspectRatio(
+    sensorRotationDegrees: Int,
+    sensorRect: Rect,
+    aspectRatio: AspectRatio
+): Rational {
+    return if (isSensorOutputLandscape(sensorRotationDegrees, sensorRect)) {
+        Rational(aspectRatio.denominator, aspectRatio.numerator)
+    } else {
+        Rational(aspectRatio.numerator, aspectRatio.denominator)
+    }
 }
 
 /**
@@ -886,16 +948,16 @@ fun CameraSessionContext.createVideoUseCase(
     stabilizationMode: StabilizationMode,
     dynamicRange: DynamicRange,
     videoQuality: VideoQuality,
-    mirrorMode: MirrorMode,
-    backgroundDispatcher: CoroutineDispatcher
+    mirrorMode: MirrorMode
 ): VideoCapture<Recorder> {
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
     val recorder = Recorder.Builder()
         .setAspectRatio(
             getAspectRatioForUseCase(sensorLandscapeRatio, aspectRatio)
         )
-        .setExecutor(backgroundDispatcher.asExecutor())
         .apply {
+            (backgroundContext[ContinuationInterceptor] as? CoroutineDispatcher)
+                ?.let { setExecutor(it.asExecutor()).ignoreResult() }
             videoQuality.toQuality()?.let { quality ->
                 // Allow falling back to a lower or higher supported quality rather than crashing
                 // if the requested quality cannot be satisfied by the active stream combination.
