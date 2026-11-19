@@ -436,7 +436,7 @@ object CaptureScaffoldDefaults {
         modifier: Modifier = Modifier,
         onDismissQuickSettings: () -> Unit = {},
         onIncrementZoom: (Float) -> Unit = {},
-        controlSize: ControlSize = ControlSize.Standard
+        controlSize: ControlSize = LocalControlSize.current
     ) {
         com.google.jetpackcamera.ui.components.capture.CaptureButton(
             modifier = modifier,

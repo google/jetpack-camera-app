@@ -1098,16 +1098,13 @@ object CaptureButtonDefaults {
     /** Diameter of the standard capture button ring. */
     val StandardDiameter: Dp = 86.dp
 
-    // 72dp matches the foldable mocks, which don't specify exact component sizes. Confirm with
-    // design.
-
     /**
      * Diameter of the medium capture button ring, used for intermediate containers such as
      * foldable side rails.
      */
-    val MediumDiameter: Dp = 72.dp
+    val MediumDiameter: Dp = 74.dp
 
-    // Matches the standalone "Mini shutter" component spec.
+    // Uses the 56dp mini shutter diameter token for tight containers.
 
     /** Diameter of the mini capture button ring, used for tight containers. */
     val MiniDiameter: Dp = 56.dp
