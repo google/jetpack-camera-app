@@ -17,23 +17,23 @@ package com.google.jetpackcamera.model.proto
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
-import com.google.jetpackcamera.model.proto.ConcurrentCameraMode as ConcurrentCameraModeProto
 import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
 import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
 import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
 import com.google.jetpackcamera.model.proto.LensFacing as LensFacingProto
 import com.google.jetpackcamera.model.proto.LowLightBoostPriority as LowLightBoostPriorityProto
+import com.google.jetpackcamera.model.proto.MirrorMode as MirrorModeProto
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
 import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
 import org.junit.Test
@@ -245,26 +245,11 @@ class ModelMappersTest {
     }
 
     @Test
-    fun concurrentCameraModeMapsCorrectly() {
-        assertThat(
-            ConcurrentCameraMode.DUAL.toProto()
-        ).isEqualTo(ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL)
-        assertThat(
-            ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL.toModel()
-        ).isEqualTo(ConcurrentCameraMode.DUAL)
-
-        assertThat(
-            ConcurrentCameraMode.OFF.toProto()
-        ).isEqualTo(ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF)
-        assertThat(
-            ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF.toModel()
-        ).isEqualTo(ConcurrentCameraMode.OFF)
-
-        assertThat(
-            ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_UNSPECIFIED.toModel()
-        ).isEqualTo(ConcurrentCameraMode.OFF)
-        assertThat(
-            ConcurrentCameraModeProto.UNRECOGNIZED.toModel()
-        ).isEqualTo(ConcurrentCameraMode.OFF)
+    fun mirrorMode_roundTripsAndUnsetMapsToOff() {
+        MirrorMode.entries.forEach { mirrorMode ->
+            assertThat(mirrorMode.toProto().toModel()).isEqualTo(mirrorMode)
+        }
+        assertThat(MirrorModeProto.MIRROR_MODE_UNSPECIFIED.toModel()).isEqualTo(MirrorMode.OFF)
+        assertThat(MirrorModeProto.UNRECOGNIZED.toModel()).isEqualTo(MirrorMode.OFF)
     }
 }

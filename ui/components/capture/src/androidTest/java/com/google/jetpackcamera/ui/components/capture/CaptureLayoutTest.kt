@@ -16,15 +16,11 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.content.Context
+import android.os.Build
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.BottomSheetScaffoldState
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.SheetValue
-import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -33,7 +29,9 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
@@ -41,7 +39,11 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.SdkSuppress
+import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
+import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.common.truth.Truth.assertThat
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -52,27 +54,32 @@ class CaptureLayoutTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
+    @Before
+    fun setUp() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            composeTestRule.enableAccessibilityChecks(
+                AccessibilityValidator()
+                    .setRunChecksFromRootView(true)
+                    .setThrowExceptionFor(AccessibilityCheckResultType.ERROR)
+            )
+        }
+    }
+
     private fun getResString(@StringRes resId: Int): String =
         ApplicationProvider.getApplicationContext<Context>().getString(resId)
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    private fun TestPreviewLayout(
+    private fun TestCaptureScaffoldLayout(
         modifier: Modifier = Modifier,
-        scaffoldState: BottomSheetScaffoldState = rememberBottomSheetScaffoldState(
-            bottomSheetState = rememberStandardBottomSheetState(
-                initialValue = SheetValue.Hidden,
-                skipHiddenState = false
-            )
-        ),
+        state: CaptureScaffoldState = rememberCaptureScaffoldState(),
         onDismissQuickSettings: () -> Unit = {},
-        captureButton: @Composable (Modifier) -> Unit = {},
+        captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
         quickSettingsOverlay: @Composable (Modifier) -> Unit = {},
         viewfinder: @Composable (Modifier) -> Unit = {}
     ) {
-        PreviewLayout(
+        CaptureScaffoldLayout(
             modifier = modifier,
-            scaffoldState = scaffoldState,
+            state = state,
             onDismissQuickSettings = onDismissQuickSettings,
             viewfinder = viewfinder,
             captureButton = captureButton,
@@ -83,25 +90,16 @@ class CaptureLayoutTest {
             quickSettingsButton = {},
             indicatorRow = {},
             captureModeToggle = {},
-            quickSettingsOverlay = quickSettingsOverlay,
-            debugOverlay = {},
-            debugVisibilityWrapper = { it() },
-            screenFlashOverlay = {},
-            snackBar = { _, _ -> }
+            quickSettingsOverlay = quickSettingsOverlay
         )
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @SdkSuppress(minSdkVersion = 34)
     @Test
-    fun previewLayout_dragHandle_hasButtonRoleAndAccessibilityLabel() {
+    fun captureScaffoldLayout_dragHandle_hasButtonRoleAndAccessibilityLabel() {
         composeTestRule.setContent {
-            val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberStandardBottomSheetState(
-                    initialValue = SheetValue.Expanded,
-                    skipHiddenState = false
-                )
-            )
-            TestPreviewLayout(scaffoldState = scaffoldState)
+            val state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+            TestCaptureScaffoldLayout(state = state)
         }
 
         val targetDescription = getResString(
@@ -122,20 +120,14 @@ class CaptureLayoutTest {
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
-    fun previewLayout_clickDragHandle_callsOnDismissQuickSettings() {
+    fun captureScaffoldLayout_clickDragHandle_callsOnDismissQuickSettings() {
         var onDismissCalled = false
 
         composeTestRule.setContent {
-            val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberStandardBottomSheetState(
-                    initialValue = SheetValue.Expanded,
-                    skipHiddenState = false
-                )
-            )
-            TestPreviewLayout(
-                scaffoldState = scaffoldState,
+            val state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+            TestCaptureScaffoldLayout(
+                state = state,
                 onDismissQuickSettings = { onDismissCalled = true }
             )
         }
@@ -144,47 +136,47 @@ class CaptureLayoutTest {
         assertThat(onDismissCalled).isTrue()
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @SdkSuppress(minSdkVersion = 34)
     @Test
-    fun previewLayout_scrim_displayedWhenExpanded_andClickCallsDismiss() {
+    fun captureScaffoldLayout_scrim_displayedWhenExpanded_andClickCallsDismiss() {
         var onDismissCalled = false
 
         composeTestRule.setContent {
-            val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberStandardBottomSheetState(
-                    initialValue = SheetValue.Expanded,
-                    skipHiddenState = false
-                )
-            )
-            TestPreviewLayout(
-                scaffoldState = scaffoldState,
+            val state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+            TestCaptureScaffoldLayout(
+                state = state,
                 onDismissQuickSettings = { onDismissCalled = true }
             )
         }
 
+        val scrimDescription = getResString(R.string.quick_settings_scrim_description)
+        val dismissLabel = getResString(
+            R.string.quick_settings_btn_close_expanded_settings_description
+        )
+
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
             .assertIsDisplayed()
+            .assertContentDescriptionEquals(scrimDescription)
+            .assert(
+                SemanticsMatcher("onClickLabel equals $dismissLabel") { node ->
+                    node.config.getOrNull(SemanticsActions.OnClick)?.label == dismissLabel
+                }
+            )
             .performClick()
 
         assertThat(onDismissCalled).isTrue()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
     @Test
-    fun previewLayout_scrim_interceptsTouchEventsFromUnderlyingControls() {
+    fun captureScaffoldLayout_scrim_interceptsTouchEventsFromUnderlyingControls() {
         var underlyingViewfinderClicked = false
         var onDismissCalled = false
 
         composeTestRule.setContent {
-            val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberStandardBottomSheetState(
-                    initialValue = SheetValue.Expanded,
-                    skipHiddenState = false
-                )
-            )
-            TestPreviewLayout(
-                scaffoldState = scaffoldState,
+            val state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+            TestCaptureScaffoldLayout(
+                state = state,
                 onDismissQuickSettings = { onDismissCalled = true },
                 viewfinder = {
                     Box(
@@ -202,17 +194,12 @@ class CaptureLayoutTest {
         assertThat(onDismissCalled).isTrue()
     }
 
-    @OptIn(ExperimentalMaterial3Api::class)
+    @SdkSuppress(minSdkVersion = 34)
     @Test
-    fun previewLayout_scrim_doesNotExistWhenHidden() {
+    fun captureScaffoldLayout_scrim_doesNotExistWhenHidden() {
         composeTestRule.setContent {
-            val scaffoldState = rememberBottomSheetScaffoldState(
-                bottomSheetState = rememberStandardBottomSheetState(
-                    initialValue = SheetValue.Hidden,
-                    skipHiddenState = false
-                )
-            )
-            TestPreviewLayout(scaffoldState = scaffoldState)
+            val state = rememberCaptureScaffoldState(isInitiallyExpanded = false)
+            TestCaptureScaffoldLayout(state = state)
         }
 
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)

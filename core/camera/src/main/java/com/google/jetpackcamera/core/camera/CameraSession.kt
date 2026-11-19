@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:kotlin.OptIn(InternalCameraApi::class)
+
 package com.google.jetpackcamera.core.camera
 
 import android.Manifest
@@ -37,6 +39,7 @@ import android.util.Size
 import android.view.Surface
 import androidx.annotation.MainThread
 import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
 import androidx.camera.camera2.interop.Camera2CameraControl
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.Camera2Interop
@@ -48,7 +51,6 @@ import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraState as CXCameraState
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
-import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.TorchState
 import androidx.camera.core.UseCaseGroup
 import androidx.camera.core.ViewPort
@@ -85,6 +87,7 @@ import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostState
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_AUTO
@@ -125,9 +128,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraSession"
+
+// Ranges are matched against the short edge of the video resolution (orientation-invariant).
+// FHD intentionally extends up to 2159 so intermediate resolutions like 1440p (QHD) map to FHD
+// rather than falling into a gap and resolving to UNSPECIFIED.
 private val QUALITY_RANGE_MAP = mapOf(
     UHD to Range.create(2160, 4319),
-    FHD to Range.create(1080, 1439),
+    FHD to Range.create(1080, 2159),
     HD to Range.create(720, 1079),
     SD to Range.create(241, 719)
 )
@@ -136,9 +143,8 @@ context(CameraSessionContext)
 @ExperimentalCamera2Interop
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
-    cameraConstraints: CameraConstraints?,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    onImageCaptureCreated: (ImageCapture) -> Unit = {}
+    onImageCaptureCreated: (ImageCapture, LensFacing) -> Unit = { _, _ -> }
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
     val initialCameraSelector = transientSettings.filterNotNull().first()
@@ -155,6 +161,7 @@ internal suspend fun runSingleCameraSession(
                     sessionSettings.stabilizationMode,
                     sessionSettings.dynamicRange,
                     sessionSettings.videoQuality,
+                    sessionSettings.mirrorMode,
                     backgroundDispatcher
                 )
             }
@@ -245,6 +252,8 @@ internal suspend fun runSingleCameraSession(
                     }
                     val camera2Info = Camera2CameraInfo.from(cameraInfo)
                     val cameraId = camera2Info.cameraId
+                    val cameraConstraints =
+                        perLensConstraints[currentTransientSettings.primaryLensFacing]
 
                     var cameraEffect: CameraEffect? = null
                     val captureResults = MutableStateFlow<TotalCaptureResult?>(null)
@@ -298,8 +307,10 @@ internal suspend fun runSingleCameraSession(
                             captureResults = captureResults
                         )
                     }.apply {
-                        attachPreviewSurfaceProvider(surfaceRequests)
-                        getImageCapture()?.let(onImageCaptureCreated)
+                        attachPreviewSurfaceProvider(useCaseGroup = this)
+                        getImageCapture()?.let { imageCapture ->
+                            onImageCaptureCreated(imageCapture, cameraInfo.appLensFacing)
+                        }
                     }
 
                     cameraProvider.runWith(
@@ -307,6 +318,8 @@ internal suspend fun runSingleCameraSession(
                         useCaseGroup
                     ) { camera ->
                         Log.d(TAG, "Camera session started")
+                        updatePreviewOrientation(camera.cameraInfo, useCaseGroup)
+
                         launch {
                             processFocusMeteringEvents(
                                 camera.cameraInfo,
@@ -323,27 +336,36 @@ internal suspend fun runSingleCameraSession(
                             }
                         }
 
+                        applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
+
                         if (videoCaptureUseCase != null) {
+                            val resolutionInfo = videoCaptureUseCase.resolutionInfo
                             val videoQuality = getVideoQualityFromResolution(
-                                videoCaptureUseCase.resolutionInfo?.resolution
+                                resolutionInfo?.resolution
                             )
-                            if (videoQuality != sessionSettings.videoQuality) {
-                                Log.e(
+                            if (resolutionInfo != null &&
+                                sessionSettings.videoQuality != VideoQuality.UNSPECIFIED &&
+                                videoQuality != sessionSettings.videoQuality
+                            ) {
+                                Log.w(
                                     TAG,
-                                    "Failed to select video quality: " +
-                                        "$sessionSettings.videoQuality. Fallback: $videoQuality"
+                                    "Requested video quality ${sessionSettings.videoQuality} " +
+                                        "unavailable. Fallback: $videoQuality"
                                 )
                             }
+                            val rotationDegrees = resolutionInfo?.rotationDegrees ?: 0
                             launch {
                                 currentCameraState.update { old ->
                                     old.copy(
                                         videoQualityInfo = VideoQualityInfo(
                                             videoQuality,
                                             getWidthFromCropRect(
-                                                videoCaptureUseCase.resolutionInfo?.cropRect
+                                                resolutionInfo?.cropRect,
+                                                rotationDegrees
                                             ),
                                             getHeightFromCropRect(
-                                                videoCaptureUseCase.resolutionInfo?.cropRect
+                                                resolutionInfo?.cropRect,
+                                                rotationDegrees
                                             )
                                         )
                                     )
@@ -417,11 +439,14 @@ internal suspend fun runSingleCameraSession(
                                 .collectLatest { zoomState ->
                                     // TODO(b/405987189): remove checks after buggy zoomState is fixed
                                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                                        // Ignore the initial 1.0f zoomState emitted on camera bind
+                                        // unless 1.0f is the actual target zoom for this lens.
+                                        val targetZoomRatio =
+                                            (transientSettings.value ?: currentTransientSettings)
+                                                .zoomRatios[camera.cameraInfo.appLensFacing]
+                                                ?: 1.0f
                                         if (zoomState.zoomRatio != 1.0f ||
-                                            zoomState.zoomRatio == currentTransientSettings
-                                                .zoomRatios[
-                                                currentTransientSettings.primaryLensFacing
-                                            ]
+                                            zoomState.zoomRatio == targetZoomRatio
                                         ) {
                                             currentCameraState.update { old ->
                                                 old.copy(
@@ -448,7 +473,6 @@ internal suspend fun runSingleCameraSession(
                                 }
                         }
 
-                        applyDeviceRotation(currentTransientSettings.deviceRotation, useCaseGroup)
                         processTransientSettingEvents(
                             camera,
                             cameraConstraints,
@@ -501,8 +525,9 @@ private fun CameraSessionContext.reportCaptureSubModeBindFailure(
 }
 
 context(CameraSessionContext)
+@InternalCameraApi
 @OptIn(ExperimentalCamera2Interop::class)
-internal suspend fun processTransientSettingEvents(
+suspend fun processTransientSettingEvents(
     camera: Camera,
     cameraConstraints: CameraConstraints?,
     useCaseGroup: UseCaseGroup,
@@ -575,6 +600,21 @@ internal suspend fun processTransientSettingEvents(
                     "${newTransientSettings.deviceRotation}"
             )
             applyDeviceRotation(newTransientSettings.deviceRotation, useCaseGroup)
+            if (sessionSettings != null) {
+                useCaseGroup.getVideoCapture()?.let { videoCapture ->
+                    val resolutionInfo = videoCapture.resolutionInfo
+                    val rotationDegrees = resolutionInfo?.rotationDegrees ?: 0
+                    currentCameraState.update { old ->
+                        old.copy(
+                            videoQualityInfo = VideoQualityInfo(
+                                getVideoQualityFromResolution(resolutionInfo?.resolution),
+                                getWidthFromCropRect(resolutionInfo?.cropRect, rotationDegrees),
+                                getHeightFromCropRect(resolutionInfo?.cropRect, rotationDegrees)
+                            )
+                        )
+                    }
+                }
+            }
         }
 
         // setzoomratio when the primary zoom value changes.
@@ -615,33 +655,13 @@ private suspend fun updateCamera2RequestOptions(
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM &&
         prevTransientSettings?.flashMode != newTransientSettings.flashMode
     ) {
-        when (newTransientSettings.flashMode) {
-            FlashMode.LOW_LIGHT_BOOST -> {
-                if (cameraConstraints?.supportedIlluminants?.contains(
-                        Illuminant.LOW_LIGHT_BOOST_AE_MODE
-                    ) == true
-                ) {
-                    Log.d(
-                        TAG,
-                        "Setting LLB with " +
-                            "CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY"
-                    )
-                    val captureRequestOptions = CaptureRequestOptions.Builder()
-                        .setCaptureRequestOption(
-                            CaptureRequest.CONTROL_AE_MODE,
-                            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
-                        )
-                        .build()
-
-                    Camera2CameraControl.from(camera.cameraControl)
-                        .addCaptureRequestOptions(captureRequestOptions)
-                }
-            }
-
-            else -> {
-                optionsBuilder.clearCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE)
-            }
-        }
+        // The AE mode is set on the shared builder rather than through a separate
+        // addCaptureRequestOptions() call, since setCaptureRequestOptions() below replaces all
+        // options previously applied through Camera2CameraControl.
+        optionsBuilder.updateLowLightBoostAeMode(
+            flashMode = newTransientSettings.flashMode,
+            supportedIlluminants = cameraConstraints?.supportedIlluminants.orEmpty()
+        )
         needsUpdate = true
     }
 
@@ -695,7 +715,38 @@ private suspend fun updateCamera2RequestOptions(
     }
 }
 
-internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: UseCaseGroup) {
+/**
+ * Updates the low light boost AE mode in this builder for [flashMode].
+ *
+ * For [FlashMode.LOW_LIGHT_BOOST], when [supportedIlluminants] contains
+ * [Illuminant.LOW_LIGHT_BOOST_AE_MODE], this sets [CaptureRequest.CONTROL_AE_MODE] to
+ * [CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY]. Otherwise, this clears
+ * [CaptureRequest.CONTROL_AE_MODE] so that CameraX controls the AE mode.
+ */
+@RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
+@ExperimentalCamera2Interop
+internal fun CaptureRequestOptions.Builder.updateLowLightBoostAeMode(
+    flashMode: FlashMode,
+    supportedIlluminants: Set<Illuminant>
+) {
+    if (flashMode == FlashMode.LOW_LIGHT_BOOST &&
+        Illuminant.LOW_LIGHT_BOOST_AE_MODE in supportedIlluminants
+    ) {
+        Log.d(TAG, "Setting LLB with CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY")
+        setCaptureRequestOption(
+            CaptureRequest.CONTROL_AE_MODE,
+            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+        )
+    } else {
+        clearCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE)
+    }
+}
+
+@InternalCameraApi
+fun CameraSessionContext.applyDeviceRotation(
+    deviceRotation: DeviceRotation,
+    useCaseGroup: UseCaseGroup
+) {
     val targetRotation = deviceRotation.toUiSurfaceRotation()
     useCaseGroup.useCases.forEach {
         when (it) {
@@ -719,7 +770,8 @@ internal fun applyDeviceRotation(deviceRotation: DeviceRotation, useCaseGroup: U
 }
 
 context(CameraSessionContext)
-internal fun createUseCaseGroup(
+@InternalCameraApi
+fun createUseCaseGroup(
     cameraInfo: CameraInfo,
     initialTransientSettings: TransientSessionSettings,
     stabilizationMode: StabilizationMode,
@@ -728,13 +780,15 @@ internal fun createUseCaseGroup(
     imageFormat: ImageOutputFormat,
     captureMode: CaptureMode,
     effect: CameraEffect? = null,
-    captureResults: MutableStateFlow<TotalCaptureResult?>? = null
+    captureResults: MutableStateFlow<TotalCaptureResult?>? = null,
+    previewMirrorMode: Int = CX_SINGLE_CAMERA_PREVIEW_MIRROR_MODE
 ): UseCaseGroup {
     val previewUseCase =
         createPreviewUseCase(
             cameraInfo,
             aspectRatio,
             stabilizationMode,
+            previewMirrorMode,
             captureResults
         )
 
@@ -758,9 +812,15 @@ internal fun createUseCaseGroup(
             TAG,
             "Setting initial device rotation to ${initialTransientSettings.deviceRotation}"
         )
+        val viewPortAspectRatio = getViewPortAspectRatio(
+            sensorRotationDegrees =
+            cameraInfo.getSensorRotationDegrees(previewUseCase.targetRotation),
+            sensorRect = cameraInfo.sensorRect,
+            aspectRatio = aspectRatio
+        )
         setViewPort(
             ViewPort.Builder(
-                Rational(aspectRatio.numerator, aspectRatio.denominator),
+                viewPortAspectRatio,
                 // Initialize rotation to Preview's rotation, which comes from Display rotation
                 previewUseCase.targetRotation
             ).build()
@@ -775,25 +835,93 @@ internal fun createUseCaseGroup(
     }.build()
 }
 
-private fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
+/**
+ * Updates [CameraState.isPreviewLandscape] to match the [Preview] output orientation of
+ * [cameraInfo] in [useCaseGroup].
+ */
+@InternalCameraApi
+fun CameraSessionContext.updatePreviewOrientation(
+    cameraInfo: CameraInfo,
+    useCaseGroup: UseCaseGroup
+) {
+    val isPreviewLandscape = useCaseGroup.getPreview()?.let { preview ->
+        isSensorOutputLandscape(
+            sensorRotationDegrees = cameraInfo.getSensorRotationDegrees(preview.targetRotation),
+            sensorRect = cameraInfo.sensorRect
+        )
+    }
+    currentCameraState.update { old ->
+        old.copy(isPreviewLandscape = isPreviewLandscape)
+    }
+}
+
+/**
+ * Returns whether the camera sensor output is landscape after applying the target rotation
+ * ([sensorRotationDegrees]).
+ */
+internal fun isSensorOutputLandscape(sensorRotationDegrees: Int, sensorRect: Rect): Boolean {
+    // If the relative rotation is 0 or 180, the orientation matches the sensor's natural
+    // orientation. If the relative rotation is 90 or 270, the orientation is rotated
+    // (landscape becomes portrait, and vice versa).
+    return (sensorRotationDegrees % 180 == 0) == (sensorRect.width() >= sensorRect.height())
+}
+
+/**
+ * Computes the [ViewPort] aspect ratio oriented to match the camera sensor output after applying
+ * the target rotation ([sensorRotationDegrees]).
+ */
+internal fun getViewPortAspectRatio(
+    sensorRotationDegrees: Int,
+    sensorRect: Rect,
+    aspectRatio: AspectRatio
+): Rational {
+    return if (isSensorOutputLandscape(sensorRotationDegrees, sensorRect)) {
+        Rational(aspectRatio.denominator, aspectRatio.numerator)
+    } else {
+        Rational(aspectRatio.numerator, aspectRatio.denominator)
+    }
+}
+
+/**
+ * Maps a given resolution [Size] to its corresponding [VideoQuality] based on the short edge.
+ *
+ * This classification is orientation-invariant, returning the same quality for both landscape and
+ * portrait orientations of the same resolution.
+ */
+internal fun getVideoQualityFromResolution(resolution: Size?): VideoQuality =
     resolution?.let { res ->
+        val shortEdge = minOf(res.width, res.height)
         QUALITY_RANGE_MAP.firstNotNullOfOrNull {
-            if (it.value.contains(res.height)) it.key else null
+            if (it.value.contains(shortEdge)) it.key else null
         }
     } ?: VideoQuality.UNSPECIFIED
 
-private fun getWidthFromCropRect(cropRect: Rect?): Int {
+/**
+ * Returns the upright width of [cropRect] after applying [rotationDegrees].
+ */
+internal fun getWidthFromCropRect(cropRect: Rect?, rotationDegrees: Int): Int {
     if (cropRect == null) {
         return 0
     }
-    return abs(cropRect.top - cropRect.bottom)
+    return if (rotationDegrees % 180 != 0) {
+        abs(cropRect.height())
+    } else {
+        abs(cropRect.width())
+    }
 }
 
-private fun getHeightFromCropRect(cropRect: Rect?): Int {
+/**
+ * Returns the upright height of [cropRect] after applying [rotationDegrees].
+ */
+internal fun getHeightFromCropRect(cropRect: Rect?, rotationDegrees: Int): Int {
     if (cropRect == null) {
         return 0
     }
-    return abs(cropRect.left - cropRect.right)
+    return if (rotationDegrees % 180 != 0) {
+        abs(cropRect.width())
+    } else {
+        abs(cropRect.height())
+    }
 }
 
 private fun createImageUseCase(
@@ -813,13 +941,15 @@ private fun createImageUseCase(
     return builder.build()
 }
 
-internal fun createVideoUseCase(
+@InternalCameraApi
+fun CameraSessionContext.createVideoUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     targetFrameRate: Int,
     stabilizationMode: StabilizationMode,
     dynamicRange: DynamicRange,
     videoQuality: VideoQuality,
+    mirrorMode: MirrorMode,
     backgroundDispatcher: CoroutineDispatcher
 ): VideoCapture<Recorder> {
     val sensorLandscapeRatio = cameraInfo.sensorLandscapeRatio
@@ -830,7 +960,8 @@ internal fun createVideoUseCase(
         .setExecutor(backgroundDispatcher.asExecutor())
         .apply {
             videoQuality.toQuality()?.let { quality ->
-                // No fallback strategy is used. The app will crash if the quality is unsupported
+                // Allow falling back to a lower or higher supported quality rather than crashing
+                // if the requested quality cannot be satisfied by the active stream combination.
                 setQualitySelector(
                     QualitySelector.from(
                         quality,
@@ -840,18 +971,20 @@ internal fun createVideoUseCase(
             }
         }.build()
 
-    return VideoCapture.Builder(recorder).apply {
-        // set video stabilization
-        if (stabilizationMode == StabilizationMode.HIGH_QUALITY) {
-            setVideoStabilizationEnabled(true)
-        }
-        // set target fps
-        if (targetFrameRate != TARGET_FPS_AUTO) {
-            setTargetFrameRate(Range(targetFrameRate, targetFrameRate))
-        }
+    return VideoCapture.Builder(recorder)
+        .setMirrorMode(mirrorMode.toCXMirrorMode())
+        .apply {
+            // set video stabilization
+            if (stabilizationMode == StabilizationMode.HIGH_QUALITY) {
+                setVideoStabilizationEnabled(true)
+            }
+            // set target fps
+            if (targetFrameRate != TARGET_FPS_AUTO) {
+                setTargetFrameRate(Range(targetFrameRate, targetFrameRate))
+            }
 
-        setDynamicRange(dynamicRange.toCXDynamicRange())
-    }.build()
+            setDynamicRange(dynamicRange.toCXDynamicRange())
+        }.build()
 }
 
 private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: AspectRatio): Int =
@@ -876,6 +1009,7 @@ private fun createPreviewUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     stabilizationMode: StabilizationMode,
+    previewMirrorMode: Int,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null
 ): Preview = Preview.Builder().apply {
     // Phone landscape counter-rotates the UI and PreviewDisplay back into a canonical portrait
@@ -925,19 +1059,20 @@ private fun createPreviewUseCase(
     setResolutionSelector(
         getResolutionSelector(cameraInfo.sensorLandscapeRatio, aspectRatio)
     )
+
+    setMirrorMode(previewMirrorMode)
 }.build()
 
 /**
- * Routes surface requests from this group's [Preview] use case to [surfaceRequests].
+ * Routes surface requests from the [Preview] use case in [useCaseGroup] to [surfaceRequests].
  *
  * Use cases may be constructed off the main thread, but [Preview.setSurfaceProvider] must be
  * called on the main thread, so this is applied separately before the group is bound.
  */
+@InternalCameraApi
 @MainThread
-internal fun UseCaseGroup.attachPreviewSurfaceProvider(
-    surfaceRequests: MutableStateFlow<SurfaceRequest?>
-) {
-    useCases.filterIsInstance<Preview>().forEach { preview ->
+fun CameraSessionContext.attachPreviewSurfaceProvider(useCaseGroup: UseCaseGroup) {
+    useCaseGroup.useCases.filterIsInstance<Preview>().forEach { preview ->
         preview.surfaceProvider = Preview.SurfaceProvider { surfaceRequest ->
             surfaceRequests.update { surfaceRequest }
         }
@@ -1417,10 +1552,11 @@ private suspend fun runVideoRecording(
 }
 
 context(CameraSessionContext)
-internal suspend fun processVideoControlEvents(
+@InternalCameraApi
+suspend fun processVideoControlEvents(
     videoCapture: VideoCapture<Recorder>?,
     captureTypeSuffix: String
-) = coroutineScope {
+): Unit = coroutineScope {
     for (event in videoCaptureControlEvents) {
         when (event) {
             is VideoCaptureControlEvent.StartRecordingEvent -> {
@@ -1459,6 +1595,8 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
 ): Preview.Builder {
     val isFirstFrameTimestampUpdated = atomic(false)
     val targetCameraLogicalId = Camera2CameraInfo.from(targetCameraInfo).cameraId
+    // Read once per bound camera, since reading zoomState can be expensive for camera extensions.
+    var zoomRange: ClosedFloatingPointRange<Float>? = null
     Camera2Interop.Extender(this).setSessionCaptureCallback(
         object : CameraCaptureSession.CaptureCallback() {
             override fun onCaptureCompleted(
@@ -1499,9 +1637,29 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                 ) {
                     // update camerastate with zoom ratio
                     val newZoomRatio = result.get(CaptureResult.CONTROL_ZOOM_RATIO)
+                    val targetZoomRatio =
+                        transientSettings.value?.zoomRatios?.get(targetCameraInfo.appLensFacing)
+                            ?: 1.0f
+                    val range = zoomRange
+                        ?: targetCameraInfo.zoomState.value
+                            ?.let { it.minZoomRatio..it.maxZoomRatio }
+                            ?.also { zoomRange = it }
+                    val clampedTarget = range?.let { targetZoomRatio.coerceIn(it) } ?: 1.0f
+                    val isTargetEssentiallyOne = abs(clampedTarget - 1.0f) < 0.01f
                     currentCameraState.update { old ->
+                        val currentZoomRatio = old.zoomRatios[targetCameraInfo.appLensFacing]
+                        // When a lens is newly bound, initial capture results emit the hardware
+                        // default 1.0f before cameraControl.setZoomRatio(initialZoomRatio) takes
+                        // effect in the repeating request. Ignore those initial 1.0f frames if
+                        // the lens is restoring a non-1.0f target zoom so the UI doesn't flash 1x.
+                        val isInitialDefaultEmission =
+                            currentZoomRatio == null &&
+                                newZoomRatio != null &&
+                                abs(newZoomRatio - 1.0f) < 0.001f &&
+                                !isTargetEssentiallyOne
                         if (newZoomRatio != null &&
-                            old.zoomRatios[targetCameraInfo.appLensFacing] != newZoomRatio
+                            !isInitialDefaultEmission &&
+                            currentZoomRatio != newZoomRatio
                         ) {
                             old.copy(
                                 zoomRatios = old.zoomRatios
@@ -1618,3 +1776,11 @@ internal fun CXCameraState.StateError.toCameraError(context: Context): CameraErr
         CXCameraState.ERROR_CAMERA_REMOVED -> CameraError.CameraRemoved
         else -> CameraError.FatalCameraError
     }
+
+/**
+ * Maps a CameraX [CXCameraState.StateError] to a domain-specific [CameraError] using this
+ * session's [Context].
+ */
+@InternalCameraApi
+fun CameraSessionContext.mapCameraStateError(error: CXCameraState.StateError): CameraError =
+    error.toCameraError(context)

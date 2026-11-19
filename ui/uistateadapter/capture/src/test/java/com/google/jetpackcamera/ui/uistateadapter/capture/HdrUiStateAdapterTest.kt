@@ -19,7 +19,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraEffectTarget
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
@@ -240,31 +240,6 @@ internal class HdrUiStateAdapterTest {
     }
 
     @Test
-    fun from_videoOnlyMode_concurrentCameraOn_returnsAvailableWithIsSupportedFalse() {
-        // Given in VIDEO_ONLY capture mode with Concurrent Camera ON, even though HDR video is supported
-        val appSettings = defaultCameraAppSettings.copy(
-            captureMode = CaptureMode.VIDEO_ONLY,
-            concurrentCameraMode = ConcurrentCameraMode.DUAL
-        )
-        val systemConstraints = CameraSystemConstraints(
-            perLensConstraints = mapOf(
-                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
-                    supportedDynamicRanges = setOf(DynamicRange.SDR, DynamicRange.HLG10)
-                )
-            )
-        )
-
-        // When
-        val hdrUiState =
-            HdrUiState.from(appSettings, systemConstraints)
-
-        // Then HDR is available but not supported because of the concurrent camera conflict
-        assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
-        val availableState = hdrUiState as HdrUiState.Available
-        assertThat(availableState.isSupported).isFalse()
-    }
-
-    @Test
     fun from_imageOnlyMode_hdrUnsupportedOnCurrentLensOnly_returnsUnavailable() {
         // Given in IMAGE_ONLY capture mode
         // Current lens (BACK) does NOT support HDR, but FRONT lens DOES support HDR
@@ -479,5 +454,66 @@ internal class HdrUiStateAdapterTest {
         )
 
         assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
+    }
+
+    @Test
+    fun from_imageOnlyMode_activeSubModeSupportsUltraHdr_returnsAvailable() {
+        val subModeId = CaptureSubModeId("night")
+        val appSettings = defaultCameraAppSettings.copy(
+            captureMode = CaptureMode.IMAGE_ONLY,
+            activeCaptureSubModeId = subModeId,
+            imageFormat = ImageOutputFormat.JPEG_ULTRA_HDR
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedImageFormatsMap = mapOf(
+                        false to setOf(ImageOutputFormat.JPEG)
+                    ),
+                    supportedImageFormatsBySubMode = mapOf(
+                        subModeId to setOf(
+                            ImageOutputFormat.JPEG,
+                            ImageOutputFormat.JPEG_ULTRA_HDR
+                        )
+                    )
+                )
+            )
+        )
+
+        val hdrUiState = HdrUiState.from(appSettings, systemConstraints)
+
+        assertThat(hdrUiState).isInstanceOf(HdrUiState.Available::class.java)
+        val availableState = hdrUiState as HdrUiState.Available
+        assertThat(availableState.selectedImageFormat).isEqualTo(ImageOutputFormat.JPEG_ULTRA_HDR)
+        assertThat(availableState.isSupported).isTrue()
+    }
+
+    @Test
+    fun from_imageOnlyMode_activeSubModeSupportsJpegOnly_returnsUnavailable() {
+        val subModeId = CaptureSubModeId("night")
+        val appSettings = defaultCameraAppSettings.copy(
+            captureMode = CaptureMode.IMAGE_ONLY,
+            activeCaptureSubModeId = subModeId,
+            imageFormat = ImageOutputFormat.JPEG
+        )
+        val systemConstraints = CameraSystemConstraints(
+            perLensConstraints = mapOf(
+                appSettings.cameraLensFacing to emptyCameraConstraints.copy(
+                    supportedImageFormatsMap = mapOf(
+                        false to setOf(
+                            ImageOutputFormat.JPEG,
+                            ImageOutputFormat.JPEG_ULTRA_HDR
+                        )
+                    ),
+                    supportedImageFormatsBySubMode = mapOf(
+                        subModeId to setOf(ImageOutputFormat.JPEG)
+                    )
+                )
+            )
+        )
+
+        val hdrUiState = HdrUiState.from(appSettings, systemConstraints)
+
+        assertThat(hdrUiState).isEqualTo(HdrUiState.Unavailable)
     }
 }

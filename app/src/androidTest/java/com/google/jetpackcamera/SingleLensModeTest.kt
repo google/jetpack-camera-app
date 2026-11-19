@@ -17,16 +17,19 @@ package com.google.jetpackcamera
 
 import android.content.pm.PackageManager
 import android.os.Bundle
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import com.google.common.truth.TruthJUnit.assume
+import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LENS_FACING_TAG
 import com.google.jetpackcamera.ui.components.capture.FLIP_CAMERA_BUTTON
 import com.google.jetpackcamera.utils.CameraXResetRule
 import com.google.jetpackcamera.utils.TEST_REQUIRED_PERMISSIONS
 import com.google.jetpackcamera.utils.isEmulatorWithFakeFrontCamera
 import com.google.jetpackcamera.utils.runMainActivityScenarioTest
+import com.google.jetpackcamera.utils.visitSettingsScreen
 import com.google.jetpackcamera.utils.waitForCaptureButton
 import org.junit.Rule
 import org.junit.Test
@@ -51,8 +54,7 @@ class SingleLensModeTest(private val lensFacing: String) {
         fun data() = listOf("front", "back")
     }
 
-    @Test
-    fun singleLensMode_flipCameraButtonDoesNotExist() {
+    private fun assumeLensAvailable() {
         val pm = InstrumentationRegistry.getInstrumentation().targetContext.packageManager
 
         // The GMD API 28 and 34 emulators report having a front camera but don't actually work with it.
@@ -73,6 +75,11 @@ class SingleLensModeTest(private val lensFacing: String) {
                 .that(pm.hasSystemFeature(PackageManager.FEATURE_CAMERA))
                 .isTrue()
         }
+    }
+
+    @Test
+    fun singleLensMode_flipCameraButtonDoesNotExist() {
+        assumeLensAvailable()
 
         val extras = Bundle().apply {
             putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, lensFacing)
@@ -84,6 +91,23 @@ class SingleLensModeTest(private val lensFacing: String) {
 
             // Assert that the flip camera button does not exist
             composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertDoesNotExist()
+        }
+    }
+
+    @Test
+    fun singleLensMode_settingsScreenOpensWithLensSwitchDisabled() {
+        assumeLensAvailable()
+
+        val extras = Bundle().apply {
+            putString(MainActivity.KEY_DEBUG_SINGLE_LENS_MODE, lensFacing)
+        }
+
+        runMainActivityScenarioTest(extras = extras) {
+            composeTestRule.waitForCaptureButton()
+
+            composeTestRule.visitSettingsScreen {
+                onNodeWithTag(BTN_SWITCH_SETTING_LENS_FACING_TAG).assertIsNotEnabled()
+            }
         }
     }
 }

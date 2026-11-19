@@ -24,7 +24,6 @@ import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
@@ -32,6 +31,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TestPattern
@@ -183,6 +183,13 @@ interface CameraSystem {
     suspend fun setVideoQuality(videoQuality: VideoQuality)
 
     /**
+     * Sets whether captured photos and videos are mirrored.
+     *
+     * @param mirrorMode The [MirrorMode] to set.
+     */
+    suspend fun setMirrorMode(mirrorMode: MirrorMode)
+
+    /**
      * Sets the low light boost priority.
      *
      * @param lowLightBoostPriority The [LowLightBoostPriority] to set.
@@ -224,13 +231,6 @@ interface CameraSystem {
      * @param deviceRotation The [DeviceRotation] to set.
      */
     fun setDeviceRotation(deviceRotation: DeviceRotation)
-
-    /**
-     * Sets the concurrent camera mode.
-     *
-     * @param concurrentCameraMode The [ConcurrentCameraMode] to set.
-     */
-    suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
 
     /**
      * Sets the image output format.
@@ -276,6 +276,13 @@ interface CameraSystem {
 
     /**
      * Sets the active capture sub-mode for the camera.
+     *
+     * The capture mode is never changed by this call; set it with [setCaptureMode] first. If the
+     * sub-mode's parent capture mode doesn't match, or the sub-mode is unsupported or incompatible
+     * with the current settings, the default sub-mode is used instead.
+     *
+     * While a sub-mode is active, its feature policy applies. When it ends, settings the policy
+     * changed return to their earlier values, or to the values last set during the sub-mode.
      *
      * @param captureSubModeId The [CaptureSubModeId] to set.
      */
@@ -333,16 +340,12 @@ interface CameraSystem {
                 cameraSystem::setMaxVideoDuration
             )
             applyDiff(new, CameraAppSettings::videoQuality, cameraSystem::setVideoQuality)
+            applyDiff(new, CameraAppSettings::mirrorMode, cameraSystem::setMirrorMode)
             applyDiff(new, CameraAppSettings::audioEnabled, cameraSystem::setAudioEnabled)
             applyDiff(
                 new,
                 CameraAppSettings::lowLightBoostPriority,
                 cameraSystem::setLowLightBoostPriority
-            )
-            applyDiff(
-                new,
-                CameraAppSettings::concurrentCameraMode,
-                cameraSystem::setConcurrentCameraMode
             )
             applyDiff(
                 new,

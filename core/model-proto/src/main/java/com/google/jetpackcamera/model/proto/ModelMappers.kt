@@ -16,23 +16,23 @@
 package com.google.jetpackcamera.model.proto
 
 import com.google.jetpackcamera.model.AspectRatio
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.proto.AspectRatio as AspectRatioProto
-import com.google.jetpackcamera.model.proto.ConcurrentCameraMode as ConcurrentCameraModeProto
 import com.google.jetpackcamera.model.proto.DarkMode as DarkModeProto
 import com.google.jetpackcamera.model.proto.DynamicRange as DynamicRangeProto
 import com.google.jetpackcamera.model.proto.FlashMode as FlashModeProto
 import com.google.jetpackcamera.model.proto.ImageOutputFormat as ImageOutputFormatProto
 import com.google.jetpackcamera.model.proto.LensFacing as LensFacingProto
 import com.google.jetpackcamera.model.proto.LowLightBoostPriority as LowLightBoostPriorityProto
+import com.google.jetpackcamera.model.proto.MirrorMode as MirrorModeProto
 import com.google.jetpackcamera.model.proto.StabilizationMode as StabilizationModeProto
 import com.google.jetpackcamera.model.proto.VideoQuality as VideoQualityProto
 
@@ -129,6 +129,32 @@ fun FlashMode.toProto(): FlashModeProto {
         FlashMode.AUTO -> FlashModeProto.FLASH_MODE_AUTO
         FlashMode.LOW_LIGHT_BOOST -> FlashModeProto.FLASH_MODE_LOW_LIGHT_BOOST
         FlashMode.OFF -> FlashModeProto.FLASH_MODE_OFF
+    }
+}
+
+/**
+ * Maps a Proto model to a Domain model.
+ *
+ * [MirrorModeProto.MIRROR_MODE_UNSPECIFIED] and unrecognized values map to [MirrorMode.OFF].
+ * Callers that need a policy-defined default for an unset value should check for
+ * [MirrorModeProto.MIRROR_MODE_UNSPECIFIED] before mapping.
+ */
+fun MirrorModeProto.toModel(): MirrorMode {
+    return when (this) {
+        MirrorModeProto.MIRROR_MODE_ON_FRONT_ONLY -> MirrorMode.ON_FRONT_ONLY
+        MirrorModeProto.MIRROR_MODE_OFF,
+        MirrorModeProto.MIRROR_MODE_UNSPECIFIED,
+        MirrorModeProto.UNRECOGNIZED -> MirrorMode.OFF
+    }
+}
+
+/**
+ * Maps a Domain model to a Proto model.
+ */
+fun MirrorMode.toProto(): MirrorModeProto {
+    return when (this) {
+        MirrorMode.OFF -> MirrorModeProto.MIRROR_MODE_OFF
+        MirrorMode.ON_FRONT_ONLY -> MirrorModeProto.MIRROR_MODE_ON_FRONT_ONLY
     }
 }
 
@@ -255,27 +281,5 @@ fun VideoQuality.toProto(): VideoQualityProto {
         VideoQuality.FHD -> VideoQualityProto.VIDEO_QUALITY_FHD
         VideoQuality.UHD -> VideoQualityProto.VIDEO_QUALITY_UHD
         VideoQuality.UNSPECIFIED -> VideoQualityProto.VIDEO_QUALITY_UNSPECIFIED
-    }
-}
-
-/**
- * Maps a Proto model to a Domain model.
- */
-fun ConcurrentCameraModeProto.toModel(): ConcurrentCameraMode {
-    return when (this) {
-        ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL -> ConcurrentCameraMode.DUAL
-        ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF,
-        ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_UNSPECIFIED,
-        ConcurrentCameraModeProto.UNRECOGNIZED -> ConcurrentCameraMode.OFF
-    }
-}
-
-/**
- * Maps a Domain model to a Proto model.
- */
-fun ConcurrentCameraMode.toProto(): ConcurrentCameraModeProto {
-    return when (this) {
-        ConcurrentCameraMode.DUAL -> ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_DUAL
-        ConcurrentCameraMode.OFF -> ConcurrentCameraModeProto.CONCURRENT_CAMERA_MODE_OFF
     }
 }

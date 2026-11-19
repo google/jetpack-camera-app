@@ -13,14 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+@file:OptIn(InternalCameraApi::class)
+
 package com.google.jetpackcamera.core.camera
 
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraMetadata
 import android.os.Build
+import androidx.camera.core.MirrorMode as CXMirrorMode
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.MirrorMode
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -128,6 +132,33 @@ class CameraExtTest {
             )
 
         assertThat(supportedRanges).containsExactly(DynamicRange.SDR)
+    }
+
+    @Test
+    fun toCXMirrorMode_mapsToCameraXMirrorModes() {
+        assertThat(MirrorMode.OFF.toCXMirrorMode()).isEqualTo(CXMirrorMode.MIRROR_MODE_OFF)
+        assertThat(MirrorMode.ON_FRONT_ONLY.toCXMirrorMode())
+            .isEqualTo(CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
+    }
+
+    @Test
+    fun toCXConcurrentPreviewMirrorMode_disablesPreviewMirroringWhenCamerasAreMirrored() {
+        assertThat(MirrorMode.OFF.toCXConcurrentPreviewMirrorMode())
+            .isEqualTo(CXMirrorMode.MIRROR_MODE_ON_FRONT_ONLY)
+        assertThat(MirrorMode.ON_FRONT_ONLY.toCXConcurrentPreviewMirrorMode())
+            .isEqualTo(CXMirrorMode.MIRROR_MODE_OFF)
+    }
+
+    @Test
+    fun concurrentCompositionScaleX_negatesScaleForMirroredLenses() {
+        assertThat(MirrorMode.ON_FRONT_ONLY.concurrentCompositionScaleX(0.5f, LensFacing.FRONT))
+            .isEqualTo(-0.5f)
+        assertThat(MirrorMode.ON_FRONT_ONLY.concurrentCompositionScaleX(0.5f, LensFacing.BACK))
+            .isEqualTo(0.5f)
+        assertThat(MirrorMode.OFF.concurrentCompositionScaleX(1.0f, LensFacing.FRONT))
+            .isEqualTo(1.0f)
+        assertThat(MirrorMode.OFF.concurrentCompositionScaleX(1.0f, LensFacing.BACK))
+            .isEqualTo(1.0f)
     }
 
     private fun createCharacteristics(capabilities: IntArray): CameraCharacteristics {

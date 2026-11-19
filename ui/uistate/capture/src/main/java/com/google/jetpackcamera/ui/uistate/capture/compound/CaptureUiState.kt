@@ -23,6 +23,7 @@ import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -58,6 +59,7 @@ sealed interface CaptureUiState {
      * @property lastBlinkTimeStamp The timestamp of the last image capture blink animation.
      * @property externalCaptureMode The external capture mode used by the intent that launched the camera. Default is [ExternalCaptureMode.Standard].
      * @property captureModeToggleUiState The UI state for the photo/video toggle.
+     * @property captureSubModeUiState The UI state for the capture sub-mode selector carousel.
      * @property sessionFirstFrameTimestamp The timestamp of the first frame of the current camera session.
      * @property debugUiState The UI state for the debug overlay.
      * @property stabilizationUiState The UI state for the video stabilization setting.
@@ -84,6 +86,8 @@ sealed interface CaptureUiState {
         val externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard,
         val captureModeToggleUiState: CaptureModeToggleUiState =
             CaptureModeToggleUiState.Unavailable,
+        val captureSubModeUiState: CaptureSubModeUiState =
+            CaptureSubModeUiState.Unavailable,
         val sessionFirstFrameTimestamp: Long = 0L,
         val stabilizationUiState: StabilizationUiState = StabilizationUiState.Disabled,
         val flashModeUiState: FlashModeUiState = FlashModeUiState.Unavailable,

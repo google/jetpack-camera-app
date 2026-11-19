@@ -39,10 +39,20 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    @Suppress("UnstableApiUsage")
     testOptions {
         unitTests {
             isReturnDefaultValues = true
             isIncludeAndroidResources = true
+        }
+        managedDevices {
+            localDevices {
+                create("pixel8Api34") {
+                    device = "Pixel 8"
+                    apiLevel = 34
+                    systemImageSource = "aosp_atd"
+                }
+            }
         }
     }
 
@@ -80,12 +90,17 @@ dependencies {
     // AndroidX Core KTX
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     // Accompanist - Permissions
     implementation(libs.accompanist.permissions)
 
     // Compose - Material Design 3
     implementation(libs.compose.material3)
+
+    // Activity & Lifecycle Compose
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.androidx.lifecycle.runtime.compose)
 
     // Compose - Android Studio Preview support
     implementation(libs.compose.ui.tooling.preview)
@@ -119,6 +134,7 @@ dependencies {
 
     implementation(project(":ui:uistate"))
     implementation(project(":ui:uistate:capture"))
+    implementation(project(":ui:components"))
     implementation(project(":ui:controller"))
     implementation(project(":core:camera"))
     implementation(project(":core:common"))

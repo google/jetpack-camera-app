@@ -17,13 +17,13 @@ package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -95,6 +95,11 @@ interface SettingsDataSource {
     suspend fun updateImageFormat(imageFormat: ImageOutputFormat)
 
     /**
+     * Updates whether captured photos and videos are mirrored.
+     */
+    suspend fun updateMirrorMode(mirrorMode: MirrorMode)
+
+    /**
      * Updates the maximum video duration limit in milliseconds.
      */
     suspend fun updateMaxVideoDuration(durationMillis: Long)
@@ -108,11 +113,6 @@ interface SettingsDataSource {
      * Updates whether audio recording is enabled by default during video capture.
      */
     suspend fun updateAudioEnabled(isAudioEnabled: Boolean)
-
-    /**
-     * Updates the default concurrent camera mode.
-     */
-    suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode)
 
     /**
      * Updates whether location tagging is enabled for captured photos and videos.

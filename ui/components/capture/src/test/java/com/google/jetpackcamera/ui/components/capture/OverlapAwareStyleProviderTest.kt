@@ -23,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
@@ -152,5 +153,75 @@ class OverlapAwareStyleProviderTest {
         // Because the missing provider falls back to Rect.Zero,
         // the 0f intersection correctly results in WHITE_20.
         assertThat(detectedStyle).isEqualTo(CameraControlBackgroundStyle.WHITE_20)
+    }
+
+    @Test
+    fun overlapAware_aboveThreshold_reportsOverViewfinderToScope() {
+        var detectedIsOverViewfinder: Boolean? = null
+        var detectedContainerColor: Color? = null
+
+        composeTestRule.setContent {
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            val targetBoundsPx = remember(density) {
+                with(density) {
+                    Rect(0f, 0f, 100.dp.toPx(), 100.dp.toPx())
+                }
+            }
+            Box(Modifier.size(500.dp)) {
+                CompositionLocalProvider(
+                    LocalOverlapTargetBounds provides remember(
+                        targetBoundsPx
+                    ) { mutableStateOf(targetBoundsPx) }
+                ) {
+                    OverlapAwareStyleProvider(
+                        modifier = Modifier
+                            .offset(x = 0.dp, y = 10.dp)
+                            .size(100.dp)
+                    ) {
+                        detectedIsOverViewfinder = isOverViewfinder
+                        detectedContainerColor = cameraControlContainerColor
+                    }
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+        assertThat(detectedIsOverViewfinder).isTrue()
+        assertThat(detectedContainerColor)
+            .isEqualTo(CameraControlBackgroundStyle.BLACK_60.containerColor)
+    }
+
+    @Test
+    fun overlapAware_belowThreshold_reportsNotOverViewfinderToScope() {
+        var detectedIsOverViewfinder: Boolean? = null
+        var detectedContainerColor: Color? = null
+
+        composeTestRule.setContent {
+            val density = androidx.compose.ui.platform.LocalDensity.current
+            val targetBoundsPx = remember(density) {
+                with(density) {
+                    Rect(0f, 0f, 100.dp.toPx(), 100.dp.toPx())
+                }
+            }
+            Box(Modifier.size(500.dp)) {
+                CompositionLocalProvider(
+                    LocalOverlapTargetBounds provides remember(
+                        targetBoundsPx
+                    ) { mutableStateOf(targetBoundsPx) }
+                ) {
+                    OverlapAwareStyleProvider(
+                        modifier = Modifier
+                            .offset(x = 0.dp, y = 60.dp)
+                            .size(100.dp)
+                    ) {
+                        detectedIsOverViewfinder = isOverViewfinder
+                        detectedContainerColor = cameraControlContainerColor
+                    }
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+        assertThat(detectedIsOverViewfinder).isFalse()
+        assertThat(detectedContainerColor)
+            .isEqualTo(CameraControlBackgroundStyle.WHITE_20.containerColor)
     }
 }

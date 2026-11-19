@@ -30,11 +30,17 @@ import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.PermissionStatus
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.location.testing.FakeLocationProvider
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.settings.testing.FakeConstraintsRepository
 import com.google.jetpackcamera.settings.testing.FakeSettingsDataSource
+import com.google.jetpackcamera.settings.ui.AspectRatioSetting
+import com.google.jetpackcamera.settings.ui.BTN_DIALOG_ASPECT_RATIO_OPTION_1_1_TAG
+import com.google.jetpackcamera.settings.ui.BTN_DIALOG_ASPECT_RATIO_OPTION_3_4_TAG
+import com.google.jetpackcamera.settings.ui.BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG
 import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CANCEL_TAG
 import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CONFIRM_TAG
+import com.google.jetpackcamera.settings.ui.BTN_OPEN_DIALOG_SETTING_ASPECT_RATIO_TAG
 import com.google.jetpackcamera.settings.ui.BTN_SWITCH_SETTING_LOCATION_TAG
 import com.google.jetpackcamera.settings.ui.DIALOG_LOCATION_PERMISSION_RATIONALE_TAG
 import com.google.jetpackcamera.settings.ui.LocationSetting
@@ -327,6 +333,42 @@ class SettingsScreenTest {
         }
 
         composeTestRule.onNodeWithTag(BTN_SWITCH_SETTING_LOCATION_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun aspectRatioSetting_displaysOptionsInOrderAndInvokesCallback() {
+        val selectedRatios = mutableListOf<AspectRatio>()
+        composeTestRule.setContent {
+            AspectRatioSetting(
+                aspectRatioUiState = AspectRatioUiState.Enabled(AspectRatio.THREE_FOUR),
+                setAspectRatio = { selectedRatios.add(it) }
+            )
+        }
+
+        composeTestRule.onNodeWithTag(BTN_OPEN_DIALOG_SETTING_ASPECT_RATIO_TAG).performClick()
+
+        val node34 = composeTestRule.onNodeWithTag(BTN_DIALOG_ASPECT_RATIO_OPTION_3_4_TAG)
+            .assertIsDisplayed()
+        val node11 = composeTestRule.onNodeWithTag(BTN_DIALOG_ASPECT_RATIO_OPTION_1_1_TAG)
+            .assertIsDisplayed()
+        val node916 = composeTestRule.onNodeWithTag(BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG)
+            .assertIsDisplayed()
+
+        val top34 = node34.fetchSemanticsNode().boundsInRoot.top
+        val top11 = node11.fetchSemanticsNode().boundsInRoot.top
+        val top916 = node916.fetchSemanticsNode().boundsInRoot.top
+        assertThat(top34).isLessThan(top11)
+        assertThat(top11).isLessThan(top916)
+
+        node34.performClick()
+        node11.performClick()
+        node916.performClick()
+
+        assertThat(selectedRatios).containsExactly(
+            AspectRatio.THREE_FOUR,
+            AspectRatio.ONE_ONE,
+            AspectRatio.NINE_SIXTEEN
+        ).inOrder()
     }
 }
 

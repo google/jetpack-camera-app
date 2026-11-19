@@ -33,6 +33,8 @@ import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
  * @param flipLensUiState The UI state for the flip lens button.
  * @param aspectRatioUiState The UI state for the aspect ratio setting.
  * @param hdrUiState The UI state for the HDR setting.
+ * @param titleResId Optional string resource ID overriding the sheet title (e.g. provided by the
+ * active capture sub-mode), or `null` to derive the title from the selected capture mode.
  * @return A [QuickSettingsUiState.Available] instance containing the consolidated states.
  */
 // TODO: Consider returning QuickSettingsUiState.Unavailable if all option rows (aspectRatio,
@@ -47,13 +49,15 @@ fun QuickSettingsUiState.Companion.from(
     flashModeUiState: FlashModeUiState,
     flipLensUiState: FlipLensUiState,
     aspectRatioUiState: AspectRatioUiState,
-    hdrUiState: HdrUiState
+    hdrUiState: HdrUiState,
+    titleResId: Int? = null
 ): QuickSettingsUiState {
     return QuickSettingsUiState.Available(
         aspectRatioUiState = aspectRatioUiState,
         captureModeUiState = captureModeUiState,
         flashModeUiState = flashModeUiState,
         flipLensUiState = flipLensUiState,
-        hdrUiState = hdrUiState
+        hdrUiState = hdrUiState,
+        titleResId = titleResId
     )
 }

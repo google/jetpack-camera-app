@@ -28,7 +28,6 @@ import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
@@ -36,6 +35,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.SaveLocation
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TestPattern
@@ -237,6 +237,12 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         }
     }
 
+    override suspend fun setMirrorMode(mirrorMode: MirrorMode) {
+        currentSettings.update { old ->
+            old.copy(mirrorMode = mirrorMode)
+        }
+    }
+
     override suspend fun setLowLightBoostPriority(lowLightBoostPriority: LowLightBoostPriority) {
         currentSettings.update { old ->
             old.copy(lowLightBoostPriority = lowLightBoostPriority)
@@ -268,12 +274,6 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     override fun setDeviceRotation(deviceRotation: DeviceRotation) {
         currentSettings.update { old ->
             old.copy(deviceRotation = deviceRotation)
-        }
-    }
-
-    override suspend fun setConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        currentSettings.update { old ->
-            old.copy(concurrentCameraMode = concurrentCameraMode)
         }
     }
 

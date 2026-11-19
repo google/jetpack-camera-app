@@ -16,10 +16,14 @@
 package com.google.jetpackcamera.settings.model
 
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
+import com.google.jetpackcamera.model.MirrorMode
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.VideoQuality
 
 /**
  * Configuration for the Jetpack Camera App that allows developers and host applications
@@ -35,6 +39,11 @@ import com.google.jetpackcamera.model.ImageOutputFormat
  * - **HDR Image Format & Video Dynamic Range:** When [OptionVisibility.Hidden] is used, developers may
  *   default or lock capture to Ultra HDR ([ImageOutputFormat.JPEG_ULTRA_HDR]) or HDR video ([DynamicRange.HLG10]).
  *   Hardware fallbacks to SDR will be handled at runtime if the active camera does not support HDR.
+ *
+ * ### Java Interop:
+ * The constructor is annotated with `@JvmOverloads` so Java callers can omit trailing parameters.
+ * **New fields must be appended at the end** of the parameter list; inserting one earlier changes
+ * the positional signature of the generated overloads and breaks existing Java callers.
  *
  * ### Example:
  * ```kotlin
@@ -56,15 +65,26 @@ import com.google.jetpackcamera.model.ImageOutputFormat
  *   if [OptionVisibility.Hidden].
  * @param imageFormat Configuration for captured photo format (e.g. JPEG, Ultra HDR).
  * @param dynamicRange Configuration for captured video dynamic range (e.g. SDR, HLG10).
+ * @param mirrorMode Configuration for whether captured photos and video are mirrored (e.g. only
+ *   for the front camera, to match the preview).
+ * @param stabilizationMode Configuration for preview and video stabilization mode.
+ * @param targetFrameRate Configuration for target video frame rate (FPS).
+ * @param cameraEffect Configuration for the selected camera effect (e.g. single-stream).
+ * @param videoQuality Configuration for recorded video quality (e.g. FHD, UHD).
  *
  * TODO (kc): Defer audioEnabled configuration to a follow-up PR, pending design for visual UX.
  */
-data class CameraFeaturePolicy(
+data class CameraFeaturePolicy @JvmOverloads constructor(
     val captureMode: SettingConfig<CaptureMode>? = null,
     val aspectRatio: SettingConfig<AspectRatio>? = null,
     val flashMode: SettingConfig<FlashMode>? = null,
     val imageFormat: SettingConfig<ImageOutputFormat>? = null,
-    val dynamicRange: SettingConfig<DynamicRange>? = null
+    val dynamicRange: SettingConfig<DynamicRange>? = null,
+    val mirrorMode: SettingConfig<MirrorMode>? = null,
+    val stabilizationMode: SettingConfig<StabilizationMode>? = null,
+    val targetFrameRate: SettingConfig<Int>? = null,
+    val cameraEffect: SettingConfig<CameraEffectId>? = null,
+    val videoQuality: SettingConfig<VideoQuality>? = null
 ) {
     // Ensures that all individual setting configurations are valid.
     init {
@@ -104,7 +124,15 @@ data class CameraFeaturePolicy(
             flashMode = this.flashMode?.defaultValue ?: defaultSettings.flashMode,
             captureMode = this.captureMode?.defaultValue ?: defaultSettings.captureMode,
             imageFormat = this.imageFormat?.defaultValue ?: defaultSettings.imageFormat,
-            dynamicRange = this.dynamicRange?.defaultValue ?: defaultSettings.dynamicRange
+            dynamicRange = this.dynamicRange?.defaultValue ?: defaultSettings.dynamicRange,
+            mirrorMode = this.mirrorMode?.defaultValue ?: defaultSettings.mirrorMode,
+            stabilizationMode = this.stabilizationMode?.defaultValue
+                ?: defaultSettings.stabilizationMode,
+            targetFrameRate = this.targetFrameRate?.defaultValue
+                ?: defaultSettings.targetFrameRate,
+            selectedCameraEffect = this.cameraEffect?.defaultValue
+                ?: defaultSettings.selectedCameraEffect,
+            videoQuality = this.videoQuality?.defaultValue ?: defaultSettings.videoQuality
         )
     }
 
@@ -116,7 +144,12 @@ data class CameraFeaturePolicy(
         flashMode = enforceSetting(settings.flashMode, flashMode),
         imageFormat = enforceSetting(settings.imageFormat, imageFormat),
         dynamicRange = enforceSetting(settings.dynamicRange, dynamicRange),
-        captureMode = enforceSetting(settings.captureMode, captureMode)
+        captureMode = enforceSetting(settings.captureMode, captureMode),
+        mirrorMode = enforceSetting(settings.mirrorMode, mirrorMode),
+        stabilizationMode = enforceSetting(settings.stabilizationMode, stabilizationMode),
+        targetFrameRate = enforceSetting(settings.targetFrameRate, targetFrameRate),
+        selectedCameraEffect = enforceSetting(settings.selectedCameraEffect, cameraEffect),
+        videoQuality = enforceSetting(settings.videoQuality, videoQuality)
     )
 
     /**
@@ -129,7 +162,12 @@ data class CameraFeaturePolicy(
             isSettingCompatible(aspectRatio, other.aspectRatio) &&
             isSettingCompatible(flashMode, other.flashMode) &&
             isSettingCompatible(imageFormat, other.imageFormat) &&
-            isSettingCompatible(dynamicRange, other.dynamicRange)
+            isSettingCompatible(dynamicRange, other.dynamicRange) &&
+            isSettingCompatible(mirrorMode, other.mirrorMode) &&
+            isSettingCompatible(stabilizationMode, other.stabilizationMode) &&
+            isSettingCompatible(targetFrameRate, other.targetFrameRate) &&
+            isSettingCompatible(cameraEffect, other.cameraEffect) &&
+            isSettingCompatible(videoQuality, other.videoQuality)
 
     /**
      * Returns the intersection of this policy (typically the host application's policy) and
@@ -145,7 +183,12 @@ data class CameraFeaturePolicy(
         aspectRatio = intersectSetting(aspectRatio, other.aspectRatio),
         flashMode = intersectSetting(flashMode, other.flashMode),
         imageFormat = intersectSetting(imageFormat, other.imageFormat),
-        dynamicRange = intersectSetting(dynamicRange, other.dynamicRange)
+        dynamicRange = intersectSetting(dynamicRange, other.dynamicRange),
+        mirrorMode = intersectSetting(mirrorMode, other.mirrorMode),
+        stabilizationMode = intersectSetting(stabilizationMode, other.stabilizationMode),
+        targetFrameRate = intersectSetting(targetFrameRate, other.targetFrameRate),
+        cameraEffect = intersectSetting(cameraEffect, other.cameraEffect),
+        videoQuality = intersectSetting(videoQuality, other.videoQuality)
     )
 }
 

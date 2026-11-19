@@ -64,7 +64,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.model.TestPattern
-import kotlin.math.abs
 
 private const val TAG = "DebugOverlayComponents"
 
@@ -305,7 +304,7 @@ private fun DebugDialogOptionsMenuDialog(
             val videoResText = if (size == null) {
                 "null"
             } else {
-                abs(size.height).toString() + "x" + abs(size.width).toString()
+                "${size.width}x${size.height}"
             }
             Text(
                 modifier = Modifier.testTag(

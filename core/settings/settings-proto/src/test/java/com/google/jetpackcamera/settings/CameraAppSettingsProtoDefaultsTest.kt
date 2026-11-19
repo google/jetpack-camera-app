@@ -17,8 +17,11 @@ package com.google.jetpackcamera.settings
 
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.MirrorMode
+import com.google.jetpackcamera.model.proto.MirrorMode as MirrorModeProto
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.proto.CameraAppSettings as CameraAppSettingsProto
+import com.google.jetpackcamera.settings.proto.copy
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.junit.runners.JUnit4
@@ -42,5 +45,32 @@ class CameraAppSettingsProtoDefaultsTest {
         assertThat(
             CameraAppSettingsProto.getDefaultInstance().toModel(CaptureMode.STANDARD)
         ).isNotEqualTo(DEFAULT_CAMERA_APP_SETTINGS)
+    }
+
+    @Test
+    fun toModel_whenMirrorModeUnset_usesBaselineSettings() {
+        val baseline = DEFAULT_CAMERA_APP_SETTINGS.copy(mirrorMode = MirrorMode.ON_FRONT_ONLY)
+
+        val model = DEFAULT_CAMERA_APP_SETTINGS_PROTO.toModel(
+            defaultCaptureModeOverride = CaptureMode.STANDARD,
+            baselineSettings = baseline
+        )
+
+        assertThat(model.mirrorMode).isEqualTo(MirrorMode.ON_FRONT_ONLY)
+    }
+
+    @Test
+    fun toModel_whenMirrorModeStored_overridesBaselineSettings() {
+        val baseline = DEFAULT_CAMERA_APP_SETTINGS.copy(mirrorMode = MirrorMode.ON_FRONT_ONLY)
+        val stored = DEFAULT_CAMERA_APP_SETTINGS_PROTO.copy {
+            mirrorMode = MirrorModeProto.MIRROR_MODE_OFF
+        }
+
+        val model = stored.toModel(
+            defaultCaptureModeOverride = CaptureMode.STANDARD,
+            baselineSettings = baseline
+        )
+
+        assertThat(model.mirrorMode).isEqualTo(MirrorMode.OFF)
     }
 }

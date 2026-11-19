@@ -17,8 +17,6 @@ package com.google.jetpackcamera.ui.components.capture.quicksettings.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,7 +35,6 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -47,8 +44,6 @@ import androidx.compose.material3.ToggleButtonShapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,6 +55,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
@@ -77,6 +73,7 @@ import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_O
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_FLASH_OPTION_ON
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_OFF
 import com.google.jetpackcamera.ui.components.capture.BTN_QUICK_SETTINGS_HDR_OPTION_ON
+import com.google.jetpackcamera.ui.components.capture.IndicatorPillIcon
 import com.google.jetpackcamera.ui.components.capture.LocalCameraControlBackgroundStyle
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_DROP_DOWN
 import com.google.jetpackcamera.ui.components.capture.QUICK_SETTINGS_RATIO_1_1_BUTTON
@@ -90,11 +87,14 @@ import com.google.jetpackcamera.ui.components.capture.ROW_QUICK_SETTINGS_HDR
 import com.google.jetpackcamera.ui.components.capture.SETTINGS_BUTTON
 import com.google.jetpackcamera.ui.components.capture.animateToUpright
 import com.google.jetpackcamera.ui.components.capture.containerColor
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraAspectRatio
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraCaptureMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraDynamicRange
 import com.google.jetpackcamera.ui.components.capture.quicksettings.CameraFlashMode
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsEnum
+import com.google.jetpackcamera.ui.components.capture.rememberLastNonNull
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
@@ -122,8 +122,16 @@ fun ToggleQuickSettingsButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true
 ) {
-    val buttonSize = IconButtonDefaults.mediumContainerSize(
+    val layoutSolution = LocalCameraLayoutSolution.current
+    val toolbarScale = layoutSolution?.toolbarHeight?.let { toolbarHeight ->
+        (toolbarHeight / CameraLayoutDefaults.BottomToolbarHeight).coerceIn(0f, 1f)
+    } ?: 1f
+    val baseButtonSize = IconButtonDefaults.mediumContainerSize(
         IconButtonDefaults.IconButtonWidthOption.Narrow
+    )
+    val buttonSize = DpSize(
+        width = baseButtonSize.width * toolbarScale,
+        height = baseButtonSize.height * toolbarScale
     )
     val openDescription = stringResource(R.string.quick_settings_toggle_open_description)
     val closedDescription = stringResource(R.string.quick_settings_toggle_closed_description)
@@ -153,6 +161,7 @@ fun ToggleQuickSettingsButton(
         )
     ) {
         Icon(
+            modifier = Modifier.size(IconButtonDefaults.mediumIconSize * toolbarScale),
             painter = painterResource(R.drawable.settings_photo_camera_icon),
             contentDescription = null
         )
@@ -183,7 +192,8 @@ internal fun QuickNavSettings(onNavigateToSettings: () -> Unit, modifier: Modifi
  *
  * @param modifier The [Modifier] to be applied to this row.
  * @param onSetCaptureMode Callback invoked when a new capture mode is selected.
- * @param captureModeUiState The current [CaptureModeUiState] representing available and selected modes.
+ * @param captureModeUiState The current [CaptureModeUiState] representing available and selected
+ * modes.
  */
 @Composable
 internal fun CaptureModeRow(
@@ -224,10 +234,12 @@ internal fun CaptureModeRow(
 }
 
 /**
- * A row component in the quick settings menu that allows the user to toggle HDR (High Dynamic Range) settings.
+ * A row component in the quick settings menu that allows the user to toggle HDR (High Dynamic
+ * Range) settings.
  *
  * @param modifier The [Modifier] to be applied to this row.
- * @param onClick Callback invoked when HDR is toggled, providing the selected [DynamicRange] and [ImageOutputFormat].
+ * @param onClick Callback invoked when HDR is toggled, providing the selected [DynamicRange] and
+ * [ImageOutputFormat].
  * @param hdrUiState The current [HdrUiState] representing HDR availability and selection.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -279,7 +291,8 @@ internal fun HdrRow(
  *
  * @param modifier The [Modifier] to be applied to this row.
  * @param onSetAspectRatio Callback invoked when a new aspect ratio is selected.
- * @param aspectRatioUiState The current [AspectRatioUiState] representing available and selected aspect ratios.
+ * @param aspectRatioUiState The current [AspectRatioUiState] representing available and selected
+ * aspect ratios.
  */
 @Composable
 internal fun AspectRatioRow(
@@ -320,7 +333,8 @@ internal fun AspectRatioRow(
  *
  * @param modifier The [Modifier] to be applied to this row.
  * @param onSetFlashMode Callback invoked when a new flash mode is selected.
- * @param flashModeUiState The current [FlashModeUiState] representing available and selected flash modes.
+ * @param flashModeUiState The current [FlashModeUiState] representing available and selected flash
+ * modes.
  */
 @Composable
 internal fun FlashRow(
@@ -484,7 +498,8 @@ private fun QuickSettingToggleSelectorButton(
  * @param accessibilityText The content description for accessibility purposes.
  * @param painter The [Painter] for the icon displayed inside the button.
  * @param modifier The [Modifier] to be applied to this composable.
- * @param isSelected A boolean indicating whether the button is currently in a highlighted (selected) state.
+ * @param isSelected A boolean indicating whether the button is currently in a highlighted
+ * (selected) state.
  * @param enabled A boolean indicating whether the button is interactive.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -530,25 +545,25 @@ private fun QuickSettingToggleSelectorButton(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
-    val enum =
-        if (hdrUiState is HdrUiState.Available &&
+    val isHdrActive =
+        hdrUiState is HdrUiState.Available &&
             hdrUiState.isSupported &&
             (
                 hdrUiState.selectedDynamicRange == DEFAULT_HDR_DYNAMIC_RANGE ||
                     hdrUiState.selectedImageFormat == DEFAULT_HDR_IMAGE_OUTPUT
                 )
-        ) {
-            CameraDynamicRange.HDR
-        } else {
-            CameraDynamicRange.SDR
-        }
-    Icon(
+    IndicatorPillIcon(
+        visible = isHdrActive,
         modifier = modifier
-            .size(IconButtonDefaults.smallIconSize)
-            .animateToUpright(),
-        painter = enum.getPainter(),
-        contentDescription = stringResource(enum.getDescriptionResId())
-    )
+    ) {
+        Icon(
+            modifier = Modifier
+                .size(IconButtonDefaults.smallIconSize)
+                .animateToUpright(),
+            painter = CameraDynamicRange.HDR.getPainter(),
+            contentDescription = stringResource(CameraDynamicRange.HDR.getDescriptionResId())
+        )
+    }
 }
 
 /**
@@ -559,21 +574,24 @@ fun HdrIndicator(hdrUiState: HdrUiState, modifier: Modifier = Modifier) {
  */
 @Composable
 fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = Modifier) {
-    when (flashModeUiState) {
-        is FlashModeUiState.Unavailable ->
-            TopBarQuickSettingIcon(
-                modifier = modifier,
-                enum = CameraFlashMode.OFF,
-                enabled = false
-            )
-
-        is FlashModeUiState.Available ->
-            TopBarQuickSettingIcon(
-                modifier = modifier,
-                enum = flashModeUiState.selectedFlashMode.toCameraFlashMode(
-                    flashModeUiState.isLowLightBoostActive
-                )
-            )
+    val activeFlashMode = if (
+        flashModeUiState is FlashModeUiState.Available &&
+        flashModeUiState.selectedFlashMode != FlashMode.OFF
+    ) {
+        flashModeUiState.selectedFlashMode.toCameraFlashMode(
+            flashModeUiState.isLowLightBoostActive
+        )
+    } else {
+        null
+    }
+    val displayedFlashMode = rememberLastNonNull(activeFlashMode)
+    IndicatorPillIcon(
+        visible = activeFlashMode != null,
+        modifier = modifier
+    ) {
+        if (displayedFlashMode != null) {
+            TopBarQuickSettingIcon(enum = displayedFlashMode)
+        }
     }
 }
 
@@ -582,30 +600,14 @@ fun FlashModeIndicator(flashModeUiState: FlashModeUiState, modifier: Modifier = 
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun TopBarQuickSettingIcon(
-    enum: QuickSettingsEnum,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-    onClick: () -> Unit = {}
-) {
-    val contentColor = Color.White.let {
-        if (!enabled) it.copy(alpha = 0.38f) else it
-    }
-    CompositionLocalProvider(LocalContentColor provides contentColor) {
-        Icon(
-            painter = enum.getPainter(),
-            contentDescription = stringResource(id = enum.getDescriptionResId()),
-            modifier = modifier
-                .size(IconButtonDefaults.smallIconSize)
-                .animateToUpright()
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = onClick,
-                    enabled = enabled
-                )
-        )
-    }
+private fun TopBarQuickSettingIcon(enum: QuickSettingsEnum, modifier: Modifier = Modifier) {
+    Icon(
+        painter = enum.getPainter(),
+        contentDescription = stringResource(id = enum.getDescriptionResId()),
+        modifier = modifier
+            .size(IconButtonDefaults.smallIconSize)
+            .animateToUpright()
+    )
 }
 
 private fun FlashMode.toCameraFlashMode(isActive: Boolean) = when (this) {

@@ -21,13 +21,13 @@ import androidx.datastore.core.DataStoreFactory
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.model.proto.toProto
@@ -147,6 +147,12 @@ class ProtoDataStoreSettingsDataSource(
         }
     }
 
+    override suspend fun updateMirrorMode(mirrorMode: MirrorMode) {
+        jcaSettings.updateData { currentSettings ->
+            currentSettings.copy { this.mirrorMode = mirrorMode.toProto() }
+        }
+    }
+
     override suspend fun updateMaxVideoDuration(durationMillis: Long) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.copy { this.maxVideoDurationMillis = durationMillis }
@@ -162,12 +168,6 @@ class ProtoDataStoreSettingsDataSource(
     override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
         jcaSettings.updateData { currentSettings ->
             currentSettings.copy { this.audioEnabled = isAudioEnabled }
-        }
-    }
-
-    override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        jcaSettings.updateData { currentSettings ->
-            currentSettings.copy { this.concurrentCameraMode = concurrentCameraMode.toProto() }
         }
     }
 

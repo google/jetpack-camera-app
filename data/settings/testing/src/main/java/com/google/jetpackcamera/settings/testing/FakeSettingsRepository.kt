@@ -17,13 +17,13 @@ package com.google.jetpackcamera.settings.testing
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.SettingsRepository
@@ -99,6 +99,11 @@ class FakeSettingsRepository(
             _defaultCameraAppSettings.value.copy(imageFormat = imageFormat)
     }
 
+    override suspend fun updateMirrorMode(mirrorMode: MirrorMode) {
+        _defaultCameraAppSettings.value =
+            _defaultCameraAppSettings.value.copy(mirrorMode = mirrorMode)
+    }
+
     override suspend fun updateMaxVideoDuration(durationMillis: Long) {
         _defaultCameraAppSettings.value =
             _defaultCameraAppSettings.value.copy(maxVideoDurationMillis = durationMillis)
@@ -112,11 +117,6 @@ class FakeSettingsRepository(
     override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
         _defaultCameraAppSettings.value =
             _defaultCameraAppSettings.value.copy(audioEnabled = isAudioEnabled)
-    }
-
-    override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        _defaultCameraAppSettings.value =
-            _defaultCameraAppSettings.value.copy(concurrentCameraMode = concurrentCameraMode)
     }
 
     override suspend fun updateLocationEnabled(locationEnabled: Boolean) {

@@ -17,13 +17,13 @@ package com.google.jetpackcamera.settings
 
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -89,6 +89,10 @@ class LocalSettingsRepository @Inject constructor(
         settingsDataSource.updateImageFormat(imageFormat)
     }
 
+    override suspend fun updateMirrorMode(mirrorMode: MirrorMode) {
+        settingsDataSource.updateMirrorMode(mirrorMode)
+    }
+
     override suspend fun updateMaxVideoDuration(durationMillis: Long) {
         settingsDataSource.updateMaxVideoDuration(durationMillis)
     }
@@ -99,10 +103,6 @@ class LocalSettingsRepository @Inject constructor(
 
     override suspend fun updateAudioEnabled(isAudioEnabled: Boolean) {
         settingsDataSource.updateAudioEnabled(isAudioEnabled)
-    }
-
-    override suspend fun updateConcurrentCameraMode(concurrentCameraMode: ConcurrentCameraMode) {
-        settingsDataSource.updateConcurrentCameraMode(concurrentCameraMode)
     }
 
     override suspend fun updateLocationEnabled(locationEnabled: Boolean) {

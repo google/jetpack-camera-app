@@ -24,6 +24,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.core.camera.CaptureSubModeState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.core.location.LocationProvider
@@ -32,9 +33,11 @@ import com.google.jetpackcamera.data.camera.CameraSystemRepository
 import com.google.jetpackcamera.data.media.testing.FakeMediaRepository
 import com.google.jetpackcamera.feature.preview.navigation.PreviewRoute
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.SaveMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
@@ -362,6 +365,46 @@ class PreviewViewModelTest {
 
             assertThat(cameraSystem.isLensFacingFront).isTrue()
         }
+
+    @Test
+    fun defaultMirrorModeChangedBeforeCreation_propagatesToCameraSystem() =
+        runTest(StandardTestDispatcher()) {
+            previewViewModel = PreviewViewModel(
+                cameraSystemRepository = cameraSystemRepository,
+                settingsRepository = FakeSettingsRepository(
+                    CameraAppSettings(mirrorMode = MirrorMode.ON_FRONT_ONLY)
+                ),
+                mediaRepository = FakeMediaRepository(),
+                locationProvider = java.util.Optional.empty(),
+                savedStateHandle = SavedStateHandle(),
+                defaultSaveMode = SaveMode.Immediate,
+                cameraFeaturePolicy = defaultTestPolicy
+            )
+            startCameraUntilRunning()
+
+            assertThat(cameraSystem.getCurrentSettings().value?.mirrorMode)
+                .isEqualTo(MirrorMode.ON_FRONT_ONLY)
+        }
+
+    @Test
+    fun captureSubModeStateError_enqueuesErrorSnackbar() = runTest(StandardTestDispatcher()) {
+        startCameraUntilRunning()
+
+        cameraSystem.setCurrentCameraState(
+            CameraState(
+                captureSubModeState = CaptureSubModeState.Error(
+                    subModeId = CaptureSubModeId("night"),
+                    error = IllegalArgumentException("Extension unavailable")
+                )
+            )
+        )
+        advanceUntilIdle()
+
+        val snackbarToShow = previewViewModel.snackBarUiState.value.snackBarQueue.peek()
+        assertThat(snackbarToShow).isNotNull()
+        assertThat(snackbarToShow?.isError).isTrue()
+        assertThat(snackbarToShow?.cookie).startsWith("CaptureSubMode-")
+    }
 
     @Test
     fun locationUpdates_withLocationProviderPresent_triggersUpdates() =

@@ -37,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
@@ -61,11 +62,11 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.jetpackcamera.model.AspectRatio
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LowLightBoostPriority
+import com.google.jetpackcamera.model.MirrorMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.TARGET_FPS_15
 import com.google.jetpackcamera.model.TARGET_FPS_30
@@ -75,7 +76,6 @@ import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.AspectRatioUiState
 import com.google.jetpackcamera.settings.AudioUiState
-import com.google.jetpackcamera.settings.ConcurrentCameraUiState
 import com.google.jetpackcamera.settings.DarkModeUiState
 import com.google.jetpackcamera.settings.DisabledRationale
 import com.google.jetpackcamera.settings.FIVE_SECONDS_DURATION
@@ -85,6 +85,7 @@ import com.google.jetpackcamera.settings.FpsUiState
 import com.google.jetpackcamera.settings.LocationUiState
 import com.google.jetpackcamera.settings.LowLightBoostPriorityUiState
 import com.google.jetpackcamera.settings.MaxVideoDurationUiState
+import com.google.jetpackcamera.settings.MirrorModeUiState
 import com.google.jetpackcamera.settings.R
 import com.google.jetpackcamera.settings.SIXTY_SECONDS_DURATION
 import com.google.jetpackcamera.settings.SingleSelectableState
@@ -245,10 +246,7 @@ fun FlashModeSetting(
                 )
             }
 
-            is FlashUiState.Disabled -> stringResource(
-                flashUiState.disabledRationale.reasonTextResId,
-                stringResource(flashUiState.disabledRationale.affectedSettingNameResId)
-            )
+            is FlashUiState.Disabled -> disabledRationaleString(flashUiState.disabledRationale)
         },
         popupContents = {
             if (flashUiState is FlashUiState.Enabled) {
@@ -257,8 +255,7 @@ fun FlashModeSetting(
                         modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_AUTO_TAG),
                         text = stringResource(id = R.string.flash_mode_selector_auto),
                         selected = flashUiState.currentFlashMode == FlashMode.AUTO,
-                        enabled = flashUiState.autoSelectableState is
-                            SingleSelectableState.Selectable,
+                        selectableState = flashUiState.autoSelectableState,
                         onClick = { setFlashMode(FlashMode.AUTO) }
                     )
 
@@ -266,8 +263,7 @@ fun FlashModeSetting(
                         modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_ON_TAG),
                         text = stringResource(id = R.string.flash_mode_selector_on),
                         selected = flashUiState.currentFlashMode == FlashMode.ON,
-                        enabled = flashUiState.onSelectableState is
-                            SingleSelectableState.Selectable,
+                        selectableState = flashUiState.onSelectableState,
                         onClick = { setFlashMode(FlashMode.ON) }
                     )
 
@@ -275,8 +271,7 @@ fun FlashModeSetting(
                         modifier = Modifier.testTag(BTN_DIALOG_FLASH_OPTION_LLB_TAG),
                         text = stringResource(id = R.string.flash_mode_selector_llb),
                         selected = flashUiState.currentFlashMode == FlashMode.LOW_LIGHT_BOOST,
-                        enabled = flashUiState.lowLightSelectableState is
-                            SingleSelectableState.Selectable,
+                        selectableState = flashUiState.lowLightSelectableState,
                         onClick = { setFlashMode(FlashMode.LOW_LIGHT_BOOST) }
                     )
 
@@ -293,6 +288,16 @@ fun FlashModeSetting(
     )
 }
 
+/**
+ * A setting item that opens a single-choice dialog for selecting the camera [AspectRatio].
+ *
+ * The row displays the currently selected ratio as its description, and the dialog presents
+ * the available aspect ratios (3:4, 1:1, 9:16) as radio button options.
+ *
+ * @param aspectRatioUiState The current [AspectRatioUiState] containing the selected aspect ratio.
+ * @param setAspectRatio Callback invoked when the user selects a new [AspectRatio].
+ * @param modifier [Modifier] to be applied to the setting row.
+ */
 @Composable
 fun AspectRatioSetting(
     aspectRatioUiState: AspectRatioUiState,
@@ -303,13 +308,8 @@ fun AspectRatioSetting(
         modifier = modifier.testTag(BTN_OPEN_DIALOG_SETTING_ASPECT_RATIO_TAG),
         title = stringResource(id = R.string.aspect_ratio_title),
         leadingIcon = null,
-        description =
-        if (aspectRatioUiState is AspectRatioUiState.Enabled) {
-            when (aspectRatioUiState.currentAspectRatio) {
-                AspectRatio.NINE_SIXTEEN -> stringResource(
-                    id = R.string.aspect_ratio_description_9_16
-                )
-
+        description = when (aspectRatioUiState) {
+            is AspectRatioUiState.Enabled -> when (aspectRatioUiState.currentAspectRatio) {
                 AspectRatio.THREE_FOUR -> stringResource(
                     id = R.string.aspect_ratio_description_3_4
                 )
@@ -317,34 +317,42 @@ fun AspectRatioSetting(
                 AspectRatio.ONE_ONE -> stringResource(
                     id = R.string.aspect_ratio_description_1_1
                 )
+
+                AspectRatio.NINE_SIXTEEN -> stringResource(
+                    id = R.string.aspect_ratio_description_9_16
+                )
             }
-        } else {
-            TODO("aspect ratio currently has no disabled criteria")
+
+            is AspectRatioUiState.Disabled ->
+                disabledRationaleString(aspectRatioUiState.disabledRationale)
         },
-        enabled = true,
+        enabled = aspectRatioUiState is AspectRatioUiState.Enabled,
         popupContents = {
-            Column(Modifier.selectableGroup()) {
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG),
-                    text = stringResource(id = R.string.aspect_ratio_selector_9_16),
-                    selected = aspectRatioUiState.currentAspectRatio == AspectRatio.NINE_SIXTEEN,
-                    enabled = true,
-                    onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) }
-                )
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_3_4_TAG),
-                    text = stringResource(id = R.string.aspect_ratio_selector_3_4),
-                    selected = aspectRatioUiState.currentAspectRatio == AspectRatio.THREE_FOUR,
-                    enabled = true,
-                    onClick = { setAspectRatio(AspectRatio.THREE_FOUR) }
-                )
-                SingleChoiceSelector(
-                    modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_1_1_TAG),
-                    text = stringResource(id = R.string.aspect_ratio_selector_1_1),
-                    selected = aspectRatioUiState.currentAspectRatio == AspectRatio.ONE_ONE,
-                    enabled = true,
-                    onClick = { setAspectRatio(AspectRatio.ONE_ONE) }
-                )
+            if (aspectRatioUiState is AspectRatioUiState.Enabled) {
+                Column(Modifier.selectableGroup()) {
+                    SingleChoiceSelector(
+                        modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_3_4_TAG),
+                        text = stringResource(id = R.string.aspect_ratio_selector_3_4),
+                        selected = aspectRatioUiState.currentAspectRatio == AspectRatio.THREE_FOUR,
+                        selectableState = aspectRatioUiState.threeFourState,
+                        onClick = { setAspectRatio(AspectRatio.THREE_FOUR) }
+                    )
+                    SingleChoiceSelector(
+                        modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_1_1_TAG),
+                        text = stringResource(id = R.string.aspect_ratio_selector_1_1),
+                        selected = aspectRatioUiState.currentAspectRatio == AspectRatio.ONE_ONE,
+                        selectableState = aspectRatioUiState.oneOneState,
+                        onClick = { setAspectRatio(AspectRatio.ONE_ONE) }
+                    )
+                    SingleChoiceSelector(
+                        modifier = Modifier.testTag(BTN_DIALOG_ASPECT_RATIO_OPTION_9_16_TAG),
+                        text = stringResource(id = R.string.aspect_ratio_selector_9_16),
+                        selected = aspectRatioUiState.currentAspectRatio ==
+                            AspectRatio.NINE_SIXTEEN,
+                        selectableState = aspectRatioUiState.nineSixteenState,
+                        onClick = { setAspectRatio(AspectRatio.NINE_SIXTEEN) }
+                    )
+                }
             }
         }
     )
@@ -519,7 +527,7 @@ fun TargetFpsSetting(
                         text = stringResource(id = R.string.fps_selector_auto),
                         selected = fpsUiState.currentSelection == TARGET_FPS_AUTO,
                         onClick = { setTargetFps(TARGET_FPS_AUTO) },
-                        enabled = fpsUiState.fpsAutoState is SingleSelectableState.Selectable
+                        selectableState = fpsUiState.fpsAutoState
                     )
                     listOf(TARGET_FPS_15, TARGET_FPS_30, TARGET_FPS_60).forEach { fpsOption ->
                         SingleChoiceSelector(
@@ -527,20 +535,10 @@ fun TargetFpsSetting(
                             text = "%d".format(fpsOption),
                             selected = fpsUiState.currentSelection == fpsOption,
                             onClick = { setTargetFps(fpsOption) },
-                            enabled = when (fpsOption) {
-                                TARGET_FPS_15 ->
-                                    fpsUiState.fpsFifteenState is
-                                        SingleSelectableState.Selectable
-
-                                TARGET_FPS_30 ->
-                                    fpsUiState.fpsThirtyState is
-                                        SingleSelectableState.Selectable
-
-                                TARGET_FPS_60 ->
-                                    fpsUiState.fpsSixtyState is
-                                        SingleSelectableState.Selectable
-
-                                else -> false
+                            selectableState = when (fpsOption) {
+                                TARGET_FPS_15 -> fpsUiState.fpsFifteenState
+                                TARGET_FPS_30 -> fpsUiState.fpsThirtyState
+                                else -> fpsUiState.fpsSixtyState
                             }
                         )
                     }
@@ -645,8 +643,7 @@ fun StabilizationSetting(
                             secondaryText = stringResource(
                                 id = R.string.stabilization_selector_auto_info
                             ),
-                            enabled = stabilizationUiState.stabilizationAutoState is
-                                SingleSelectableState.Selectable,
+                            selectableState = stabilizationUiState.stabilizationAutoState,
                             selected = stabilizationUiState.currentStabilizationMode
                                 == StabilizationMode.AUTO,
                             onClick = {
@@ -662,8 +659,7 @@ fun StabilizationSetting(
                             secondaryText = stringResource(
                                 id = R.string.stabilization_selector_on_info
                             ),
-                            enabled = stabilizationUiState.stabilizationOnState is
-                                SingleSelectableState.Selectable,
+                            selectableState = stabilizationUiState.stabilizationOnState,
                             selected = stabilizationUiState.currentStabilizationMode
                                 == StabilizationMode.ON,
                             onClick = {
@@ -683,8 +679,7 @@ fun StabilizationSetting(
                             secondaryText = stringResource(
                                 id = R.string.stabilization_selector_high_quality_info
                             ),
-                            enabled = stabilizationUiState.stabilizationHighQualityState
-                                == SingleSelectableState.Selectable,
+                            selectableState = stabilizationUiState.stabilizationHighQualityState,
 
                             selected = stabilizationUiState.currentStabilizationMode
                                 == StabilizationMode.HIGH_QUALITY,
@@ -704,8 +699,7 @@ fun StabilizationSetting(
                             secondaryText = stringResource(
                                 id = R.string.stabilization_selector_optical_info
                             ),
-                            enabled = stabilizationUiState.stabilizationOpticalState
-                                == SingleSelectableState.Selectable,
+                            selectableState = stabilizationUiState.stabilizationOpticalState,
 
                             selected = stabilizationUiState.currentStabilizationMode
                                 == StabilizationMode.OPTICAL,
@@ -771,8 +765,7 @@ fun VideoQualitySetting(
                     ),
                     selected = (videQualityUiState as VideoQualityUiState.Enabled)
                         .currentVideoQuality == VideoQuality.UNSPECIFIED,
-                    enabled = videQualityUiState.videoQualityAutoState is
-                        SingleSelectableState.Selectable,
+                    selectableState = videQualityUiState.videoQualityAutoState,
                     onClick = { setVideoQuality(VideoQuality.UNSPECIFIED) }
                 )
                 listOf(VideoQuality.SD, VideoQuality.HD, VideoQuality.FHD, VideoQuality.UHD)
@@ -786,13 +779,49 @@ fun VideoQualitySetting(
                                 )
                             ),
                             selected = videQualityUiState.currentVideoQuality == videoQuality,
-                            enabled = videQualityUiState.getSelectableState(videoQuality) is
-                                SingleSelectableState.Selectable,
+                            selectableState = videQualityUiState.getSelectableState(videoQuality),
                             onClick = { setVideoQuality(videoQuality) }
                         )
                     }
             }
         }
+    )
+}
+
+/**
+ * A settings item that renders a toggle switch for mirroring front camera photos and videos.
+ *
+ * The switch is on for any [MirrorMode] other than [MirrorMode.OFF]. Turning it on selects
+ * [MirrorMode.ON_FRONT_ONLY].
+ *
+ * @param modifier Modifier to be applied to the setting layout.
+ * @param mirrorModeUiState The current [MirrorModeUiState].
+ * @param setMirrorMode Callback invoked with the selected [MirrorMode] when the user toggles the
+ *   switch.
+ */
+@Composable
+fun MirrorFrontCameraSetting(
+    modifier: Modifier = Modifier,
+    mirrorModeUiState: MirrorModeUiState,
+    setMirrorMode: (MirrorMode) -> Unit
+) {
+    val isMirrored = when (mirrorModeUiState) {
+        is MirrorModeUiState.Enabled -> mirrorModeUiState.currentMirrorMode != MirrorMode.OFF
+    }
+    SwitchSettingUI(
+        modifier = modifier.testTag(BTN_SWITCH_SETTING_MIRROR_FRONT_CAMERA_TAG),
+        title = stringResource(id = R.string.mirror_front_camera_title),
+        description = if (isMirrored) {
+            stringResource(R.string.mirror_front_camera_description_on)
+        } else {
+            stringResource(R.string.mirror_front_camera_description_off)
+        },
+        leadingIcon = null,
+        onSwitchChanged = { on ->
+            setMirrorMode(if (on) MirrorMode.ON_FRONT_ONLY else MirrorMode.OFF)
+        },
+        settingValue = isMirrored,
+        enabled = true
     )
 }
 
@@ -873,58 +902,6 @@ fun LocationSetting(
     )
 }
 
-/**
- * A setting component that allows the user to enable or disable concurrent camera mode.
- *
- * @param modifier the [Modifier] to be applied to this setting.
- * @param concurrentCameraUiState the current UI state of the concurrent camera setting.
- * @param setConcurrentCameraMode callback to update the concurrent camera mode.
- */
-@Composable
-internal fun ConcurrentCameraSetting(
-    modifier: Modifier = Modifier,
-    concurrentCameraUiState: ConcurrentCameraUiState,
-    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit
-) {
-    SwitchSettingUI(
-        modifier = modifier.testTag(BTN_SWITCH_SETTING_CONCURRENT_CAMERA_TAG),
-        title = stringResource(id = R.string.concurrent_camera_title),
-        description = when (concurrentCameraUiState) {
-            is ConcurrentCameraUiState.Enabled -> {
-                when (concurrentCameraUiState.currentConcurrentCameraMode) {
-                    ConcurrentCameraMode.DUAL -> stringResource(
-                        R.string.concurrent_camera_description_on
-                    )
-
-                    ConcurrentCameraMode.OFF -> stringResource(
-                        R.string.concurrent_camera_description_off
-                    )
-                }
-            }
-
-            is ConcurrentCameraUiState.Disabled -> {
-                disabledRationaleString(
-                    disabledRationale = concurrentCameraUiState.disabledRationale
-                )
-            }
-        },
-        leadingIcon = null,
-        onSwitchChanged = { on ->
-            setConcurrentCameraMode(
-                if (on) ConcurrentCameraMode.DUAL else ConcurrentCameraMode.OFF
-            )
-        },
-        settingValue = when (concurrentCameraUiState) {
-            is ConcurrentCameraUiState.Enabled ->
-                concurrentCameraUiState.currentConcurrentCameraMode ==
-                    ConcurrentCameraMode.DUAL
-
-            is ConcurrentCameraUiState.Disabled -> false
-        },
-        enabled = concurrentCameraUiState is ConcurrentCameraUiState.Enabled
-    )
-}
-
 @Composable
 fun VersionInfo(versionName: String, modifier: Modifier = Modifier, buildType: String = "") {
     SettingUI(
@@ -974,12 +951,12 @@ fun BasicPopupSetting(
             modifier = Modifier.semantics { testTagsAsResourceId = true },
             onDismissRequest = { popupStatus.value = false },
             confirmButton = {
-                Text(
-                    text = "Close",
-                    modifier = Modifier
-                        .testTag(CLOSE_BUTTON)
-                        .clickable { popupStatus.value = false }
-                )
+                TextButton(
+                    onClick = { popupStatus.value = false },
+                    modifier = Modifier.testTag(CLOSE_BUTTON)
+                ) {
+                    Text(text = stringResource(R.string.dialog_close))
+                }
             },
             title = { Text(text = title) },
             text = {
@@ -1032,9 +1009,7 @@ fun SwitchSettingUI(
             Switch(
                 enabled = enabled,
                 checked = settingValue,
-                onCheckedChange = { value ->
-                    onSwitchChanged(value)
-                }
+                onCheckedChange = null
             )
         }
     )
@@ -1079,6 +1054,34 @@ fun SettingUI(
 }
 
 /**
+ * A [SingleChoiceSelector] that is enabled when [selectableState] is selectable. A disabled option
+ * shows the reason it is disabled in place of [secondaryText], so it is also read by
+ * accessibility services.
+ */
+@Composable
+fun SingleChoiceSelector(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    selectableState: SingleSelectableState,
+    modifier: Modifier = Modifier,
+    secondaryText: String? = null
+) {
+    SingleChoiceSelector(
+        text = text,
+        selected = selected,
+        onClick = onClick,
+        modifier = modifier,
+        secondaryText = when (selectableState) {
+            is SingleSelectableState.Disabled ->
+                disabledRationaleString(selectableState.disabledRationale)
+            SingleSelectableState.Selectable -> secondaryText
+        },
+        enabled = selectableState is SingleSelectableState.Selectable
+    )
+}
+
+/**
  * A component for a single-choice selector for a multiple choice list
  */
 @Composable
@@ -1108,7 +1111,7 @@ fun SingleChoiceSelector(
             leadingIcon = {
                 RadioButton(
                     selected = selected,
-                    onClick = onClick,
+                    onClick = null,
                     enabled = enabled
                 )
             },
@@ -1158,19 +1161,15 @@ fun disabledRationaleString(disabledRationale: DisabledRationale): String =
             stringResource(disabledRationale.affectedSettingNameResId)
         )
 
-        is DisabledRationale.ConcurrentCameraDisabledRationale -> stringResource(
-            disabledRationale.reasonTextResId,
-            stringResource(disabledRationale.affectedSettingNameResId)
-        )
-
-        is DisabledRationale.ConcurrentCameraActiveRationale -> stringResource(
-            disabledRationale.reasonTextResId,
-            stringResource(disabledRationale.affectedSettingNameResId)
-        )
-
         is DisabledRationale.UltraHdrUnsupportedRationale -> stringResource(
             disabledRationale.reasonTextResId,
             stringResource(disabledRationale.affectedSettingNameResId)
+        )
+
+        is DisabledRationale.CaptureSubModeActiveRationale -> stringResource(
+            disabledRationale.reasonTextResId,
+            stringResource(disabledRationale.affectedSettingNameResId),
+            stringResource(disabledRationale.captureSubModeLabelResId)
         )
     }
 
