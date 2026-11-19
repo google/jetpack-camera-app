@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.content.Context
+import android.graphics.Point
 import android.hardware.display.DisplayManager
 import android.os.Build
 import android.view.Surface
@@ -30,10 +31,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
 import androidx.compose.ui.graphics.graphicsLayer
@@ -59,15 +61,16 @@ internal val LocalDeviceRotation = compositionLocalOf { DeviceRotation.Natural }
 internal val LocalWindowRotation = compositionLocalOf { DeviceRotation.Natural }
 
 /**
- * Tracks the current OS display rotation synchronously with configuration changes and
- * [DisplayManager.DisplayListener] callbacks (including 180-degree landscape-to-landscape flips).
+ * Tracks the current OS display rotation relative to portrait synchronously with configuration
+ * changes and [DisplayManager.DisplayListener] callbacks (including 180-degree
+ * landscape-to-landscape flips).
  */
 @Composable
 internal fun rememberWindowRotation(): DeviceRotation {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
-    var surfaceRotation by remember(configuration) {
-        mutableIntStateOf(context.currentDisplayRotation())
+    var windowRotation by remember(configuration) {
+        mutableStateOf(context.currentWindowRotation())
     }
 
     DisposableEffect(context) {
@@ -76,7 +79,7 @@ internal fun rememberWindowRotation(): DeviceRotation {
             override fun onDisplayAdded(displayId: Int) {}
             override fun onDisplayRemoved(displayId: Int) {}
             override fun onDisplayChanged(displayId: Int) {
-                surfaceRotation = context.currentDisplayRotation()
+                windowRotation = context.currentWindowRotation()
             }
         }
         displayManager?.registerDisplayListener(listener, null)
@@ -85,68 +88,167 @@ internal fun rememberWindowRotation(): DeviceRotation {
         }
     }
 
-    return DeviceRotation.fromUiSurfaceRotation(surfaceRotation)
+    return windowRotation
 }
 
 @Suppress("DEPRECATION")
-private fun Context.currentDisplayRotation(): Int {
+private fun Context.currentWindowRotation(): DeviceRotation {
     return try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            display?.rotation ?: Surface.ROTATION_0
+        val display = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            display
         } else {
             val windowManager = getSystemService(Context.WINDOW_SERVICE) as? WindowManager
-            windowManager?.defaultDisplay?.rotation ?: Surface.ROTATION_0
-        }
+            windowManager?.defaultDisplay
+        } ?: return DeviceRotation.Natural
+
+        val point = Point()
+        display.getRealSize(point)
+        resolveWindowRotation(
+            surfaceRotation = display.rotation,
+            displayWidth = point.x,
+            displayHeight = point.y
+        )
     } catch (_: UnsupportedOperationException) {
-        Surface.ROTATION_0
+        DeviceRotation.Natural
     }
 }
 
 /**
- * Counter-rotates the root phone camera layout back to the device's canonical Portrait (`0°`)
- * coordinate system whenever a landscape-shaped OS window (`width > height`) is rotated to a
- * landscape orientation.
+ * Resolves the OS window's [DeviceRotation] relative to canonical portrait (`width <= height`),
+ * accounting for devices whose physical display has a natural landscape orientation at
+ * [Surface.ROTATION_0] (`displayWidth > displayHeight`).
  */
-internal fun Modifier.counterRotateToPortrait(windowRotation: DeviceRotation): Modifier =
-    layout { measurable, constraints ->
-        val isLandscape =
-            windowRotation.isLandscape && constraints.maxWidth > constraints.maxHeight
-        val placeable = measurable.measure(
-            if (isLandscape) {
-                constraints.copy(
-                    minWidth = constraints.minHeight,
-                    maxWidth = constraints.maxHeight,
-                    minHeight = constraints.minWidth,
-                    maxHeight = constraints.maxWidth
-                )
-            } else {
-                constraints
-            }
-        )
-
-        val layoutWidth = if (isLandscape) {
-            placeable.height
-        } else {
-            placeable.width
+internal fun resolveWindowRotation(
+    surfaceRotation: Int,
+    displayWidth: Int,
+    displayHeight: Int
+): DeviceRotation {
+    val isNaturalLandscape = if (
+        surfaceRotation == Surface.ROTATION_0 || surfaceRotation == Surface.ROTATION_180
+    ) {
+        displayWidth > displayHeight
+    } else {
+        displayHeight > displayWidth
+    }
+    return if (isNaturalLandscape) {
+        // Canonical portrait is Surface.ROTATION_90, so each rotation is a quarter turn behind.
+        when (surfaceRotation) {
+            Surface.ROTATION_0 -> DeviceRotation.Rotated270
+            Surface.ROTATION_180 -> DeviceRotation.Rotated90
+            Surface.ROTATION_270 -> DeviceRotation.Rotated180
+            else -> DeviceRotation.Natural
         }
-        val layoutHeight = if (isLandscape) {
-            placeable.width
-        } else {
-            placeable.height
-        }
+    } else {
+        DeviceRotation.fromUiSurfaceRotation(surfaceRotation)
+    }
+}
 
-        layout(layoutWidth, layoutHeight) {
-            val offsetX = (layoutWidth - placeable.width) / 2
-            val offsetY = (layoutHeight - placeable.height) / 2
-            placeable.placeWithLayer(offsetX, offsetY) {
-                rotationZ = if (isLandscape) {
-                    windowRotation.toWindowCounterRotationDegrees()
-                } else {
-                    0f
-                }
-            }
+/**
+ * Holds the window counter-rotation currently applied by [counterRotateToPortrait], so that
+ * descendants can undo it with [undoWindowCounterRotation].
+ *
+ * The value is written during the layout of [counterRotateToPortrait], before its content is
+ * measured, so descendants always observe the counter-rotation applied in the same layout pass.
+ */
+internal class WindowCounterRotationState {
+    var appliedWindowRotation: DeviceRotation by mutableStateOf(DeviceRotation.Natural)
+        internal set
+}
+
+/**
+ * Provides the [WindowCounterRotationState] of the closest [counterRotateToPortrait] ancestor.
+ */
+internal val LocalWindowCounterRotationState = staticCompositionLocalOf {
+    WindowCounterRotationState()
+}
+
+/**
+ * Counter-rotates the root phone camera layout back to the device's canonical Portrait (`0°`)
+ * coordinate system whenever the OS window rotates.
+ *
+ * @param counterRotationState optional state that records the applied counter-rotation so that
+ *   descendants can undo it with [undoWindowCounterRotation].
+ */
+internal fun Modifier.counterRotateToPortrait(
+    windowRotation: DeviceRotation,
+    counterRotationState: WindowCounterRotationState? = null
+): Modifier = layout { measurable, constraints ->
+    val isLandscape =
+        windowRotation.isLandscape && constraints.maxWidth > constraints.maxHeight
+    val appliedRotation = if (isLandscape || windowRotation == DeviceRotation.Rotated180) {
+        windowRotation
+    } else {
+        DeviceRotation.Natural
+    }
+    counterRotationState?.appliedWindowRotation = appliedRotation
+    val placeable = measurable.measure(
+        if (isLandscape) {
+            constraints.copy(
+                minWidth = constraints.minHeight,
+                maxWidth = constraints.maxHeight,
+                minHeight = constraints.minWidth,
+                maxHeight = constraints.maxWidth
+            )
+        } else {
+            constraints
+        }
+    )
+
+    val layoutWidth = if (isLandscape) {
+        placeable.height
+    } else {
+        placeable.width
+    }
+    val layoutHeight = if (isLandscape) {
+        placeable.width
+    } else {
+        placeable.height
+    }
+
+    layout(layoutWidth, layoutHeight) {
+        val offsetX = (layoutWidth - placeable.width) / 2
+        val offsetY = (layoutHeight - placeable.height) / 2
+        placeable.placeWithLayer(offsetX, offsetY) {
+            rotationZ = appliedRotation.toWindowCounterRotationDegrees()
         }
     }
+}
+
+/**
+ * Undoes the window counter-rotation applied by the closest [counterRotateToPortrait] ancestor, so
+ * that the content is laid out and rendered in the OS window's coordinate frame, occupying the same
+ * region of the screen.
+ *
+ * This is used for content that must follow the OS window rotation, such as the camera
+ * viewfinder, whose frames are oriented relative to the display rotation.
+ */
+internal fun Modifier.undoWindowCounterRotation(
+    counterRotationState: WindowCounterRotationState
+): Modifier = layout { measurable, constraints ->
+    val windowRotation = counterRotationState.appliedWindowRotation
+    val isLandscape = windowRotation.isLandscape
+    val placeable = measurable.measure(
+        if (isLandscape) {
+            constraints.copy(
+                minWidth = constraints.minHeight,
+                maxWidth = constraints.maxHeight,
+                minHeight = constraints.minWidth,
+                maxHeight = constraints.maxWidth
+            )
+        } else {
+            constraints
+        }
+    )
+    val layoutWidth = if (isLandscape) placeable.height else placeable.width
+    val layoutHeight = if (isLandscape) placeable.width else placeable.height
+    layout(layoutWidth, layoutHeight) {
+        val offsetX = (layoutWidth - placeable.width) / 2
+        val offsetY = (layoutHeight - placeable.height) / 2
+        placeable.placeWithLayer(offsetX, offsetY) {
+            rotationZ = -windowRotation.toWindowCounterRotationDegrees()
+        }
+    }
+}
 
 /**
  * Computes and animates the clockwise rotation in degrees needed to keep a UI element upright in a

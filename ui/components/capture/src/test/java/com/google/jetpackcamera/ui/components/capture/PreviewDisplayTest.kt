@@ -15,12 +15,16 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -29,6 +33,7 @@ import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.AspectRatio
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolution
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
@@ -79,13 +84,13 @@ class PreviewDisplayTest {
         var aspectRatio by mutableStateOf(AspectRatio.THREE_FOUR)
         setPreviewContent { aspectRatio }
 
-        var bounds = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
+        var bounds = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getBoundsInRoot()
         assertThat(bounds.width.value).isWithin(0.5f).of(480f)
         assertThat(bounds.height.value).isWithin(0.5f).of(360f)
 
         composeTestRule.runOnIdle { aspectRatio = AspectRatio.NINE_SIXTEEN }
         composeTestRule.waitForIdle()
-        bounds = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
+        bounds = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getBoundsInRoot()
         assertThat(bounds.width.value).isWithin(0.5f).of(640f)
         assertThat(bounds.height.value).isWithin(0.5f).of(360f)
 
@@ -143,6 +148,67 @@ class PreviewDisplayTest {
         composeTestRule.waitForIdle()
         bounds = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getUnclippedBoundsInRoot()
         assertThat(bounds.width.value).isWithin(0.5f).of(360f)
+        assertThat(bounds.height.value).isWithin(0.5f).of(360f)
+    }
+
+    @Test
+    @Config(qualifiers = "w800dp-h360dp-land")
+    fun previewDisplay_counterRotatedLandscapeWindow_usesSolvedPortraitBandInWindowSpace() {
+        var aspectRatio by mutableStateOf(AspectRatio.THREE_FOUR)
+        val solution = CameraLayoutSolver.solve(
+            CameraLayoutDefaults.spec(),
+            CameraWindow(width = 360.dp, height = 800.dp, topInset = 48.dp, navInset = 24.dp)
+        )
+        val counterRotationState = WindowCounterRotationState()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(
+                LocalDisableAnimations provides true,
+                LocalOverlapTargetBounds provides remember { mutableStateOf(Rect.Zero) },
+                LocalCameraLayoutSolution provides solution,
+                LocalWindowCounterRotationState provides counterRotationState
+            ) {
+                Box(
+                    Modifier
+                        .size(width = 800.dp, height = 360.dp)
+                        .counterRotateToPortrait(
+                            windowRotation = DeviceRotation.Rotated270,
+                            counterRotationState = counterRotationState
+                        )
+                ) {
+                    PreviewDisplay(
+                        previewDisplayUiState = PreviewDisplayUiState(
+                            aspectRatioUiState = AspectRatioUiState.Available(
+                                selectedAspectRatio = aspectRatio,
+                                availableAspectRatios = listOf(
+                                    SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
+                                    SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN)
+                                )
+                            ),
+                            // In landscape display coordinates, a standard phone sensor outputs a
+                            // landscape preview; counterRotateToPortrait swaps axes to portrait.
+                            isPreviewLandscape = true
+                        ),
+                        onTapToFocus = { _, _ -> },
+                        onFlipCamera = {},
+                        onScaleZoom = {},
+                        onRequestWindowColorMode = {},
+                        surfaceRequest = null,
+                        focusMeteringUiState = FocusMeteringUiState.Unspecified
+                    )
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        var bounds = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getBoundsInRoot()
+        assertThat(bounds.width.value).isWithin(0.5f).of(480f)
+        assertThat(bounds.height.value).isWithin(0.5f).of(360f)
+
+        composeTestRule.runOnIdle { aspectRatio = AspectRatio.NINE_SIXTEEN }
+        composeTestRule.waitForIdle()
+        bounds = composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).getBoundsInRoot()
+        assertThat(bounds.width.value).isWithin(0.5f).of(640f)
         assertThat(bounds.height.value).isWithin(0.5f).of(360f)
     }
 

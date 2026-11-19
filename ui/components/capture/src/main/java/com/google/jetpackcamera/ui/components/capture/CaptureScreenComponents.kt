@@ -861,9 +861,14 @@ fun PreviewDisplay(
         contentAlignment = Alignment.TopCenter
     ) {
         val maxAspectRatio: Float = maxWidth / maxHeight
-        // Orient the preview frame to match the camera output (and ViewPort crop). Fall back to
-        // the window shape only when the camera output orientation is not yet known.
-        val isPreviewLandscape = previewDisplayUiState.isPreviewLandscape ?: (maxWidth > maxHeight)
+        val counterRotationState = LocalWindowCounterRotationState.current
+        // Orient the preview frame to match the camera output (and ViewPort crop). When the capture
+        // layout is counter-rotated from a landscape window into portrait coordinates, flip the
+        // display-relative orientation to match this layout's swapped axes. Fall back to the
+        // container shape only when the camera output orientation is not yet known.
+        val isPreviewLandscape = previewDisplayUiState.isPreviewLandscape?.let {
+            if (counterRotationState.appliedWindowRotation.isLandscape) !it else it
+        } ?: (maxWidth > maxHeight)
         val aspectRatioFloat: Float = if (isPreviewLandscape) {
             aspectRatio.toLandscapeFloat()
         } else {
@@ -938,7 +943,10 @@ fun PreviewDisplay(
                 .clip(RoundedCornerShape(ViewfinderCornerRadius))
         ) {
             if (surfaceRequest != null) {
-                val implementationMode = ImplementationMode.EMBEDDED
+                val implementationMode = when {
+                    Build.VERSION.SDK_INT > 24 -> ImplementationMode.EXTERNAL
+                    else -> ImplementationMode.EMBEDDED
+                }
 
                 DetectWindowColorModeChanges(
                     surfaceRequest = surfaceRequest,
@@ -949,38 +957,47 @@ fun PreviewDisplay(
                 val coordinateTransformer = remember { MutableCoordinateTransformer() }
                 val viewfinderDescription =
                     stringResource(R.string.camera_viewfinder_content_description)
-                CameraXViewfinder(
+                // The capture layout is counter-rotated to portrait when the window rotates. The
+                // viewfinder must follow the window rotation instead, since CameraX orients the
+                // preview relative to the display rotation, so undo the counter-rotation here.
+                Box(
                     modifier = Modifier
+                        .undoWindowCounterRotation(counterRotationState)
                         .fillMaxSize()
-                        .semantics { contentDescription = viewfinderDescription }
-                        .pointerInput(onFlipCamera) {
-                            detectTapGestures(
-                                onDoubleTap = { offset ->
-                                    // double tap to flip camera
-                                    Log.d(TAG, "onDoubleTap $offset")
-                                    onFlipCamera()
-                                },
-                                onTap = {
-                                    with(coordinateTransformer) {
-                                        val surfaceCoords = it.transform()
-                                        Log.d(
-                                            "TAG",
-                                            "onTapToFocus: " +
-                                                "input{$it} -> surface{$surfaceCoords}"
-                                        )
-                                        onTapToFocus(surfaceCoords.x, surfaceCoords.y)
+                ) {
+                    CameraXViewfinder(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .semantics { contentDescription = viewfinderDescription }
+                            .pointerInput(onFlipCamera) {
+                                detectTapGestures(
+                                    onDoubleTap = { offset ->
+                                        // double tap to flip camera
+                                        Log.d(TAG, "onDoubleTap $offset")
+                                        onFlipCamera()
+                                    },
+                                    onTap = {
+                                        with(coordinateTransformer) {
+                                            val surfaceCoords = it.transform()
+                                            Log.d(
+                                                "TAG",
+                                                "onTapToFocus: " +
+                                                    "input{$it} -> surface{$surfaceCoords}"
+                                            )
+                                            onTapToFocus(surfaceCoords.x, surfaceCoords.y)
+                                        }
                                     }
-                                }
-                            )
-                        },
-                    surfaceRequest = surfaceRequest,
-                    implementationMode = implementationMode,
-                    coordinateTransformer = coordinateTransformer
-                )
-                FocusMeteringIndicator(
-                    focusMeteringUiState = focusMeteringUiState,
-                    coordinateTransformer = coordinateTransformer
-                )
+                                )
+                            },
+                        surfaceRequest = surfaceRequest,
+                        implementationMode = implementationMode,
+                        coordinateTransformer = coordinateTransformer
+                    )
+                    FocusMeteringIndicator(
+                        focusMeteringUiState = focusMeteringUiState,
+                        coordinateTransformer = coordinateTransformer
+                    )
+                }
             } else {
                 CircularProgressIndicator(
                     modifier = Modifier.align(Alignment.Center).size(LOADING_SPINNER_SIZE),

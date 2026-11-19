@@ -293,14 +293,18 @@ fun CaptureScaffoldLayout(
     }
 
     val windowRotation = rememberWindowRotation()
+    val windowCounterRotationState = remember { WindowCounterRotationState() }
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val windowWidth = maxWidth
         val windowHeight = maxHeight
-        // Only counter-rotate when the window itself is landscape-shaped (width > height) so that
-        // portrait multi-window panes on a landscape display stay upright.
+        // Only counter-rotate when the window itself is landscape-shaped (width > height) or
+        // upside-down (180°) so that portrait multi-window panes on a landscape display stay
+        // upright.
         val effectiveWindowRotation =
             if (windowWidth > windowHeight && windowRotation.isLandscape) {
                 windowRotation
+            } else if (windowRotation == DeviceRotation.Rotated180) {
+                DeviceRotation.Rotated180
             } else {
                 DeviceRotation.Natural
             }
@@ -381,13 +385,17 @@ fun CaptureScaffoldLayout(
         CompositionLocalProvider(
             LocalOverlapTargetBounds provides overlapTargetBounds,
             LocalDeviceRotation provides uiRotation,
-            LocalWindowRotation provides effectiveWindowRotation
+            LocalWindowRotation provides effectiveWindowRotation,
+            LocalWindowCounterRotationState provides windowCounterRotationState
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .counterRotateToPortrait(effectiveWindowRotation)
+                        .counterRotateToPortrait(
+                            effectiveWindowRotation,
+                            windowCounterRotationState
+                        )
                 ) {
                     BottomSheetScaffold(
                         modifier = Modifier.fillMaxSize(),

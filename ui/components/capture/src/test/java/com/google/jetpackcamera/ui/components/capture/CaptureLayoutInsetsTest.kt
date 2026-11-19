@@ -192,6 +192,7 @@ class CaptureLayoutInsetsTest {
     }
 
     @Test
+    @Config(qualifiers = "w800dp-h360dp-land")
     fun counterRotateToPortrait_swapsConstraints_whenWindowIsLandscapeShapedInLandscape() {
         var measuredChildSize = IntSize.Zero
         composeTestRule.setContent {
