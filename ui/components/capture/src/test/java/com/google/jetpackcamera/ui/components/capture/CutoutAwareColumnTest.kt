@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.content.Context
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -350,7 +351,8 @@ class CutoutAwareColumnTest {
     fun verticalIndicatorPill_noActiveIndicators_drawsNoPillSegments() {
         var pillSegments: List<IntRect> = listOf(IntRect(0, 0, 10, 10))
         composeTestRule.setContent {
-            VerticalIndicatorPill(
+            IndicatorPill(
+                orientation = Orientation.Vertical,
                 cutoutRectsOverride = emptyList(),
                 onPillSegmentsPlaced = { pillSegments = it }
             ) {
@@ -390,10 +392,11 @@ class CutoutAwareColumnTest {
     }
 
     @Test
-    fun verticalIndicatorPill_oneActiveIndicator_renders40x48Pill() {
+    fun verticalIndicatorPill_oneActiveIndicator_renders48x60Pill() {
         var pillSegments: List<IntRect> = emptyList()
         composeTestRule.setContent {
-            VerticalIndicatorPill(
+            IndicatorPill(
+                orientation = Orientation.Vertical,
                 cutoutRectsOverride = emptyList(),
                 onPillSegmentsPlaced = { pillSegments = it }
             ) {
@@ -408,22 +411,23 @@ class CutoutAwareColumnTest {
             }
         }
 
-        // Centered 40dp pill inside 48dp slot -> left = 4, right = 44; height = 6 + 36 + 6 = 48.
+        // 48dp pill inside 48dp slot -> left = 0, right = 48; height = 6 + 48 + 6 = 60.
         assertThat(pillSegments).containsExactly(
-            IntRect(left = 4, top = 0, right = 44, bottom = 48)
+            IntRect(left = 0, top = 0, right = 48, bottom = 60)
         )
         val flashBounds = composeTestRule.onNodeWithTag("flash").getUnclippedBoundsInRoot()
-        assertThat(flashBounds.left).isEqualTo(4.dp)
-        assertThat(flashBounds.right).isEqualTo(44.dp)
+        assertThat(flashBounds.left).isEqualTo(6.dp)
+        assertThat(flashBounds.right).isEqualTo(42.dp)
         assertThat(flashBounds.top).isEqualTo(6.dp)
-        assertThat(flashBounds.bottom).isEqualTo(42.dp)
+        assertThat(flashBounds.bottom).isEqualTo(54.dp)
     }
 
     @Test
-    fun verticalIndicatorPill_twoActiveIndicators_sharesSingle40x84Pill() {
+    fun verticalIndicatorPill_twoActiveIndicators_sharesSingle48x108Pill() {
         var pillSegments: List<IntRect> = emptyList()
         composeTestRule.setContent {
-            VerticalIndicatorPill(
+            IndicatorPill(
+                orientation = Orientation.Vertical,
                 cutoutRectsOverride = emptyList(),
                 onPillSegmentsPlaced = { pillSegments = it }
             ) {
@@ -438,16 +442,16 @@ class CutoutAwareColumnTest {
             }
         }
 
-        // Height = 6 + 36 + 36 + 6 = 84; width = 40 centered at [4, 44].
+        // Height = 6 + 48 + 48 + 6 = 108; width = 48 at [0, 48].
         assertThat(pillSegments).containsExactly(
-            IntRect(left = 4, top = 0, right = 44, bottom = 84)
+            IntRect(left = 0, top = 0, right = 48, bottom = 108)
         )
         val flashBounds = composeTestRule.onNodeWithTag("flash").getUnclippedBoundsInRoot()
         val hdrBounds = composeTestRule.onNodeWithTag("hdr").getUnclippedBoundsInRoot()
         assertThat(flashBounds.top).isEqualTo(6.dp)
-        assertThat(flashBounds.bottom).isEqualTo(42.dp)
-        assertThat(hdrBounds.top).isEqualTo(42.dp)
-        assertThat(hdrBounds.bottom).isEqualTo(78.dp)
+        assertThat(flashBounds.bottom).isEqualTo(54.dp)
+        assertThat(hdrBounds.top).isEqualTo(54.dp)
+        assertThat(hdrBounds.bottom).isEqualTo(102.dp)
     }
 
     @Test
@@ -458,8 +462,9 @@ class CutoutAwareColumnTest {
         composeTestRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
                 Box(modifier = Modifier.widthIn(max = 400.dp)) {
-                    VerticalIndicatorPill(
+                    IndicatorPill(
                         modifier = Modifier.testTag("vertical_pill"),
+                        orientation = Orientation.Vertical,
                         cutoutRectsOverride = emptyList(),
                         onPillSegmentsPlaced = { pillSegments = it }
                     ) {
@@ -495,33 +500,34 @@ class CutoutAwareColumnTest {
                 .isEqualTo(48.dp)
             assertWithMessage("Pill segments in $direction")
                 .that(pillSegments)
-                .containsExactly(IntRect(left = 4, top = 0, right = 44, bottom = 156))
+                .containsExactly(IntRect(left = 0, top = 0, right = 48, bottom = 204))
 
             // Verify strict Top -> Bottom stacking: Flash -> HDR -> VideoQuality -> Stabilization.
             assertThat(composeTestRule.onNodeWithTag("flash").getUnclippedBoundsInRoot().top)
                 .isEqualTo(6.dp)
             assertThat(composeTestRule.onNodeWithTag("hdr").getUnclippedBoundsInRoot().top)
-                .isEqualTo(42.dp)
+                .isEqualTo(54.dp)
             assertThat(composeTestRule.onNodeWithTag("vq").getUnclippedBoundsInRoot().top)
-                .isEqualTo(78.dp)
+                .isEqualTo(102.dp)
             assertThat(composeTestRule.onNodeWithTag("stab").getUnclippedBoundsInRoot().top)
-                .isEqualTo(114.dp)
+                .isEqualTo(150.dp)
         }
     }
 
     @Test
     fun verticalIndicatorPill_cutoutBetweenIndicators_splitsIntoTwoSeparatePillsInLtrAndRtl() {
-        // Cutout occupies y=[60, 100] with 8dp clearance -> vertical keep-out range [52, 108].
-        // First indicator pill y=[0, 48] fits above the cutout.
-        // Second and third indicators shift below to y=[108, 192] as a second 40x84dp pill.
+        // Cutout occupies y=[72, 112] with 8dp clearance -> vertical keep-out range [64, 120].
+        // First indicator pill y=[0, 60] fits above the cutout.
+        // Second and third indicators shift below to y=[120, 228] as a second 48x108dp pill.
         var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
         var pillSegments: List<IntRect> = emptyList()
 
         composeTestRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                VerticalIndicatorPill(
+                IndicatorPill(
+                    orientation = Orientation.Vertical,
                     cutoutRectsOverride = listOf(
-                        IntRect(left = 0, top = 60, right = 48, bottom = 100)
+                        IntRect(left = 0, top = 72, right = 48, bottom = 112)
                     ),
                     onPillSegmentsPlaced = { pillSegments = it }
                 ) {
@@ -548,16 +554,16 @@ class CutoutAwareColumnTest {
             assertWithMessage("Split pill segments in $direction")
                 .that(pillSegments)
                 .containsExactly(
-                    IntRect(left = 4, top = 0, right = 44, bottom = 48),
-                    IntRect(left = 4, top = 108, right = 44, bottom = 192)
+                    IntRect(left = 0, top = 0, right = 48, bottom = 60),
+                    IntRect(left = 0, top = 120, right = 48, bottom = 228)
                 )
                 .inOrder()
             assertThat(composeTestRule.onNodeWithTag("flash").getUnclippedBoundsInRoot().top)
                 .isEqualTo(6.dp)
             assertThat(composeTestRule.onNodeWithTag("vq").getUnclippedBoundsInRoot().top)
-                .isEqualTo(114.dp)
+                .isEqualTo(126.dp)
             assertThat(composeTestRule.onNodeWithTag("stab").getUnclippedBoundsInRoot().top)
-                .isEqualTo(150.dp)
+                .isEqualTo(174.dp)
         }
     }
 
@@ -570,7 +576,8 @@ class CutoutAwareColumnTest {
 
         composeTestRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                VerticalIndicatorPill(
+                IndicatorPill(
+                    orientation = Orientation.Vertical,
                     cutoutRectsOverride = listOf(
                         IntRect(left = 80, top = 10, right = 140, bottom = 70),
                         IntRect(left = -100, top = 10, right = -20, bottom = 70)
@@ -595,27 +602,25 @@ class CutoutAwareColumnTest {
 
             assertWithMessage("Unshifted pill in $direction")
                 .that(pillSegments)
-                .containsExactly(IntRect(left = 4, top = 0, right = 44, bottom = 84))
+                .containsExactly(IntRect(left = 0, top = 0, right = 48, bottom = 108))
             assertThat(composeTestRule.onNodeWithTag("flash").getUnclippedBoundsInRoot().top)
                 .isEqualTo(6.dp)
             assertThat(composeTestRule.onNodeWithTag("hdr").getUnclippedBoundsInRoot().top)
-                .isEqualTo(42.dp)
+                .isEqualTo(54.dp)
         }
     }
 
     @Test
     fun indicatorPillIcon_expandAndShrinkVertically_neverTeleportsAcrossCutoutMidAnimation() {
-        // Cutout occupies y=[62, 100] with 8dp clearance -> vertical keep-out range [54, 108].
-        // Flash (index 0) occupies pill y=[0, 48] (icon y=[6, 42]).
-        // Notice 42dp + small animated height + 6dp bottom padding <= 54dp on early/late frames,
-        // so without LookaheadScope + maxIntrinsicHeight + lockedMinY, HDR (index 1) would start
-        // or end at y=42dp above the cutout instead of staying anchored at y=114dp below [54, 108].
+        // Cutout occupies y=[72, 112] with 8dp clearance -> vertical keep-out range [64, 120].
+        // Flash (index 0) occupies pill y=[0, 60] (icon cell y=[6, 54]).
         var isHdrVisible by mutableStateOf(false)
         composeTestRule.mainClock.autoAdvance = false
 
         composeTestRule.setContent {
-            VerticalIndicatorPill(
-                cutoutRectsOverride = listOf(IntRect(left = 0, top = 62, right = 48, bottom = 100))
+            IndicatorPill(
+                orientation = Orientation.Vertical,
+                cutoutRectsOverride = listOf(IntRect(left = 0, top = 72, right = 48, bottom = 112))
             ) {
                 FlashModeIndicator(
                     flashModeUiState = activeFlashUiState(),
@@ -630,7 +635,7 @@ class CutoutAwareColumnTest {
 
         composeTestRule.mainClock.advanceTimeByFrame()
 
-        // Trigger vertical enter animation (height 0dp -> 36dp).
+        // Trigger vertical enter animation (height 0dp -> 48dp).
         isHdrVisible = true
         composeTestRule.mainClock.advanceTimeByFrame()
 
@@ -643,14 +648,14 @@ class CutoutAwareColumnTest {
                 val clipped = composeTestRule.onNodeWithTag("hdr").getBoundsInRoot()
                 if (clipped.height > 0.dp) {
                     observedEnteringFrames++
-                    if (clipped.height < 36.dp) {
+                    if (clipped.height < 48.dp) {
                         observedIntermediateEnterHeight = true
-                        // Width is already full 40dp during vertical expansion.
-                        assertThat(clipped.width).isEqualTo(40.dp)
+                        // Width is already full 36dp during vertical expansion.
+                        assertThat(clipped.width).isEqualTo(36.dp)
                     }
                     assertWithMessage("Enter step=$step clipped=$clipped")
                         .that(clipped.top)
-                        .isEqualTo(114.dp)
+                        .isEqualTo(126.dp)
                 }
             }
         }
@@ -660,7 +665,7 @@ class CutoutAwareColumnTest {
         // Allow enter transition to settle completely.
         composeTestRule.mainClock.advanceTimeBy(500)
 
-        // Trigger vertical exit animation (height 36dp -> 0dp).
+        // Trigger vertical exit animation (height 48dp -> 0dp).
         isHdrVisible = false
         composeTestRule.mainClock.advanceTimeByFrame()
 
@@ -673,13 +678,13 @@ class CutoutAwareColumnTest {
                 val clipped = composeTestRule.onNodeWithTag("hdr").getBoundsInRoot()
                 if (clipped.height > 0.dp) {
                     observedExitingFrames++
-                    if (clipped.height < 36.dp) {
+                    if (clipped.height < 48.dp) {
                         observedIntermediateExitHeight = true
-                        assertThat(clipped.width).isEqualTo(40.dp)
+                        assertThat(clipped.width).isEqualTo(36.dp)
                     }
                     assertWithMessage("Exit step=$step clipped=$clipped")
                         .that(clipped.top)
-                        .isEqualTo(114.dp)
+                        .isEqualTo(126.dp)
                 }
             }
         }
@@ -694,7 +699,10 @@ class CutoutAwareColumnTest {
 
         composeTestRule.setContent {
             CompositionLocalProvider(LocalDisableAnimations provides true) {
-                VerticalIndicatorPill(cutoutRectsOverride = emptyList()) {
+                IndicatorPill(
+                    orientation = Orientation.Vertical,
+                    cutoutRectsOverride = emptyList()
+                ) {
                     FlashModeIndicator(
                         flashModeUiState = activeFlashUiState(),
                         modifier = Modifier.testTag("flash")
@@ -715,20 +723,20 @@ class CutoutAwareColumnTest {
         composeTestRule.onNodeWithTag("hdr").assertDoesNotExist()
 
         // First frame schedules recomposition; second frame materializes the child snapped directly
-        // to its full 40x36dp target bounds with zero intermediate animation heights.
+        // to its full 36x48dp target bounds with zero intermediate animation heights.
         isHdrVisible = true
         repeat(2) {
             composeTestRule.mainClock.advanceTimeByFrame()
             val nodes = composeTestRule.onAllNodes(hasTestTag("hdr")).fetchSemanticsNodes()
             if (nodes.isNotEmpty()) {
                 val bounds = composeTestRule.onNodeWithTag("hdr").getBoundsInRoot()
-                assertThat(bounds.width).isEqualTo(40.dp)
-                assertThat(bounds.height).isEqualTo(36.dp)
+                assertThat(bounds.width).isEqualTo(36.dp)
+                assertThat(bounds.height).isEqualTo(48.dp)
             }
         }
         val enteredBounds = composeTestRule.onNodeWithTag("hdr").getBoundsInRoot()
-        assertThat(enteredBounds.width).isEqualTo(40.dp)
-        assertThat(enteredBounds.height).isEqualTo(36.dp)
+        assertThat(enteredBounds.width).isEqualTo(36.dp)
+        assertThat(enteredBounds.height).isEqualTo(48.dp)
 
         // Exiting with animations disabled removes the child immediately without shrinking frames.
         isHdrVisible = false
@@ -737,7 +745,7 @@ class CutoutAwareColumnTest {
             val nodes = composeTestRule.onAllNodes(hasTestTag("hdr")).fetchSemanticsNodes()
             if (nodes.isNotEmpty()) {
                 val bounds = composeTestRule.onNodeWithTag("hdr").getBoundsInRoot()
-                assertThat(bounds.height).isEqualTo(36.dp)
+                assertThat(bounds.height).isEqualTo(48.dp)
             }
         }
         composeTestRule.onNodeWithTag("hdr").assertDoesNotExist()
@@ -797,14 +805,9 @@ class CutoutAwareColumnTest {
                 ) {
                     Box(Modifier.size(24.dp))
                 }
-                VerticalIndicatorPill(
+                IndicatorPill(
                     modifier = Modifier.testTag("vertical_pill"),
-                    cutoutRectsOverride = emptyList()
-                ) {
-                    FlashModeIndicator(flashModeUiState = activeFlashUiState())
-                }
-                HorizontalIndicatorPill(
-                    modifier = Modifier.testTag("horizontal_pill_direct"),
+                    orientation = Orientation.Vertical,
                     cutoutRectsOverride = emptyList()
                 ) {
                     FlashModeIndicator(flashModeUiState = activeFlashUiState())
@@ -817,19 +820,20 @@ class CutoutAwareColumnTest {
                 }
                 IndicatorPill(
                     modifier = Modifier.testTag("delegated_vertical_pill"),
-                    isVertical = true,
+                    orientation = Orientation.Vertical,
                     cutoutRectsOverride = emptyList()
                 ) {
                     FlashModeIndicator(flashModeUiState = activeFlashUiState())
                 }
-                VerticalIndicatorPill(
-                    modifier = Modifier.testTag(PILL_PUBLIC_VERTICAL_TAG)
+                IndicatorPill(
+                    modifier = Modifier.testTag(PILL_PUBLIC_VERTICAL_TAG),
+                    orientation = Orientation.Vertical
                 ) {
                     FlashModeIndicator(flashModeUiState = activeFlashUiState())
                 }
                 IndicatorPill(
                     modifier = Modifier.testTag(PILL_PUBLIC_DELEGATED_VERTICAL_TAG),
-                    isVertical = true
+                    orientation = Orientation.Vertical
                 ) {
                     FlashModeIndicator(flashModeUiState = activeFlashUiState())
                 }
@@ -840,7 +844,6 @@ class CutoutAwareColumnTest {
             SemanticsMatcher.expectValue(SemanticsProperties.IsTraversalGroup, true)
         composeTestRule.onNodeWithTag("cutout_column").assert(isTraversalGroupMatcher)
         composeTestRule.onNodeWithTag("vertical_pill").assert(isTraversalGroupMatcher)
-        composeTestRule.onNodeWithTag("horizontal_pill_direct").assert(isTraversalGroupMatcher)
         composeTestRule.onNodeWithTag("horizontal_pill").assert(isTraversalGroupMatcher)
         composeTestRule.onNodeWithTag("delegated_vertical_pill").assert(isTraversalGroupMatcher)
         composeTestRule.onNodeWithTag(PILL_PUBLIC_VERTICAL_TAG).assert(isTraversalGroupMatcher)
@@ -849,13 +852,13 @@ class CutoutAwareColumnTest {
     }
 
     @Test
-    fun indicatorPill_isVerticalFlag_delegatesToVerticalAndHorizontalLayouts() {
-        var isVertical by mutableStateOf(false)
+    fun indicatorPill_orientation_delegatesToVerticalAndHorizontalLayouts() {
+        var orientation by mutableStateOf(Orientation.Horizontal)
         var pillSegments: List<IntRect> = emptyList()
 
         composeTestRule.setContent {
             IndicatorPill(
-                isVertical = isVertical,
+                orientation = orientation,
                 cutoutRectsOverride = emptyList(),
                 onPillSegmentsPlaced = { pillSegments = it }
             ) {
@@ -870,7 +873,7 @@ class CutoutAwareColumnTest {
             }
         }
 
-        // Horizontal (isVertical = false): 84x40dp pill, icons side-by-side at x=[6..42], [42..78].
+        // Horizontal: 84x40dp pill, icons side-by-side at x=[6..42], [42..78].
         assertThat(pillSegments).containsExactly(
             IntRect(left = 0, top = 0, right = 84, bottom = 40)
         )
@@ -879,25 +882,25 @@ class CutoutAwareColumnTest {
         assertThat(composeTestRule.onNodeWithTag("hdr").getUnclippedBoundsInRoot().left)
             .isEqualTo(42.dp)
 
-        // Vertical (isVertical = true): 40x84dp pill centered at x=[4..44],
-        // icons stacked at y=[6..42], [42..78].
-        isVertical = true
+        // Vertical: 48x108dp pill at x=[0..48], icons stacked at y=[6..54], [54..102].
+        orientation = Orientation.Vertical
         composeTestRule.waitForIdle()
 
         assertThat(pillSegments).containsExactly(
-            IntRect(left = 4, top = 0, right = 44, bottom = 84)
+            IntRect(left = 0, top = 0, right = 48, bottom = 108)
         )
         assertThat(composeTestRule.onNodeWithTag("flash").getUnclippedBoundsInRoot().top)
             .isEqualTo(6.dp)
         assertThat(composeTestRule.onNodeWithTag("hdr").getUnclippedBoundsInRoot().top)
-            .isEqualTo(42.dp)
+            .isEqualTo(54.dp)
     }
 
     @Test
     fun verticalIndicatorPill_allIndicatorsInactive_emitsZeroChildAndImageSemanticsNodes() {
         composeTestRule.setContent {
-            VerticalIndicatorPill(
+            IndicatorPill(
                 modifier = Modifier.testTag("vertical_pill"),
+                orientation = Orientation.Vertical,
                 cutoutRectsOverride = emptyList()
             ) {
                 FlashModeIndicator(flashModeUiState = inactiveFlashUiState())
@@ -936,7 +939,10 @@ class CutoutAwareColumnTest {
         composeTestRule.setContent {
             CompositionLocalProvider(LocalDisableAnimations provides false) {
                 Column {
-                    VerticalIndicatorPill(cutoutRectsOverride = emptyList()) {
+                    IndicatorPill(
+                        orientation = Orientation.Vertical,
+                        cutoutRectsOverride = emptyList()
+                    ) {
                         FlashModeIndicator(
                             flashModeUiState = if (isActive) {
                                 activeFlashUiState()
@@ -1101,19 +1107,20 @@ class CutoutAwareColumnTest {
         // Cutouts in local coordinates with 8dp clearance:
         // - [-60, -20] -> bottom + clearance = -12 <= 0 (completely above column, ignored)
         // - [-20, 12]  -> [-28, 20] clamped to [0, 20], shifting first pill to y=20
-        // - [80, 116]  -> [72, 124], splitting Flash (pill [20, 68]) from HDR + VideoQuality
-        //                 (pill [124, 208])
-        // - [220, 256] -> [212, 264], splitting Stabilization into a third pill [264, 312]
+        // - [90, 126]  -> [82, 134], splitting Flash (pill [20, 80]) from HDR + VideoQuality
+        //                 (pill [134, 242])
+        // - [250, 286] -> [242, 294], splitting Stabilization into a third pill [294, 354]
         var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
         var pillSegments: List<IntRect> = emptyList()
 
         composeTestRule.setContent {
             CompositionLocalProvider(LocalLayoutDirection provides layoutDirection) {
-                VerticalIndicatorPill(
+                IndicatorPill(
+                    orientation = Orientation.Vertical,
                     cutoutRectsOverride = listOf(
-                        IntRect(left = 0, top = 220, right = 48, bottom = 256),
+                        IntRect(left = 0, top = 250, right = 48, bottom = 286),
                         IntRect(left = 0, top = -60, right = 48, bottom = -20),
-                        IntRect(left = 0, top = 80, right = 48, bottom = 116),
+                        IntRect(left = 0, top = 90, right = 48, bottom = 126),
                         IntRect(left = 0, top = -20, right = 48, bottom = 12)
                     ),
                     onPillSegmentsPlaced = { pillSegments = it }
@@ -1145,19 +1152,19 @@ class CutoutAwareColumnTest {
             assertWithMessage("Multi-cutout pill segments in $direction")
                 .that(pillSegments)
                 .containsExactly(
-                    IntRect(left = 4, top = 20, right = 44, bottom = 68),
-                    IntRect(left = 4, top = 124, right = 44, bottom = 208),
-                    IntRect(left = 4, top = 264, right = 44, bottom = 312)
+                    IntRect(left = 0, top = 20, right = 48, bottom = 80),
+                    IntRect(left = 0, top = 134, right = 48, bottom = 242),
+                    IntRect(left = 0, top = 294, right = 48, bottom = 354)
                 )
                 .inOrder()
             assertThat(composeTestRule.onNodeWithTag("flash").getUnclippedBoundsInRoot().top)
                 .isEqualTo(26.dp)
             assertThat(composeTestRule.onNodeWithTag("hdr").getUnclippedBoundsInRoot().top)
-                .isEqualTo(130.dp)
+                .isEqualTo(140.dp)
             assertThat(composeTestRule.onNodeWithTag("vq").getUnclippedBoundsInRoot().top)
-                .isEqualTo(166.dp)
+                .isEqualTo(188.dp)
             assertThat(composeTestRule.onNodeWithTag("stab").getUnclippedBoundsInRoot().top)
-                .isEqualTo(270.dp)
+                .isEqualTo(300.dp)
         }
     }
 

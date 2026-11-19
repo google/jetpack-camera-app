@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.components.capture
 import android.content.Context
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -375,8 +376,9 @@ class CaptureScreenComponentsTest {
 
         composeTestRule.setContent {
             VerticalIndicatorTestChrome(darkTheme = true, backgroundColor = Color.Black) {
-                VerticalIndicatorPill(
+                IndicatorPill(
                     modifier = Modifier.testTag(PILL_VERTICAL_INDICATOR_TAG),
+                    orientation = Orientation.Vertical,
                     cutoutRectsOverride = listOf(
                         IntRect(left = 0, top = 60, right = 48, bottom = 100)
                     )
@@ -427,7 +429,10 @@ class CaptureScreenComponentsTest {
 
         composeTestRule.setContent {
             VerticalIndicatorTestChrome(darkTheme = false, backgroundColor = Color.White) {
-                VerticalIndicatorPill(cutoutRectsOverride = emptyList()) {
+                IndicatorPill(
+                    cutoutRectsOverride = emptyList(),
+                    orientation = Orientation.Vertical
+                ) {
                     FlashModeIndicator(
                         flashModeUiState = FlashModeUiState.Available(
                             selectedFlashMode = FlashMode.ON,
@@ -457,7 +462,10 @@ class CaptureScreenComponentsTest {
     fun verticalIndicatorPill_inactiveState_passesAccessibilityChecks() {
         composeTestRule.setContent {
             VerticalIndicatorTestChrome(darkTheme = false, backgroundColor = Color.White) {
-                VerticalIndicatorPill(cutoutRectsOverride = emptyList()) {
+                IndicatorPill(
+                    cutoutRectsOverride = emptyList(),
+                    orientation = Orientation.Vertical
+                ) {
                     FlashModeIndicator(
                         flashModeUiState = FlashModeUiState.Available(
                             selectedFlashMode = FlashMode.OFF,

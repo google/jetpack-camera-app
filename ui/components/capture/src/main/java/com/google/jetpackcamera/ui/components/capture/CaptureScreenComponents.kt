@@ -103,6 +103,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -1200,28 +1201,40 @@ private object IndicatorPillTokens {
     val IconVerticalPadding = 8.dp
 }
 
+private object VerticalIndicatorPillTokens {
+    val ContainerWidth = 48.dp
+    val ContainerVerticalPadding = 6.dp
+    val IconHorizontalPadding = 6.dp
+    val IconVerticalPadding = 12.dp
+}
+
+/**
+ * CompositionLocal specifying the container layout and animation axis for [IndicatorPillIcon]
+ * ([Orientation.Horizontal] or [Orientation.Vertical]). Governs stack direction and
+ * expand/shrink transitions only, independent of icon glyph rotation.
+ */
+internal val LocalIndicatorPillOrientation = staticCompositionLocalOf { Orientation.Horizontal }
+
 /**
  * A cutout-aware pill container that groups active camera status indicators into connected rounded
- * pills and splits cleanly around any intersecting display cutout.
+ * pills along [orientation] and splits cleanly around any intersecting display cutout.
  *
- * Delegates to [VerticalIndicatorPill] when [isVertical] is `true` (side-rail layout) and to
- * [HorizontalIndicatorPill] when [isVertical] is `false` (top-bar layout). Draws no pill segments
- * when no indicators are active.
+ * Draws no pill segments and collapses when no indicators are active.
  *
  * @param modifier the [Modifier] to be applied to this pill container.
- * @param isVertical whether the indicators stack vertically (`true`) or horizontally (`false`).
+ * @param orientation layout axis along which active indicators stack and animate.
  * @param content the status indicator children.
  */
 @Composable
 fun IndicatorPill(
     modifier: Modifier = Modifier,
-    isVertical: Boolean = false,
+    orientation: Orientation = Orientation.Horizontal,
     content: @Composable () -> Unit
 ) {
     IndicatorPill(
         cutoutRectsOverride = null,
         modifier = modifier,
-        isVertical = isVertical,
+        orientation = orientation,
         onPillSegmentsPlaced = null,
         content = content
     )
@@ -1230,78 +1243,45 @@ fun IndicatorPill(
 /**
  * Internal overload of [IndicatorPill] exposing [cutoutRectsOverride] and [onPillSegmentsPlaced]
  * hooks for deterministic cutout testing and previews.
- *
- * @param cutoutRectsOverride optional list of cutout bounding rectangles in the container's local
- *   pixel coordinate space, used for deterministic testing and previews.
- * @param modifier the [Modifier] to be applied to this pill container.
- * @param isVertical whether the indicators stack vertically (`true`) or horizontally (`false`).
- * @param onPillSegmentsPlaced optional callback invoked with the physical local [IntRect] bounds
- *   of each active pill segment after layout, used for testing.
- * @param content the status indicator children.
  */
 @Composable
 internal fun IndicatorPill(
     cutoutRectsOverride: List<IntRect>?,
     modifier: Modifier = Modifier,
-    isVertical: Boolean = false,
+    orientation: Orientation = Orientation.Horizontal,
     onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    if (isVertical) {
-        VerticalIndicatorPill(
-            cutoutRectsOverride = cutoutRectsOverride,
-            modifier = modifier,
-            onPillSegmentsPlaced = onPillSegmentsPlaced
-        ) {
-            content()
-        }
+    val isVertical = orientation == Orientation.Vertical
+    val pillPadding = if (isVertical) {
+        VerticalIndicatorPillTokens.ContainerVerticalPadding
     } else {
-        HorizontalIndicatorPill(
-            modifier = modifier,
-            cutoutRectsOverride = cutoutRectsOverride,
-            onPillSegmentsPlaced = onPillSegmentsPlaced
-        ) {
-            content()
-        }
+        IndicatorPillTokens.ContainerHorizontalPadding
     }
-}
+    val pillMinCrossSize = if (isVertical) {
+        VerticalIndicatorPillTokens.ContainerWidth
+    } else {
+        IndicatorPillTokens.ContainerHeight
+    }
+    val resolvedModifier = if (isVertical) {
+        modifier.defaultMinSize(minWidth = VerticalIndicatorPillTokens.ContainerWidth)
+    } else {
+        modifier
+    }
 
-/**
- * A cutout-aware horizontal pill container that groups active top-bar status indicators into
- * connected rounded pills, splitting into separate pills on either side of any intersecting
- * display cutout.
- *
- * Renders `40.dp`-tall pill segments (`6.dp` horizontal segment end-cap padding) with
- * `CameraControlBackgroundStyle.BLACK_60` background and `Color.White` content color. Provides
- * [LocalIndicatorPillOrientation] set to [Orientation.Horizontal] so child [IndicatorPillIcon]s
- * animate horizontally with `6x8.dp` item padding, and inherits `isTraversalGroup = true` from
- * [CutoutAwareRow]. Draws no pill segments when no indicators are active.
- *
- * @param modifier the [Modifier] to be applied to this horizontal pill container.
- * @param cutoutRectsOverride optional list of cutout bounding rectangles in the row's local
- *   coordinate space, used for deterministic testing.
- * @param onPillSegmentsPlaced optional callback invoked with the physical local [IntRect] bounds
- *   of each active pill segment after layout, used for testing.
- * @param content the status indicator children, scoped to [RowScope].
- */
-@Composable
-internal fun HorizontalIndicatorPill(
-    modifier: Modifier = Modifier,
-    cutoutRectsOverride: List<IntRect>? = null,
-    onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
-    content: @Composable RowScope.() -> Unit
-) {
     CompositionLocalProvider(
         LocalContentColor provides Color.White,
-        LocalIndicatorPillOrientation provides Orientation.Horizontal
+        LocalIndicatorPillOrientation provides orientation
     ) {
-        CutoutAwareRow(
-            modifier = modifier,
-            horizontalSpacing = 0.dp,
-            pillHorizontalPadding = IndicatorPillTokens.ContainerHorizontalPadding,
-            pillMinHeight = IndicatorPillTokens.ContainerHeight,
+        CutoutAwareLinearLayout(
+            orientation = orientation,
+            modifier = resolvedModifier,
+            spacing = 0.dp,
+            pillPadding = pillPadding,
+            pillMinCrossSize = pillMinCrossSize,
             pillBackgroundColor = CameraControlBackgroundStyle.BLACK_60.containerColor,
             verticalAlignment = Alignment.CenterVertically,
+            horizontalAlignment = Alignment.CenterHorizontally,
             cutoutRectsOverride = cutoutRectsOverride,
             onPillSegmentsPlaced = onPillSegmentsPlaced,
             content = content
@@ -1313,16 +1293,10 @@ internal fun HorizontalIndicatorPill(
  * Wraps an individual status indicator icon with orientation-aware expand/shrink and fade
  * animations and standard indicator pill item padding.
  *
- * Reads [LocalIndicatorPillOrientation] to animate horizontally with `6x8.dp` padding inside
- * [HorizontalIndicatorPill] (`36x40.dp` around a `24.dp` icon) and vertically with `8x6.dp`
- * padding inside [VerticalIndicatorPill] (`40x36.dp` around a `24.dp` icon). Snaps immediately
- * without animation when [LocalDisableAnimations] is enabled, and clears descendant semantics
- * immediately when [visible] becomes `false` so exiting icons do not expose stale descriptions or
- * low-opacity contrast frames during shrink/fade-out transitions.
- *
- * @param visible whether the status indicator is currently active and visible.
- * @param modifier the [Modifier] applied to the indicator wrapper.
- * @param content the indicator icon composable to display.
+ * Reads [LocalIndicatorPillOrientation] to animate and pad along the active pill's layout axis.
+ * Snaps immediately without animation when [LocalDisableAnimations] is enabled, and clears
+ * descendant semantics immediately when [visible] becomes `false` so exiting icons do not expose
+ * stale descriptions or low-opacity contrast frames during shrink/fade-out transitions.
  */
 @Composable
 internal fun IndicatorPillIcon(
