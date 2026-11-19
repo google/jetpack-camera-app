@@ -1111,6 +1111,7 @@ class CaptureScaffoldTest {
         var captureUiState by mutableStateOf(
             idleUiStateForMode(CaptureMode.VIDEO_ONLY, videoCarouselState)
         )
+        composeTestRule.mainClock.autoAdvance = false
 
         composeTestRule.setContent {
             MaterialTheme {
@@ -1122,25 +1123,21 @@ class CaptureScaffoldTest {
                 }
             }
         }
-        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.advanceTimeByFrame()
         composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
 
-        composeTestRule.runOnIdle {
-            captureUiState = recordingUiState(elapsedTimeNanos = FIVE_SECONDS_NANOS)
-        }
-        composeTestRule.waitForIdle()
+        captureUiState = recordingUiState(elapsedTimeNanos = FIVE_SECONDS_NANOS)
+        composeTestRule.mainClock.advanceTimeBy(MODE_SWITCH_SETTLE_MS)
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
 
-        composeTestRule.runOnIdle {
-            captureUiState = idleUiStateForMode(
-                mode = CaptureMode.VIDEO_ONLY,
-                subModes = videoCarouselState,
-                finalElapsedTimeNanos = FIVE_SECONDS_NANOS
-            )
-        }
-        composeTestRule.waitForIdle()
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeBy(MODE_SWITCH_SETTLE_MS)
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
     }
