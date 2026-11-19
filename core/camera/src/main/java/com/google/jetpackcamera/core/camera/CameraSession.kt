@@ -1687,7 +1687,7 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                         isFirstFrameTimestampUpdated.value = true
                     }
                     // Publish stabilization state
-                    publishStabilizationMode(result, currentCameraState)
+                    currentCameraState.publishStabilizationMode(result)
                 } catch (_: Exception) {
                 }
             }
@@ -1696,10 +1696,7 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
     return this
 }
 
-private fun publishStabilizationMode(
-    result: TotalCaptureResult,
-    currentCameraState: MutableStateFlow<CameraState>
-) {
+private fun MutableStateFlow<CameraState>.publishStabilizationMode(result: TotalCaptureResult) {
     val nativeVideoStabilizationMode = result.get(CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE)
     val stabilizationMode = when (nativeVideoStabilizationMode) {
         CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION ->
@@ -1717,7 +1714,7 @@ private fun publishStabilizationMode(
         }
     }
 
-    currentCameraState.update { old ->
+    update { old ->
         if (old.stabilizationMode != stabilizationMode) {
             old.copy(stabilizationMode = stabilizationMode)
         } else {
