@@ -19,6 +19,7 @@ import android.content.Context
 import androidx.camera.core.CameraInfo
 import androidx.camera.lifecycle.ProcessCameraProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.core.camera.DEFAULT_MAX_IN_FLIGHT_CAPTURES
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeDescriptor
 import com.google.jetpackcamera.model.CaptureSubModeId
@@ -53,6 +54,11 @@ class CaptureSubModeProviderTest {
     @Test
     fun featurePolicy_byDefault_isUnrestricted() {
         assertThat(provider.featurePolicy).isEqualTo(CameraFeaturePolicy())
+    }
+
+    @Test
+    fun maxInFlightCaptures_byDefault_isDefaultMaxInFlightCaptures() {
+        assertThat(provider.maxInFlightCaptures).isEqualTo(DEFAULT_MAX_IN_FLIGHT_CAPTURES)
     }
 
     @Test

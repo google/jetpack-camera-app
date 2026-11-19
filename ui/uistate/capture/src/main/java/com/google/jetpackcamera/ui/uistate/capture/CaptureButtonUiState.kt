@@ -49,10 +49,15 @@ sealed interface CaptureButtonUiState {
          * @param captureMode The current [CaptureMode] (e.g., [CaptureMode.IMAGE] or
          *   [CaptureMode.VIDEO]) to indicate the button's primary action.
          * @property isEnabled Whether the button is enabled for interaction.
+         * @property debounceVisualDisable Whether to delay transitioning to the visually disabled
+         *   appearance when [isEnabled] becomes `false`. Defaults to `true` to avoid flicker
+         *   during brief disabled periods; set to `false` when the button should appear disabled
+         *   immediately.
          */
         data class Idle(
             val captureMode: CaptureMode,
-            override val isEnabled: Boolean = true
+            override val isEnabled: Boolean = true,
+            val debounceVisualDisable: Boolean = true
         ) : Enabled
 
         /**

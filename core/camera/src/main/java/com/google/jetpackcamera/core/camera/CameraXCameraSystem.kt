@@ -42,6 +42,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
 import androidx.core.net.toFile
+import androidx.tracing.trace
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
 import com.google.jetpackcamera.core.camera.effects.CameraEffectFeatureKey
@@ -105,11 +106,13 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraXCameraSystem"
+private const val APPLY_CAPTURE_SUB_MODE_TRACE = "JCA Apply Capture Sub-Mode"
 
 /**
  * CameraX based implementation for [CameraSystem]
@@ -133,13 +136,36 @@ class CameraXCameraSystem(
     private val defaultCaptureSubModes:
     Map<CaptureMode, @JvmSuppressWildcards CaptureSubModeFeatureKey> =
         emptyMap(),
-    private val cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy()
+    private val cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy(),
+    /**
+     * The maximum number of still captures allowed in flight at once. The effective limit is the
+     * lower of this and the active capture sub-mode's
+     * [CaptureSubModeProvider.maxInFlightCaptures]. Host apps that leave the capture screen after
+     * each photo can set this to 1 to disable the shutter until it is saved.
+     */
+    private val maxInFlightCaptures: Int = DEFAULT_MAX_IN_FLIGHT_CAPTURES
 ) : CameraSystem {
+    init {
+        require(maxInFlightCaptures >= 1) {
+            "maxInFlightCaptures must be at least 1, was $maxInFlightCaptures"
+        }
+    }
+
     private lateinit var cameraProvider: ProcessCameraProvider
 
     private data class BoundImageCapture(val useCase: ImageCapture, val isMirrored: Boolean)
 
-    private var boundImageCapture: BoundImageCapture? = null
+    // Coordinates still captures with session restarts so that a restart never aborts a capture in
+    // flight, and a capture requested during a restart is taken by the new session.
+    private val imageCaptureGate = CaptureSessionGate<BoundImageCapture>(
+        onInFlightCapturesChanged = { delta ->
+            currentCameraState.update { old ->
+                old.copy(
+                    inFlightCapturesCount = (old.inFlightCapturesCount + delta).coerceAtLeast(0)
+                )
+            }
+        }
+    )
 
     private lateinit var systemConstraints: CameraSystemConstraints
 
@@ -202,7 +228,8 @@ class CameraXCameraSystem(
     }
 
     // Could be improved by setting initial value only when camera is initialized
-    private var currentCameraState = MutableStateFlow(CameraState())
+    private var currentCameraState =
+        MutableStateFlow(CameraState(maxInFlightCaptures = maxInFlightCaptures))
     override fun getCurrentCameraState(): StateFlow<CameraState> = currentCameraState.asStateFlow()
 
     private val _systemConstraints = MutableStateFlow<CameraSystemConstraints?>(null)
@@ -666,6 +693,10 @@ class CameraXCameraSystem(
                 }
             }
             .distinctUntilChanged()
+            // collectLatest cancels the running session as soon as new settings arrive, and
+            // stopping the camera aborts any still capture in flight. Wait for in-flight captures
+            // to finish first; captures requested meanwhile wait for the new session.
+            .onEach { imageCaptureGate.closeAndAwaitIdle() }
             .collectLatest { sessionSettings ->
                 if (sessionSettings == null) return@collectLatest
                 coroutineScope {
@@ -685,30 +716,47 @@ class CameraXCameraSystem(
                             cameraEffectProviders = cameraEffectProviders,
                             captureSubModeProviders = subModeProviderMap,
                             sessionSettings = sessionSettings,
-                            perLensConstraints = systemConstraints.perLensConstraints
+                            perLensConstraints = systemConstraints.perLensConstraints,
+                            awaitCapturesBeforeRestart = imageCaptureGate::closeAndAwaitIdle,
+                            maxInFlightCaptures = maxInFlightCaptures
                         )
                     ) {
                         try {
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
                                     sessionSettings,
-                                    onImageCaptureCreated = { imageCapture, lensFacing ->
-                                        boundImageCapture = BoundImageCapture(
-                                            useCase = imageCapture,
-                                            isMirrored = sessionSettings.mirrorMode
-                                                .appliesTo(lensFacing)
+                                    onImageCaptureBound = { imageCapture, lensFacing ->
+                                        imageCaptureGate.open(
+                                            imageCapture?.let {
+                                                BoundImageCapture(
+                                                    useCase = it,
+                                                    isMirrored = sessionSettings.mirrorMode
+                                                        .appliesTo(lensFacing)
+                                                )
+                                            }
                                         )
                                     }
                                 )
 
                                 is PerpetualSessionSettings.CustomSession -> {
-                                    val runner = requireNotNull(
+                                    val provider =
                                         captureSubModeProviders[sessionSettings.subModeKey]
-                                            ?.sessionBinding as? CameraSessionBinding.Custom
+                                    val runner = requireNotNull(
+                                        provider?.sessionBinding as? CameraSessionBinding.Custom
                                     ) {
                                         "Custom session runner missing for sub-mode: " +
                                             "${sessionSettings.subModeKey}"
                                     }
+                                    currentCameraState.update { old ->
+                                        old.copy(
+                                            maxInFlightCaptures = minOf(
+                                                maxInFlightCaptures,
+                                                provider.maxInFlightCaptures
+                                            )
+                                        )
+                                    }
+                                    // Custom sessions don't bind an ImageCapture use case.
+                                    imageCaptureGate.open(null)
                                     runner.runSession(this)
                                 }
                             }
@@ -753,15 +801,15 @@ class CameraXCameraSystem(
     }
 
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
-        val imageCaptureUseCase = boundImageCapture?.useCase
-            ?: throw RuntimeException("Attempted take picture with null imageCapture use case")
-        try {
-            val imageProxy = imageCaptureUseCase.takePicture(onCaptureStarted)
-            Log.d(TAG, "onCaptureSuccess")
-            imageProxy.close()
-        } catch (exception: Exception) {
-            Log.d(TAG, "takePicture onError: $exception")
-            throw exception
+        imageCaptureGate.withCapture { bound ->
+            try {
+                val imageProxy = bound.useCase.takePicture(onCaptureStarted)
+                Log.d(TAG, "onCaptureSuccess")
+                imageProxy.close()
+            } catch (exception: Exception) {
+                Log.d(TAG, "takePicture onError: $exception")
+                throw exception
+            }
         }
     }
 
@@ -771,89 +819,92 @@ class CameraXCameraSystem(
         saveLocation: SaveLocation,
         location: Location?,
         onCaptureStarted: (() -> Unit)
-    ): ImageCapture.OutputFileResults = boundImageCapture?.let { bound ->
-        val imageCaptureUseCase = bound.useCase
-        val metadata = ImageCapture.Metadata().apply {
-            this.location = location?.takeIfInBounds()
-            isReversedHorizontal = bound.isMirrored
-        }
-        val (outputFileOptions, closeable) = when (saveLocation) {
-            is SaveLocation.Default -> {
-                val filename = filePathGenerator.generateImageFilename()
-                val contentValues = ContentValues()
-                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
-                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
-                val relativePath = filePathGenerator.relativeImageOutputPath
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
-                    contentValues.put(
-                        MediaStore.Images.Media.RELATIVE_PATH,
-                        relativePath
-                    )
-                }
-                val options = OutputFileOptions.Builder(
-                    contentResolver,
-                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
-                    contentValues
-                )
-                    .setMetadata(metadata)
-                    .build()
-                options to null
+    ): ImageCapture.OutputFileResults {
+        val outputFileResults = imageCaptureGate.withCapture { bound ->
+            val metadata = ImageCapture.Metadata().apply {
+                this.location = location?.takeIfInBounds()
+                isReversedHorizontal = bound.isMirrored
             }
-
-            is SaveLocation.Explicit -> {
-                try {
-                    val imageCaptureUri = saveLocation.locationUri
-                    val outputStream = contentResolver.openOutputStream(imageCaptureUri)
-                        ?: throw RuntimeException("Provider recently crashed.")
-                    val options = OutputFileOptions.Builder(outputStream)
+            val (outputFileOptions, closeable) = when (saveLocation) {
+                is SaveLocation.Default -> {
+                    val filename = filePathGenerator.generateImageFilename()
+                    val contentValues = ContentValues()
+                    contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
+                    contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
+                    val relativePath = filePathGenerator.relativeImageOutputPath
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) { // Android 10+
+                        contentValues.put(
+                            MediaStore.Images.Media.RELATIVE_PATH,
+                            relativePath
+                        )
+                    }
+                    val options = OutputFileOptions.Builder(
+                        contentResolver,
+                        MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        contentValues
+                    )
                         .setMetadata(metadata)
                         .build()
-                    options to outputStream
-                } catch (e: FileNotFoundException) {
-                    Log.d(TAG, "takePicture onError: $e")
-                    throw e
+                    options to null
+                }
+
+                is SaveLocation.Explicit -> {
+                    try {
+                        val imageCaptureUri = saveLocation.locationUri
+                        val outputStream = contentResolver.openOutputStream(imageCaptureUri)
+                            ?: throw RuntimeException("Provider recently crashed.")
+                        val options = OutputFileOptions.Builder(outputStream)
+                            .setMetadata(metadata)
+                            .build()
+                        options to outputStream
+                    } catch (e: FileNotFoundException) {
+                        Log.d(TAG, "takePicture onError: $e")
+                        throw e
+                    }
+                }
+
+                is SaveLocation.Cache -> {
+                    // 1. Get the app's cache directory
+                    val cacheDir = saveLocation.cacheDir?.toFile() ?: application.cacheDir
+
+                    // 2. Create a unique temporary file
+                    val tempFile = File.createTempFile(
+                        "JCA_IMG_CAPTURE_TEMP_",
+                        ".jpg", // Use .jpg to support Ultra HDR
+                        cacheDir
+                    )
+                    Log.d(TAG, "cached image location: ${tempFile.absolutePath}")
+
+                    // 3. Build OutputFileOptions directly with the File object
+                    val options = OutputFileOptions.Builder(tempFile)
+                        .setMetadata(metadata)
+                        .build()
+
+                    // 4. Return options. Since CameraX manages the stream, we return null for the 'closeable'.
+                    options to null
                 }
             }
 
-            is SaveLocation.Cache -> {
-                // 1. Get the app's cache directory
-                val cacheDir = saveLocation.cacheDir?.toFile() ?: application.cacheDir
-
-                // 2. Create a unique temporary file
-                val tempFile = File.createTempFile(
-                    "JCA_IMG_CAPTURE_TEMP_",
-                    ".jpg", // Use .jpg to support Ultra HDR
-                    cacheDir
+            try {
+                bound.useCase.takePicture(
+                    outputFileOptions,
+                    onCaptureStarted
                 )
-                Log.d(TAG, "cached image location: ${tempFile.absolutePath}")
-
-                // 3. Build OutputFileOptions directly with the File object
-                val options = OutputFileOptions.Builder(tempFile)
-                    .setMetadata(metadata)
-                    .build()
-
-                // 4. Return options. Since CameraX manages the stream, we return null for the 'closeable'.
-                options to null
+            } finally {
+                closeable?.close()
             }
         }
-
-        try {
-            imageCaptureUseCase.takePicture(
-                outputFileOptions,
-                onCaptureStarted
-            )
-        } finally {
-            closeable?.close()
-        }.also { outputFileResults ->
-            outputFileResults.savedUri?.let {
-                for ((key, value) in imagePostProcessors) {
-                    value.get().postProcessImage(it)
-                    Log.d(TAG, "Post processed image with $key")
-                }
-                Log.d(TAG, "Saved image to $it")
+        // Post-process after the capture has ended, so that a pending session restart doesn't
+        // wait for post-processing.
+        outputFileResults.savedUri?.let {
+            for ((key, value) in imagePostProcessors) {
+                value.get().postProcessImage(it)
+                Log.d(TAG, "Post processed image with $key")
             }
+            Log.d(TAG, "Saved image to $it")
         }
-    } ?: throw RuntimeException("Attempted take picture with null imageCapture use case")
+        return outputFileResults
+    }
 
     override suspend fun startVideoRecording(
         saveLocation: SaveLocation,
@@ -1338,8 +1389,10 @@ class CameraXCameraSystem(
     }
 
     override fun isScreenFlashEnabled() =
-        boundImageCapture?.useCase?.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
-            boundImageCapture?.useCase?.screenFlash != null
+        imageCaptureGate.currentTarget?.useCase?.let { imageCapture ->
+            imageCapture.flashMode == ImageCapture.FLASH_MODE_SCREEN &&
+                imageCapture.screenFlash != null
+        } ?: false
 
     override suspend fun setAspectRatio(aspectRatio: AspectRatio) {
         currentSettings.update { old ->
@@ -1453,9 +1506,13 @@ class CameraXCameraSystem(
     }
 
     override suspend fun setCaptureSubMode(captureSubModeId: CaptureSubModeId) {
-        currentSettings.update { old ->
-            old?.copy(captureSubModeId = captureSubModeId)
-                ?.tryApplyCaptureSubModeConstraints()
+        // Collectors of the settings that do not suspend before handling the change run inside
+        // this section, on the caller's thread.
+        trace(APPLY_CAPTURE_SUB_MODE_TRACE) {
+            currentSettings.update { old ->
+                old?.copy(captureSubModeId = captureSubModeId)
+                    ?.tryApplyCaptureSubModeConstraints()
+            }
         }
     }
 

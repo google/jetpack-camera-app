@@ -121,6 +121,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -143,7 +144,9 @@ context(CameraSessionContext)
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    onImageCaptureCreated: (ImageCapture, LensFacing) -> Unit = { _, _ -> }
+    // Called once the camera is bound with the session's ImageCapture, or null if the session has
+    // no ImageCapture (for example, in video-only capture mode).
+    onImageCaptureBound: suspend (ImageCapture?, LensFacing) -> Unit = { _, _ -> }
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
     val initialCameraSelector = transientSettings.filterNotNull().first()
@@ -206,6 +209,9 @@ internal suspend fun runSingleCameraSession(
                         )
                 )
         }
+        // Rebinding below stops the camera, which aborts any still capture in flight, so wait for
+        // in-flight captures to finish before each rebind.
+        .onEach { awaitCapturesBeforeRestart() }
         .collectLatest { currentTransientSettings ->
             coroutineScope sessionScope@{
                 cameraProvider.unbindAll()
@@ -221,8 +227,8 @@ internal suspend fun runSingleCameraSession(
                     // the calling (typically main) thread.
                     val (currentCameraSelector, cameraInfo) = withContext(backgroundDispatcher) {
                         val activeSubModeKey = sessionSettings.activeCaptureSubMode
-                        val activeBinding = activeSubModeKey
-                            ?.let { captureSubModeProviders[it]?.sessionBinding }
+                        val activeProvider = activeSubModeKey?.let { captureSubModeProviders[it] }
+                        val activeBinding = activeProvider?.sessionBinding
                             as? CameraSessionBinding.SingleCamera
                         if (activeBinding != null) {
                             try {
@@ -232,6 +238,14 @@ internal suspend fun runSingleCameraSession(
                                 )
                                 val resolvedInfo = cameraProvider.getCameraInfo(selector)
                                 boundSubModeId = activeSubModeKey.id
+                                currentCameraState.update { old ->
+                                    old.copy(
+                                        maxInFlightCaptures = minOf(
+                                            maxInFlightCaptures,
+                                            activeProvider.maxInFlightCaptures
+                                        )
+                                    )
+                                }
                                 selector to resolvedInfo
                             } catch (e: CancellationException) {
                                 throw e
@@ -246,6 +260,13 @@ internal suspend fun runSingleCameraSession(
                                 kotlinx.coroutines.awaitCancellation()
                             }
                         } else {
+                            currentCameraState.update { old ->
+                                if (old.maxInFlightCaptures != maxInFlightCaptures) {
+                                    old.copy(maxInFlightCaptures = maxInFlightCaptures)
+                                } else {
+                                    old
+                                }
+                            }
                             baseSelector to cameraProvider.getCameraInfo(baseSelector)
                         }
                     }
@@ -307,9 +328,6 @@ internal suspend fun runSingleCameraSession(
                         )
                     }.apply {
                         attachPreviewSurfaceProvider(useCaseGroup = this)
-                        getImageCapture()?.let { imageCapture ->
-                            onImageCaptureCreated(imageCapture, cameraInfo.appLensFacing)
-                        }
                     }
 
                     cameraProvider.runWith(
@@ -318,6 +336,12 @@ internal suspend fun runSingleCameraSession(
                     ) { camera ->
                         Log.d(TAG, "Camera session started")
                         updatePreviewOrientation(camera.cameraInfo, useCaseGroup)
+
+                        // The use cases are bound now, so captures can be sent to this session.
+                        onImageCaptureBound(
+                            useCaseGroup.getImageCapture(),
+                            cameraInfo.appLensFacing
+                        )
 
                         launch {
                             processFocusMeteringEvents(
@@ -518,6 +542,7 @@ private fun CameraSessionContext.reportCaptureSubModeBindFailure(
     currentCameraState.update { old ->
         old.copy(
             isCameraRunning = false,
+            maxInFlightCaptures = maxInFlightCaptures,
             captureSubModeState = CaptureSubModeState.Error(subModeId = subModeId, error = error)
         )
     }

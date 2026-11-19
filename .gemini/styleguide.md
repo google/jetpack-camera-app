@@ -16,6 +16,13 @@ When reviewing a pull request, focus on the following key areas:
     * Does the new code align with the existing MVVM architecture?
     * Are ViewModels, Repositories, and UI components used correctly?
     * Does it introduce any anti-patterns or deviate from established conventions in the codebase?
+    * **Model UI State, Not Upstream Signals:** `UiState` classes must describe
+      what the UI renders and how it behaves (for example, enabled/disabled
+      state, visibility, or visual debounce behavior), not the upstream camera,
+      hardware, or domain condition that caused it (avoid fields like
+      `isAtCaptureLimit` or `isCameraRestarting` in `UiState`).
+      `UiStateAdapter` functions translate domain and hardware signals into
+      those UI-focused states.
 
 2.  **Code Quality and Best Practices**
     * Check for adherence to official Kotlin style guides and Android best practices.

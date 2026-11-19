@@ -373,8 +373,10 @@ internal fun CaptureButton(
  * visually disabled.
  *
  * While the button's semantics and pointer input are disabled immediately, the visual change
- * to a disabled appearance is delayed. If the button becomes enabled again within this period,
- * the distracting flicker is avoided.
+ * to a disabled appearance is delayed when
+ * [CaptureButtonUiState.Enabled.Idle.debounceVisualDisable] is `true`. If the button becomes
+ * enabled again within this period, the distracting flicker is avoided. When
+ * `debounceVisualDisable` is `false`, the button appears disabled immediately.
  *
  * @param captureButtonUiState The current UI state of the capture button.
  * @param delayMillis The duration to wait before visually disabling the button.
@@ -390,7 +392,11 @@ private fun rememberDebouncedVisuallyDisabled(
     }
     LaunchedEffect(captureButtonUiState) {
         if (!captureButtonUiState.isEnabled) {
-            delay(delayMillis)
+            val shouldDebounce = (captureButtonUiState as? CaptureButtonUiState.Enabled.Idle)
+                ?.debounceVisualDisable ?: true
+            if (shouldDebounce) {
+                delay(delayMillis)
+            }
             isVisuallyDisabled.value = true
         } else {
             isVisuallyDisabled.value = false
