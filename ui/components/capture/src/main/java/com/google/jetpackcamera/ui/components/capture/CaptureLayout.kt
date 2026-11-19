@@ -17,6 +17,7 @@ package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -43,18 +44,18 @@ import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberBottomSheetScaffoldState
-import androidx.compose.material3.rememberStandardBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
@@ -63,8 +64,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.AlignmentLine
@@ -72,12 +79,15 @@ import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
@@ -91,6 +101,10 @@ import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
 import com.google.jetpackcamera.ui.components.capture.layout.CameraRowIds
 import com.google.jetpackcamera.ui.components.capture.layout.CameraWindow
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsSheetDefaults
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.first
 
 /**
  * Height of the shutter row (capture button, image well and flip camera button) as specified by
@@ -152,6 +166,19 @@ private const val PORTRAIT_ASPECT_RATIO_THRESHOLD = 16f / 9f - 0.01f
 private val MIN_GESTURE_INSET = 32.dp
 
 /**
+ * While a modal sheet is open, stops keyboard focus from entering the background controls,
+ * including focusables nested in their own focus groups (which `canFocus = false` would miss).
+ */
+private fun Modifier.suppressBackgroundFocusForModal(isModalOpen: Boolean): Modifier =
+    if (isModalOpen) {
+        this
+            .focusProperties { onEnter = { cancelFocusChange() } }
+            .focusGroup()
+    } else {
+        this
+    }
+
+/**
  * The top edge of the visible viewfinder, reported by a viewfinder that fills its slot and offsets
  * its own frame (such as [PreviewDisplay]).
  *
@@ -174,8 +201,8 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * @param modifier the [Modifier] for this component.
  * @param state the mode-agnostic [CaptureScaffoldState] controlling Quick Settings visibility and
  *   the [SnackbarHostState].
- * @param onDismissQuickSettings callback invoked when Quick Settings is dismissed via the drag
- *   handle or scrim.
+ * @param onDismissQuickSettings callback invoked when Quick Settings is dismissed via swipe
+ *   gesture, drag handle, or scrim.
  * @param viewfinder the viewfinder composable.
  * @param captureButton the capture button composable.
  * @param imageWell the image well composable.
@@ -220,7 +247,6 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * @param errorDialog the camera error alert dialog composable.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Suppress("DEPRECATION")
 @Composable
 fun CaptureScaffoldLayout(
     modifier: Modifier = Modifier,
@@ -248,31 +274,60 @@ fun CaptureScaffoldLayout(
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
-    val bottomSheetState = rememberStandardBottomSheetState(
+    // Omitting PartiallyExpanded from enabledValues is sufficient: BottomSheetScaffold creates no
+    // PartiallyExpanded anchor and SheetState.partialExpand() fails fast when it is skipped.
+    val enabledSheetValues = remember { setOf(SheetValue.Hidden, SheetValue.Expanded) }
+    val bottomSheetState = rememberBottomSheetState(
         initialValue = if (state.isQuickSettingsOpen) SheetValue.Expanded else SheetValue.Hidden,
-        skipHiddenState = false,
-        confirmValueChange = { targetValue ->
-            if (targetValue == SheetValue.Hidden) {
-                state.dismissQuickSettings()
-            } else if (targetValue == SheetValue.Expanded) {
-                state.showQuickSettings()
-            }
-            true
-        }
+        enabledValues = enabledSheetValues
     )
     val scaffoldState = rememberBottomSheetScaffoldState(
         bottomSheetState = bottomSheetState,
         snackbarHostState = state.snackbarHostState
     )
-    LaunchedEffect(state.isQuickSettingsOpen) {
+    val currentOnDismissQuickSettings by rememberUpdatedState(onDismissQuickSettings)
+    val handleDismissQuickSettings = {
+        state.dismissQuickSettings()
+        currentOnDismissQuickSettings()
+    }
+    LaunchedEffect(state, state.isQuickSettingsOpen) {
         if (state.isQuickSettingsOpen) {
-            if (bottomSheetState.targetValue != SheetValue.Expanded) {
-                bottomSheetState.expand()
+            if (bottomSheetState.currentValue != SheetValue.Expanded) {
+                try {
+                    bottomSheetState.expand()
+                } catch (_: CancellationException) {
+                    coroutineContext.ensureActive()
+                }
             }
+            snapshotFlow {
+                bottomSheetState.currentValue == SheetValue.Hidden &&
+                    bottomSheetState.targetValue == SheetValue.Hidden &&
+                    !bottomSheetState.isVisible &&
+                    !bottomSheetState.isAnimationRunning
+            }.first { it }
+            handleDismissQuickSettings()
         } else {
             if (bottomSheetState.isVisible || bottomSheetState.targetValue != SheetValue.Hidden) {
                 bottomSheetState.hide()
             }
+        }
+    }
+
+    val isSheetVisible = state.isQuickSettingsOpen ||
+        bottomSheetState.isVisible ||
+        bottomSheetState.targetValue == SheetValue.Expanded
+    val focusManager = LocalFocusManager.current
+    val sheetFocusRequester = remember { FocusRequester() }
+    var sheetHasFocus by remember { mutableStateOf(false) }
+    // Suppression only blocks focus from entering the background, so move focus already there
+    // into the sheet on open, and release it on hide so it isn't left on an off-screen sheet.
+    LaunchedEffect(isSheetVisible) {
+        if (isSheetVisible) {
+            if (!sheetFocusRequester.requestFocus()) {
+                focusManager.clearFocus(force = true)
+            }
+        } else if (sheetHasFocus) {
+            focusManager.clearFocus(force = true)
         }
     }
 
@@ -281,10 +336,6 @@ fun CaptureScaffoldLayout(
         stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
     val quickSettingsScrimDescription =
         stringResource(R.string.quick_settings_scrim_description)
-    val handleDismissQuickSettings = {
-        state.dismissQuickSettings()
-        onDismissQuickSettings()
-    }
 
     CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
         Box(modifier = modifier.fillMaxSize()) {
@@ -293,25 +344,47 @@ fun CaptureScaffoldLayout(
                 scaffoldState = scaffoldState,
                 sheetPeekHeight = 0.dp,
                 sheetDragHandle = null,
-                sheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-                sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                sheetShape = QuickSettingsSheetDefaults.BottomSheetShape,
+                sheetContainerColor = QuickSettingsSheetDefaults.ContainerColor,
+                sheetContentColor = QuickSettingsSheetDefaults.ContentColor,
+                sheetShadowElevation = QuickSettingsSheetDefaults.ShadowElevation,
                 sheetContent = {
-                    // Rendered inside sheetContent rather than sheetDragHandle because
-                    // StandardBottomSheet wraps non-null sheetDragHandle in its own clickable
-                    // DragHandleWithTooltip, creating duplicate clickable bounds and overriding
-                    // onDismissQuickSettings.
-                    BottomSheetDefaults.DragHandle(
+                    Box(
+                        modifier = Modifier.fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        BottomSheetDefaults.DragHandle(
+                            color = QuickSettingsSheetDefaults.DragHandleColor,
+                            modifier = Modifier
+                                .testTag(QUICK_SETTINGS_DRAG_HANDLE)
+                                .clickable(
+                                    role = Role.Button,
+                                    onClickLabel = dismissQuickSettingsLabel,
+                                    onClick = handleDismissQuickSettings
+                                )
+                                .semantics {
+                                    dismiss(dismissQuickSettingsLabel) {
+                                        handleDismissQuickSettings()
+                                        true
+                                    }
+                                }
+                                .minimumInteractiveComponentSize()
+                        )
+                    }
+                    Column(
                         modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .testTag(QUICK_SETTINGS_DRAG_HANDLE)
-                            .clickable(
-                                role = Role.Button,
-                                onClickLabel = dismissQuickSettingsLabel,
-                                onClick = handleDismissQuickSettings
+                            .fillMaxWidth()
+                            .onFocusChanged { sheetHasFocus = it.hasFocus }
+                            .focusRequester(sheetFocusRequester)
+                            .focusGroup()
+                            .verticalScroll(rememberScrollState())
+                            .windowInsetsPadding(WindowInsets.navigationBarsIgnoringVisibility)
+                            .padding(
+                                bottom = QuickSettingsSheetDefaults.BottomSheetContentBottomPadding
                             )
-                            .minimumInteractiveComponentSize()
-                    )
-                    quickSettingsOverlay(Modifier)
+                    ) {
+                        quickSettingsOverlay(Modifier)
+                    }
                 },
                 snackbarHost = {}
             ) {
@@ -343,6 +416,7 @@ fun CaptureScaffoldLayout(
                             quickSettingsToggleButton = quickSettingsButton,
                             captureModeToggleSwitch = captureModeToggle,
                             controlsVisible = controlsVisible,
+                            modifier = Modifier.suppressBackgroundFocusForModal(isSheetVisible),
                             snackbarHost = { snackbarModifier ->
                                 PillSnackbarHost(
                                     snackbarHostState = state.snackbarHostState,
@@ -357,11 +431,14 @@ fun CaptureScaffoldLayout(
                                     WindowInsets.systemBarsIgnoringVisibility
                                         .union(WindowInsets.displayCutout)
                                 )
+                                .suppressBackgroundFocusForModal(isSheetVisible)
                         ) {
                             snackBar(Modifier, state.snackbarHostState)
                         }
                     } else {
-                        Column {
+                        Column(
+                            modifier = Modifier.suppressBackgroundFocusForModal(isSheetVisible)
+                        ) {
                             val cutoutTopInset =
                                 WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
                             val minTouchTarget =
@@ -405,6 +482,7 @@ fun CaptureScaffoldLayout(
                                     WindowInsets.systemBarsIgnoringVisibility
                                         .union(WindowInsets.displayCutout)
                                 )
+                                .suppressBackgroundFocusForModal(isSheetVisible)
                         ) {
                             if (controlsVisible) {
                                 VerticalMaterialControls(
@@ -427,13 +505,12 @@ fun CaptureScaffoldLayout(
                             snackBar(Modifier, state.snackbarHostState)
                         }
                     }
-                    OverlapAwareStyleProvider {
+                    OverlapAwareStyleProvider(
+                        modifier = Modifier.suppressBackgroundFocusForModal(isSheetVisible)
+                    ) {
                         overlay(Modifier)
                     }
 
-                    val isSheetVisible = state.isQuickSettingsOpen ||
-                        bottomSheetState.isVisible ||
-                        bottomSheetState.targetValue == SheetValue.Expanded
                     if (isSheetVisible) {
                         Box(
                             modifier = Modifier
@@ -441,9 +518,11 @@ fun CaptureScaffoldLayout(
                                 .testTag(QUICK_SETTINGS_SCRIM)
                                 .semantics {
                                     contentDescription = quickSettingsScrimDescription
+                                    traversalIndex = 1f
                                 }
                                 .clickable(
                                     onClickLabel = dismissQuickSettingsLabel,
+                                    role = Role.Button,
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
                                     onClick = handleDismissQuickSettings
@@ -533,6 +612,7 @@ private fun AdaptivePortraitCaptureLayout(
     quickSettingsToggleButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     captureModeToggleSwitch: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     controlsVisible: Boolean,
+    modifier: Modifier = Modifier,
     snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     val cutoutTopInset = WindowInsets.displayCutout.asPaddingValues().calculateTopPadding()
@@ -583,7 +663,7 @@ private fun AdaptivePortraitCaptureLayout(
 
     CompositionLocalProvider(LocalCameraLayoutSolution provides solution) {
         Layout(
-            modifier = Modifier.fillMaxSize(),
+            modifier = modifier.fillMaxSize(),
             content = {
                 Box(modifier = Modifier.layoutId(CaptureSlotId.Viewfinder)) {
                     viewfinder(Modifier)
