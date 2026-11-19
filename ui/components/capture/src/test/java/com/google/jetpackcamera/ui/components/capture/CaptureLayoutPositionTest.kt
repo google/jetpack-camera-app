@@ -710,8 +710,30 @@ class CaptureLayoutPositionTest {
 
         val quickSettingsBounds =
             composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).getUnclippedBoundsInRoot()
-        assertThat(quickSettingsBounds.width.value).isWithin(TOLERANCE).of(48f * expectedScale)
+        assertThat(quickSettingsBounds.width.value).isWithin(TOLERANCE).of(56f * expectedScale)
         assertThat(quickSettingsBounds.height.value).isWithin(TOLERANCE).of(56f * expectedScale)
+    }
+
+    /**
+     * Verifies that without bottom toolbar compaction, [ToggleQuickSettingsButton] renders as a
+     * round `56dp x 56dp` medium icon button.
+     */
+    @Test
+    fun toggleQuickSettingsButton_uncompacted_is56dpCircle() {
+        composeTestRule.setContent {
+            Box {
+                ToggleQuickSettingsButton(
+                    isOpen = false,
+                    onClick = {}
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val quickSettingsBounds =
+            composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).getUnclippedBoundsInRoot()
+        assertThat(quickSettingsBounds.width.value).isWithin(TOLERANCE).of(56f)
+        assertThat(quickSettingsBounds.height.value).isWithin(TOLERANCE).of(56f)
     }
 
     /**
