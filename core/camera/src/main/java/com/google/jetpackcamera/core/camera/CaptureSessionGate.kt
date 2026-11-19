@@ -18,6 +18,8 @@ package com.google.jetpackcamera.core.camera
 import android.util.Log
 import androidx.tracing.traceAsync
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.coroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -138,35 +140,52 @@ internal class CaptureSessionGate<T : Any>(
         try {
             return block(target)
         } finally {
-            _inFlightCaptures.update { (it - 1).coerceAtLeast(0) }
-            onInFlightCapturesChanged(-1)
+            releaseCapture()
         }
     }
 
-    private suspend fun acquire(): T = withTimeoutOrNull(acquireTimeoutMillis) {
-        var target: T? = null
-        while (target == null) {
-            state.first { it !is GateState.Switching }
-            target = mutex.withLock {
-                when (val current = state.value) {
-                    is GateState.Ready -> {
-                        _inFlightCaptures.update { it + 1 }
-                        onInFlightCapturesChanged(1)
-                        current.target
+    private suspend fun acquire(): T {
+        var acquired = false
+        try {
+            return withTimeoutOrNull(acquireTimeoutMillis) {
+                var target: T? = null
+                while (target == null) {
+                    state.first { it !is GateState.Switching }
+                    target = mutex.withLock {
+                        coroutineContext.ensureActive()
+                        when (val current = state.value) {
+                            is GateState.Ready -> {
+                                _inFlightCaptures.update { it + 1 }
+                                onInFlightCapturesChanged(1)
+                                acquired = true
+                                current.target
+                            }
+
+                            GateState.NoCapture -> throw IllegalStateException(
+                                "The camera session does not support image capture"
+                            )
+
+                            // The gate closed again before the lock was acquired; wait for the next
+                            // session.
+                            GateState.Switching -> null
+                        }
                     }
-
-                    GateState.NoCapture -> throw IllegalStateException(
-                        "The camera session does not support image capture"
-                    )
-
-                    // The gate closed again before the lock was acquired; wait for the next
-                    // session.
-                    GateState.Switching -> null
                 }
+                target
+            } ?: throw IllegalStateException(
+                "Timed out after ${acquireTimeoutMillis}ms waiting for a camera session to " +
+                    "accept a capture"
+            )
+        } catch (t: Throwable) {
+            if (acquired) {
+                releaseCapture()
             }
+            throw t
         }
-        target
-    } ?: throw IllegalStateException(
-        "Timed out after ${acquireTimeoutMillis}ms waiting for a camera session to accept a capture"
-    )
+    }
+
+    private fun releaseCapture() {
+        _inFlightCaptures.update { (it - 1).coerceAtLeast(0) }
+        onInFlightCapturesChanged(-1)
+    }
 }

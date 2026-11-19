@@ -18,7 +18,9 @@ package com.google.jetpackcamera.core.camera
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -167,6 +169,55 @@ class CaptureSessionGateTest {
         assertThat(result.exceptionOrNull()).isInstanceOf(IllegalArgumentException::class.java)
         assertThat(inFlightCaptures).isEqualTo(0)
         assertThat(gate.inFlightCaptures.value).isEqualTo(0)
+    }
+
+    @Test
+    fun withCapture_whenCancelledDuringBlock_releasesCapture() = testScope.runTest {
+        gate.open(OLD_SESSION)
+        val captureJob = launch {
+            gate.withCapture {
+                awaitCancellation()
+            }
+        }
+        runCurrent()
+        assertThat(inFlightCaptures).isEqualTo(1)
+
+        captureJob.cancel()
+        runCurrent()
+
+        assertThat(inFlightCaptures).isEqualTo(0)
+        assertThat(gate.inFlightCaptures.value).isEqualTo(0)
+    }
+
+    @Test
+    fun withCapture_whenCancelledDuringAcquire_doesNotLeakInFlightCount() = testScope.runTest {
+        var count = 0
+        var captureJob: Job? = null
+        val raceGate = CaptureSessionGate<String>(
+            onInFlightCapturesChanged = { delta ->
+                count += delta
+                if (delta > 0) {
+                    // Simulate cancellation arriving after acquire() increments the count inside
+                    // mutex.withLock, before withTimeoutOrNull returns to withCapture().
+                    captureJob?.cancel()
+                }
+            },
+            idleTimeoutMillis = IDLE_TIMEOUT_MILLIS,
+            acquireTimeoutMillis = ACQUIRE_TIMEOUT_MILLIS
+        )
+        raceGate.open(OLD_SESSION)
+
+        var blockEntered = false
+        captureJob = launch {
+            raceGate.withCapture {
+                blockEntered = true
+            }
+        }
+        runCurrent()
+
+        assertThat(blockEntered).isFalse()
+        assertThat(count).isEqualTo(0)
+        assertThat(raceGate.inFlightCaptures.value).isEqualTo(0)
     }
 
     @Test
