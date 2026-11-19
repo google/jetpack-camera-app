@@ -29,14 +29,22 @@
     <!-- Accessibility announcement (read aloud by screen readers, not shown visually) for the elapsed-time timer on the capture screen while the video recording is paused. %1$s is the formatted elapsed minutes phrase from elapsed_time_accessibility_minutes (e.g. "1 minute") and %2$s is the formatted remaining elapsed seconds phrase from elapsed_time_accessibility_seconds (e.g. "30 seconds"), so the text reads e.g. "Recording paused: 1 minute and 30 seconds". [CHAR LIMIT=NONE] -->
     <string name="elapsed_time_accessibility_paused">Recording paused: <xliff:g id="minutes" example="1 minute">%1$s</xliff:g> and <xliff:g id="seconds" example="30 seconds">%2$s</xliff:g></string>
 
-    <!-- Accessibility label for the toggle option to switch to photo capture mode. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility label (read aloud by screen readers, not shown visually) identifying the capture mode switch on the capture screen that toggles between photo capture and video recording. Translate as a noun phrase naming the control; do not include the word "switch" or "button". [CHAR LIMIT=40] -->
+    <string name="capture_mode_toggle_content_description">Capture mode</string>
+    <!-- Accessibility state description (read aloud by screen readers, not shown visually) for the capture mode switch on the capture screen when photo capture is the currently active mode. Translate as a noun phrase describing the active state ("Photo mode"), not an imperative action verb to switch modes. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="capture_mode_image_capture_content_description">Photo mode</string>
-    <!-- Accessibility label for the toggle option to switch to video recording mode. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility state description (read aloud by screen readers, not shown visually) for the capture mode switch on the capture screen when video recording is the currently active mode. Translate as a noun phrase describing the active state ("Video mode"), not an imperative action verb to switch modes. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="capture_mode_video_recording_content_description">Video mode</string>
-    <!-- Accessibility label for the capture mode toggle when locked to photo capture mode only. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility state description (read aloud by screen readers, not shown visually) for the capture mode switch on the capture screen when locked to photo capture mode only. [CHAR LIMIT=NONE] -->
     <string name="capture_mode_image_capture_content_description_disabled">Photo mode only</string>
-    <!-- Accessibility label for the capture mode toggle when locked to video recording mode only. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility state description (read aloud by screen readers, not shown visually) for the capture mode switch on the capture screen when locked to video recording mode only. [CHAR LIMIT=NONE] -->
     <string name="capture_mode_video_recording_content_description_disabled">Video mode only</string>
+    <!-- Accessibility action label (announced by screen readers as "double-tap to [label]") on the capture mode switch on the capture screen while photo mode is active, describing the action of switching to video recording mode. Use an imperative verb phrase. [CHAR LIMIT=40] -->
+    <string name="capture_mode_action_switch_to_video">Switch to video mode</string>
+    <!-- Accessibility action label (announced by screen readers as "double-tap to [label]") on the capture mode switch on the capture screen while video mode is active, describing the action of switching to photo capture mode. Use an imperative verb phrase. [CHAR LIMIT=40] -->
+    <string name="capture_mode_action_switch_to_photo">Switch to photo mode</string>
+    <!-- Accessibility action label (announced by screen readers as "double-tap to [label]") on the capture mode switch on the capture screen when mode switching is unavailable, explaining that activating the switch shows why the other mode cannot be used. Use an imperative verb phrase. [CHAR LIMIT=60] -->
+    <string name="capture_mode_action_explain_unavailable">Show why other mode is unavailable</string>
 
     <!-- Accessibility label for the button that pauses or resumes an active video recording. [CHAR LIMIT=NONE] -->
     <string name="pause_resume_button_description">Pause or resume video recording</string>
