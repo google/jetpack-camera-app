@@ -104,7 +104,8 @@ fun CutoutAwareRow(
 ) {
     val view = LocalView.current
     val windowRotation = LocalWindowRotation.current
-    val cutoutInsets = WindowInsets.displayCutout
+    val currentWindowInsets = LocalCurrentWindowInsets.current
+    val cutoutInsets = currentWindowInsets?.displayCutout ?: WindowInsets.displayCutout
     var rowBoundsInWindow by remember { mutableStateOf<IntRect?>(null) }
     val lockedMinX = remember { mutableMapOf<Int, Int>() }
     var pillSegments by remember { mutableStateOf<List<IntRect>>(emptyList()) }
@@ -185,8 +186,9 @@ fun CutoutAwareRow(
             }
             val localCutoutRects = resolveLocalCutoutRects(
                 cutoutRectsOverride = cutoutRectsOverride,
-                windowCutoutRects = ViewCompat.getRootWindowInsets(view)
-                    ?.displayCutout?.boundingRects.orEmpty(),
+                windowCutoutRects = currentWindowInsets?.displayCutoutBoundingRects
+                    ?: ViewCompat.getRootWindowInsets(view)
+                        ?.displayCutout?.boundingRects.orEmpty(),
                 rowBoundsInWindow = rowBoundsInWindow,
                 isRtl = isRtl,
                 rtlReferenceWidth = rtlReferenceWidth,

@@ -33,18 +33,14 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsIgnoringVisibility
-import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -83,6 +79,8 @@ import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
 import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -294,6 +292,7 @@ fun CaptureScaffoldLayout(
 
     val windowRotation = rememberWindowRotation()
     val windowCounterRotationState = remember { WindowCounterRotationState() }
+    val currentWindowInsets = rememberCurrentWindowInsets(windowRotation)
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val windowWidth = maxWidth
         val windowHeight = maxHeight
@@ -386,7 +385,8 @@ fun CaptureScaffoldLayout(
             LocalOverlapTargetBounds provides overlapTargetBounds,
             LocalDeviceRotation provides uiRotation,
             LocalWindowRotation provides effectiveWindowRotation,
-            LocalWindowCounterRotationState provides windowCounterRotationState
+            LocalWindowCounterRotationState provides windowCounterRotationState,
+            LocalCurrentWindowInsets provides currentWindowInsets
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Box(
@@ -465,24 +465,27 @@ fun CaptureScaffoldLayout(
                         snackbarHost = {}
                     ) {
                         val portraitCutoutInsets =
-                            WindowInsets.displayCutout.toPortraitWindowInsets(
+                            currentWindowInsets.displayCutout.toPortraitWindowInsets(
                                 effectiveWindowRotation
                             )
                         val portraitSystemBarsAndCutoutInsets =
-                            WindowInsets.systemBarsIgnoringVisibility
-                                .union(WindowInsets.displayCutout)
+                            currentWindowInsets.systemBarsIgnoringVisibility
+                                .union(currentWindowInsets.displayCutout)
                                 .toPortraitWindowInsets(effectiveWindowRotation)
+                        val rotationStableInsets =
+                            portraitSystemBarsAndCutoutInsets.toRotationStableInsets()
 
                         BoxWithConstraints(
                             modifier = Modifier.fillMaxSize().background(Color.Black)
                         ) {
-                            // The adaptive portrait solver targets portrait handhelds (16:9 and taller,
-                            // where a full-width 9:16 frame fits inside the window). Squarer windows
-                            // (landscape, foldable inner displays, or short split-screen panes like
-                            // 360x500) fall back to VerticalMaterialControls, which compresses below
+                            // The adaptive portrait solver targets portrait handhelds (16:9 and
+                            // taller, where a full-width 9:16 frame fits inside the window).
+                            // Squarer windows (landscape, foldable inner displays, or short
+                            // split-screen panes like 360x500) fall back to
+                            // VerticalMaterialControls, which compresses below
                             // SHORT_SCREEN_THRESHOLD.
-                            val isHandheldPortrait =
-                                (maxHeight.value / maxWidth.value) >= PORTRAIT_ASPECT_RATIO_THRESHOLD
+                            val isHandheldPortrait = (maxHeight.value / maxWidth.value) >=
+                                PORTRAIT_ASPECT_RATIO_THRESHOLD
                             if (isHandheldPortrait) {
                                 AdaptivePortraitCaptureLayout(
                                     windowWidth = maxWidth,
@@ -573,13 +576,24 @@ fun CaptureScaffoldLayout(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .windowInsetsPadding(
-                                        portraitSystemBarsAndCutoutInsets.only(
-                                            WindowInsetsSides.Vertical
-                                        )
+                                        // The handheld layout positions its controls with the
+                                        // layout solver. Other windows reserve the same insets on
+                                        // every edge so that the controls do not move when the
+                                        // window rotates.
+                                        if (isHandheldPortrait) {
+                                            portraitSystemBarsAndCutoutInsets.only(
+                                                WindowInsetsSides.Vertical
+                                            )
+                                        } else {
+                                            rotationStableInsets
+                                        }
                                     )
                             ) {
                                 if (!isHandheldPortrait && controlsVisible) {
                                     VerticalMaterialControls(
+                                        reservedBottomInset = rotationStableInsets
+                                            .asPaddingValues()
+                                            .calculateBottomPadding(),
                                         captureButton = captureButton,
                                         imageWell = imageWell,
                                         flipCameraButton = flipCameraButton,
@@ -724,13 +738,17 @@ private fun AdaptivePortraitCaptureLayout(
     snackbarHost: @Composable (Modifier) -> Unit = {}
 ) {
     val windowRotation = LocalWindowRotation.current
-    val portraitCutoutInsets = WindowInsets.displayCutout.toPortraitWindowInsets(windowRotation)
+    val currentWindowInsets = LocalCurrentWindowInsets.current ?: rememberCurrentWindowInsets(
+        windowRotation
+    )
+    val portraitCutoutInsets =
+        currentWindowInsets.displayCutout.toPortraitWindowInsets(windowRotation)
     val cutoutTopInset = portraitCutoutInsets.asPaddingValues().calculateTopPadding()
-    val navInset = WindowInsets.navigationBarsIgnoringVisibility
+    val navInset = currentWindowInsets.navigationBarsIgnoringVisibility
         .toPortraitWindowInsets(windowRotation)
         .asPaddingValues()
         .calculateBottomPadding()
-    val rawGestureInset = WindowInsets.systemGestures
+    val rawGestureInset = currentWindowInsets.systemGestures
         .toPortraitWindowInsets(windowRotation)
         .asPaddingValues()
         .calculateBottomPadding()
@@ -1055,9 +1073,31 @@ private fun AdaptivePortraitCaptureLayout(
     }
 }
 
+/**
+ * Returns insets that reserve the largest of these insets on every edge.
+ *
+ * The capture layout is counter-rotated to portrait, so when the window rotates, a system bar can
+ * move to a different edge of the layout (for example, a taskbar that is always at the bottom of
+ * the window). Padding controls by the current insets would then move them on rotation. Reserving
+ * the same inset on every edge keeps them in place.
+ */
+@Composable
+private fun WindowInsets.toRotationStableInsets(): WindowInsets {
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
+    val inset = maxOf(
+        getLeft(density, layoutDirection),
+        getTop(density),
+        getRight(density, layoutDirection),
+        getBottom(density)
+    )
+    return WindowInsets(inset, inset, inset, inset)
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun VerticalMaterialControls(
+    reservedBottomInset: Dp,
     modifier: Modifier = Modifier,
     captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
@@ -1076,13 +1116,9 @@ private fun VerticalMaterialControls(
         // This layout is only used for windows that are not portrait handhelds (see
         // CaptureScaffoldLayout), so it does not track the viewfinder. Short windows, such as
         // landscape phones, compress the stack to its minimum spacing.
-        val windowRotation = LocalWindowRotation.current
-        val navBarBottom = WindowInsets.navigationBarsIgnoringVisibility
-            .toPortraitWindowInsets(windowRotation)
-            .asPaddingValues()
-            .calculateBottomPadding()
+        // The caller has already padded the controls by reservedBottomInset.
         val isShortScreen = maxHeight < SHORT_SCREEN_THRESHOLD
-        val maxBottomPad = max(TARGET_BOTTOM_CLEARANCE - navBarBottom, MIN_NAV_MARGIN)
+        val maxBottomPad = max(TARGET_BOTTOM_CLEARANCE - reservedBottomInset, MIN_NAV_MARGIN)
         val bottomPad = if (isShortScreen) {
             min(MIN_CONTROLS_BOTTOM_PADDING, maxBottomPad)
         } else {
