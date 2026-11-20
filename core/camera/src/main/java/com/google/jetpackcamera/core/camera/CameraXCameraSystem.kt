@@ -96,6 +96,7 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Provider
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -114,13 +115,15 @@ private const val TAG = "CameraXCameraSystem"
 /**
  * CameraX based implementation for [CameraSystem]
  *
- * @param defaultCoroutineContext The [CoroutineContext] used for CPU-bound background work.
- * @param ioCoroutineContext The [CoroutineContext] used for blocking I/O work.
+ * @param defaultCoroutineContext The [CoroutineContext] used for CPU-bound background work. Any
+ * [Job] in this context is ignored.
+ * @param ioCoroutineContext The [CoroutineContext] used for blocking I/O work. Any [Job] in this
+ * context is ignored.
  */
 class CameraXCameraSystem(
     private val application: Application,
-    private val defaultCoroutineContext: CoroutineContext,
-    private val ioCoroutineContext: CoroutineContext,
+    defaultCoroutineContext: CoroutineContext,
+    ioCoroutineContext: CoroutineContext,
     private val filePathGenerator: FilePathGenerator,
     availabilityCheckers:
     Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>>,
@@ -138,6 +141,10 @@ class CameraXCameraSystem(
         emptyMap(),
     private val cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy()
 ) : CameraSystem {
+    // Strip any Job so that withContext() keeps the work a child of the calling coroutine.
+    private val defaultCoroutineContext = defaultCoroutineContext.minusKey(Job)
+    private val ioCoroutineContext = ioCoroutineContext.minusKey(Job)
+
     private lateinit var cameraProvider: ProcessCameraProvider
 
     private data class BoundImageCapture(val useCase: ImageCapture, val isMirrored: Boolean)
