@@ -483,7 +483,7 @@ class LayoutRotationTest {
                 modifier = Modifier.size(containerSize),
                 deviceRotation = windowRotation,
                 windowRotation = windowRotation,
-                slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
+                slots = previewSideRailSlots(includeElapsedTime = true),
                 onViewfinderObserved = { mode, _, _, _, vfSize ->
                     observedMode = mode
                     observedViewfinderSize = vfSize
@@ -528,19 +528,17 @@ class LayoutRotationTest {
 
     @Test
     fun cutoutAwareRow_remapsCutoutsUnderRotated90AndRotated270() {
-        val rotated90RowBounds = IntRect(left = 692, top = 0, right = 740, bottom = 360)
+        val rotated90Anchor = WindowAnchor(left = 692, top = 0, width = 48, height = 360)
         val rotated90WindowCutout = listOf(AndroidRect(692, 20, 740, 60))
 
         assertThat(
             resolveLocalCutoutRects(
                 cutoutRectsOverride = null,
                 windowCutoutRects = rotated90WindowCutout,
-                rowBoundsInWindow = rotated90RowBounds,
+                windowAnchor = rotated90Anchor,
                 isRtl = false,
                 rtlReferenceWidth = 360,
-                windowRotation = DeviceRotation.Rotated90,
-                fallbackViewWidth = 740,
-                fallbackViewHeight = 360
+                windowRotation = DeviceRotation.Rotated90
             )
         ).containsExactly(IntRect(left = 20, top = 0, right = 60, bottom = 48))
 
@@ -548,28 +546,24 @@ class LayoutRotationTest {
             resolveLocalCutoutRects(
                 cutoutRectsOverride = null,
                 windowCutoutRects = rotated90WindowCutout,
-                rowBoundsInWindow = rotated90RowBounds,
+                windowAnchor = rotated90Anchor,
                 isRtl = true,
                 rtlReferenceWidth = 360,
-                windowRotation = DeviceRotation.Rotated90,
-                fallbackViewWidth = 740,
-                fallbackViewHeight = 360
+                windowRotation = DeviceRotation.Rotated90
             )
         ).containsExactly(IntRect(left = 300, top = 0, right = 340, bottom = 48))
 
-        val rotated270RowBounds = IntRect(left = 0, top = 0, right = 48, bottom = 360)
+        val rotated270Anchor = WindowAnchor(left = 0, top = 0, width = 48, height = 360)
         val rotated270WindowCutout = listOf(AndroidRect(0, 300, 48, 340))
 
         assertThat(
             resolveLocalCutoutRects(
                 cutoutRectsOverride = null,
                 windowCutoutRects = rotated270WindowCutout,
-                rowBoundsInWindow = rotated270RowBounds,
+                windowAnchor = rotated270Anchor,
                 isRtl = false,
                 rtlReferenceWidth = 360,
-                windowRotation = DeviceRotation.Rotated270,
-                fallbackViewWidth = 740,
-                fallbackViewHeight = 360
+                windowRotation = DeviceRotation.Rotated270
             )
         ).containsExactly(IntRect(left = 20, top = 0, right = 60, bottom = 48))
 
@@ -577,12 +571,10 @@ class LayoutRotationTest {
             resolveLocalCutoutRects(
                 cutoutRectsOverride = null,
                 windowCutoutRects = rotated270WindowCutout,
-                rowBoundsInWindow = rotated270RowBounds,
+                windowAnchor = rotated270Anchor,
                 isRtl = true,
                 rtlReferenceWidth = 360,
-                windowRotation = DeviceRotation.Rotated270,
-                fallbackViewWidth = 740,
-                fallbackViewHeight = 360
+                windowRotation = DeviceRotation.Rotated270
             )
         ).containsExactly(IntRect(left = 300, top = 0, right = 340, bottom = 48))
 

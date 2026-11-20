@@ -13,14 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(InternalCameraApi::class)
+@file:kotlin.OptIn(InternalCameraApi::class)
 
 package com.google.jetpackcamera.core.camera
 
 import android.graphics.Rect
+import android.hardware.camera2.CameraMetadata
+import android.hardware.camera2.CaptureRequest
+import android.os.Build
 import android.util.Rational
 import android.util.Size
 import android.view.Surface
+import androidx.annotation.OptIn
+import androidx.camera.camera2.interop.CaptureRequestOptions
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.core.UseCaseGroup
@@ -29,13 +35,16 @@ import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.TestPattern
 import com.google.jetpackcamera.model.VideoQuality
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
+@OptIn(ExperimentalCamera2Interop::class)
 @RunWith(RobolectricTestRunner::class)
 class CameraSessionTest {
 
@@ -303,5 +312,74 @@ class CameraSessionTest {
         assertThat(fakeSystem.windowRotation).isEqualTo(DeviceRotation.Natural)
         fakeSystem.setWindowRotation(DeviceRotation.Rotated180)
         assertThat(fakeSystem.windowRotation).isEqualTo(DeviceRotation.Rotated180)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
+    fun updateLowLightBoostAeMode_lowLightBoostWithAeModeSupport_setsLowLightBoostAeMode() {
+        val builder = CaptureRequestOptions.Builder()
+
+        builder.updateLowLightBoostAeMode(
+            flashMode = FlashMode.LOW_LIGHT_BOOST,
+            supportedIlluminants = setOf(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
+        )
+
+        assertThat(builder.build().getCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE))
+            .isEqualTo(CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
+    fun updateLowLightBoostAeMode_lowLightBoostWithCameraEffect_clearsAeMode() {
+        val builder = CaptureRequestOptions.Builder().setCaptureRequestOption(
+            CaptureRequest.CONTROL_AE_MODE,
+            CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY
+        )
+
+        builder.updateLowLightBoostAeMode(
+            flashMode = FlashMode.LOW_LIGHT_BOOST,
+            supportedIlluminants = setOf(Illuminant.LOW_LIGHT_BOOST_CAMERA_EFFECT)
+        )
+
+        assertThat(builder.build().getCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE))
+            .isNull()
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
+    fun updateLowLightBoostAeMode_otherFlashMode_clearsAeMode() {
+        val builder = CaptureRequestOptions.Builder()
+        builder.updateLowLightBoostAeMode(
+            flashMode = FlashMode.LOW_LIGHT_BOOST,
+            supportedIlluminants = setOf(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
+        )
+
+        builder.updateLowLightBoostAeMode(
+            flashMode = FlashMode.OFF,
+            supportedIlluminants = setOf(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
+        )
+
+        assertThat(builder.build().getCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE))
+            .isNull()
+    }
+
+    @Test
+    @Config(sdk = [Build.VERSION_CODES.VANILLA_ICE_CREAM])
+    fun updateLowLightBoostAeMode_keepsOtherOptions() {
+        val builder = CaptureRequestOptions.Builder().setCaptureRequestOption(
+            CaptureRequest.SENSOR_TEST_PATTERN_MODE,
+            CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS
+        )
+
+        builder.updateLowLightBoostAeMode(
+            flashMode = FlashMode.LOW_LIGHT_BOOST,
+            supportedIlluminants = setOf(Illuminant.LOW_LIGHT_BOOST_AE_MODE)
+        )
+
+        val options = builder.build()
+        assertThat(options.getCaptureRequestOption(CaptureRequest.SENSOR_TEST_PATTERN_MODE))
+            .isEqualTo(CameraMetadata.SENSOR_TEST_PATTERN_MODE_COLOR_BARS)
+        assertThat(options.getCaptureRequestOption(CaptureRequest.CONTROL_AE_MODE))
+            .isEqualTo(CameraMetadata.CONTROL_AE_MODE_ON_LOW_LIGHT_BOOST_BRIGHTNESS_PRIORITY)
     }
 }

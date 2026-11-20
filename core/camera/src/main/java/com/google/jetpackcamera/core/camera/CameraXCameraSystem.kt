@@ -94,8 +94,8 @@ import java.io.File
 import java.io.FileNotFoundException
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Provider
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -114,11 +114,14 @@ private const val TAG = "CameraXCameraSystem"
 
 /**
  * CameraX based implementation for [CameraSystem]
+ *
+ * @param defaultCoroutineContext The [CoroutineContext] used for CPU-bound background work.
+ * @param ioCoroutineContext The [CoroutineContext] used for blocking I/O work.
  */
 class CameraXCameraSystem(
     private val application: Application,
-    private val defaultDispatcher: CoroutineDispatcher,
-    private val iODispatcher: CoroutineDispatcher,
+    private val defaultCoroutineContext: CoroutineContext,
+    private val ioCoroutineContext: CoroutineContext,
     private val filePathGenerator: FilePathGenerator,
     availabilityCheckers:
     Map<LowLightBoostFeatureKey, @JvmSuppressWildcards Provider<LowLightBoostAvailabilityChecker>>,
@@ -480,7 +483,7 @@ class CameraXCameraSystem(
                 .tryApplyTestPatternConstraints()
                 .tryApplyCaptureSubModeConstraints()
         if (debugSettings.isDebugModeEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            withContext(iODispatcher) {
+            withContext(ioCoroutineContext) {
                 val cameraPropertiesJSON =
                     getAllCamerasPropertiesJSONArray(cameraProvider.availableCameraInfos).toString()
                 val fileDir = File(application.getExternalFilesDir(null), "Debug")
@@ -677,7 +680,7 @@ class CameraXCameraSystem(
                         CameraSessionContext(
                             context = application,
                             cameraProvider = cameraProvider,
-                            backgroundDispatcher = defaultDispatcher,
+                            backgroundContext = defaultCoroutineContext,
                             screenFlashEvents = screenFlashEvents,
                             filePathGenerator = filePathGenerator,
                             focusMeteringEvents = focusMeteringEvents,

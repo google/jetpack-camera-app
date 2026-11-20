@@ -46,6 +46,7 @@ import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.LayoutDirection
@@ -57,6 +58,9 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolution
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
+import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
+import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -91,7 +95,7 @@ class SideRailCaptureLayoutsTest {
         composeTestRule.setContent {
             MaterialTheme {
                 FoldableLayout(
-                    slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
+                    slots = previewSideRailSlots(includeElapsedTime = true),
                     viewfinder = { vfModifier ->
                         observedSolverSolution = LocalCameraLayoutSolution.current
                         observedActiveLayout = LocalActiveCaptureLayout.current
@@ -151,7 +155,7 @@ class SideRailCaptureLayoutsTest {
         composeTestRule.setContent {
             MaterialTheme {
                 FoldableLayout(
-                    slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
+                    slots = previewSideRailSlots(includeElapsedTime = true),
                     viewfinder = { vfModifier ->
                         Box(modifier = vfModifier.testTag(PREVIEW_DISPLAY))
                     }
@@ -174,11 +178,12 @@ class SideRailCaptureLayoutsTest {
             .isWithin(TOLERANCE)
             .of(852f - 48f)
 
-        // ControlSize.Medium sizes the shutter at 72dp, which clears the ~95dp black bar beside a
-        // 3:4 viewfinder (883 * 3 / 4 = 662.25dp wide, centered).
-        assertThat(shutter.right.value - shutter.left.value).isWithin(TOLERANCE).of(72f)
+        // ControlSize.Medium sizes the shutter ring at 74dp, which clears the ~95dp black bar
+        // beside a 3:4 viewfinder (883 * 3 / 4 = 662.25dp wide, centered).
+        assertThat(shutter.bottom.value - shutter.top.value).isWithin(TOLERANCE).of(74f)
+        val shutterRingLeft = (shutter.left.value + shutter.right.value) / 2f - 74f / 2f
         val viewfinderRight = (852f + 883f * 3f / 4f) / 2f
-        assertThat(shutter.left.value).isAtLeast(viewfinderRight)
+        assertThat(shutterRingLeft).isAtLeast(viewfinderRight)
     }
 
     @Config(qualifiers = "w800dp-h1280dp")
@@ -189,13 +194,13 @@ class SideRailCaptureLayoutsTest {
         composeTestRule.setContent {
             MaterialTheme {
                 TabletPortraitLayout(
-                    slots = PlaceholderCaptureSlots.sideRail(
+                    slots = previewSideRailSlots(
                         includeImageWell = true,
                         includeElapsedTime = true
                     ),
                     viewfinder = { vfModifier ->
                         observedActiveLayout = LocalActiveCaptureLayout.current
-                        PlaceholderViewfinder(modifier = vfModifier)
+                        Box(modifier = vfModifier.testTag(PREVIEW_DISPLAY).fillMaxSize())
                     }
                 )
             }
@@ -226,15 +231,26 @@ class SideRailCaptureLayoutsTest {
     }
 
     @Test
-    fun foldableLayout_quickSettings_opensSingleBottomSheetAndScrimTapDismisses() {
+    fun foldableLayout_quickSettings_opensSingleSideSheetCenteredAndScrimTapDismisses() {
         val state = CaptureScaffoldState(isInitiallyExpanded = false)
         var dismissCount = 0
 
         composeTestRule.setContent {
             MaterialTheme {
                 FoldableLayout(
-                    slots = PlaceholderCaptureSlots.sideRail(tagQuickSettingsOverlay = true),
-                    viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+                    slots = previewSideRailSlots().copy(
+                        quickSettingsOverlay = { mod ->
+                            QuickSettingsContent(
+                                quickSettingsUiState = sampleQuickSettingsUiState(),
+                                quickSettingsController = FakeQuickSettingsController(),
+                                onNavigateToSettings = {},
+                                modifier = mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                            )
+                        }
+                    ),
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    },
                     state = state,
                     onDismissQuickSettings = { dismissCount++ }
                 )
@@ -247,7 +263,12 @@ class SideRailCaptureLayoutsTest {
         composeTestRule.runOnIdle { state.showQuickSettings() }
         composeTestRule.waitForIdle()
 
-        assertSingleInHierarchyBottomSheet()
+        assertSingleInHierarchySideSheet()
+        val sheetBounds = boundsOf(QUICK_SETTINGS_SIDE_SHEET_TAG)
+        val sheetCenterY = (sheetBounds.top.value + sheetBounds.bottom.value) / 2f
+        val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
+        val rootCenterY = (rootBounds.top.value + rootBounds.bottom.value) / 2f
+        assertThat(sheetCenterY).isWithin(2f).of(rootCenterY)
         // Background camera chrome is pruned from accessibility while Quick Settings is open.
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(hiddenFromA11yAncestor)
 
@@ -262,7 +283,7 @@ class SideRailCaptureLayoutsTest {
 
     @Config(qualifiers = "w800dp-h1280dp")
     @Test
-    fun tabletPortraitLayout_quickSettings_opensSingleBottomSheetAndBackPressDismisses() {
+    fun tabletPortraitLayout_quickSettings_opensSingleSideSheetLowerBiasedAndBackPressDismisses() {
         val state = CaptureScaffoldState(isInitiallyExpanded = true)
         var dismissCount = 0
         lateinit var backDispatcher: OnBackPressedDispatcher
@@ -271,8 +292,19 @@ class SideRailCaptureLayoutsTest {
             backDispatcher = LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
             MaterialTheme {
                 TabletPortraitLayout(
-                    slots = PlaceholderCaptureSlots.sideRail(tagQuickSettingsOverlay = true),
-                    viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+                    slots = previewSideRailSlots().copy(
+                        quickSettingsOverlay = { mod ->
+                            QuickSettingsContent(
+                                quickSettingsUiState = sampleQuickSettingsUiState(),
+                                quickSettingsController = FakeQuickSettingsController(),
+                                onNavigateToSettings = {},
+                                modifier = mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                            )
+                        }
+                    ),
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    },
                     state = state,
                     onDismissQuickSettings = { dismissCount++ }
                 )
@@ -280,7 +312,12 @@ class SideRailCaptureLayoutsTest {
         }
         composeTestRule.waitForIdle()
 
-        assertSingleInHierarchyBottomSheet()
+        assertSingleInHierarchySideSheet()
+        val sheetBounds = boundsOf(QUICK_SETTINGS_SIDE_SHEET_TAG)
+        val sheetCenterY = (sheetBounds.top.value + sheetBounds.bottom.value) / 2f
+        val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
+        val rootCenterY = (rootBounds.top.value + rootBounds.bottom.value) / 2f
+        assertThat(sheetCenterY).isGreaterThan(rootCenterY)
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(hiddenFromA11yAncestor)
 
         composeTestRule.runOnUiThread { backDispatcher.onBackPressed() }
@@ -291,15 +328,26 @@ class SideRailCaptureLayoutsTest {
 
     @Config(qualifiers = "w1280dp-h800dp")
     @Test
-    fun tabletLandscapeLayout_quickSettings_opensSingleBottomSheetAndScrimTapDismisses() {
+    fun tabletLandscapeLayout_quickSettings_opensSingleSideSheetCenteredAndScrimTapDismisses() {
         val state = CaptureScaffoldState(isInitiallyExpanded = true)
         var dismissCount = 0
 
         composeTestRule.setContent {
             MaterialTheme {
                 TabletLandscapeLayout(
-                    slots = PlaceholderCaptureSlots.sideRail(tagQuickSettingsOverlay = true),
-                    viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+                    slots = previewSideRailSlots().copy(
+                        quickSettingsOverlay = { mod ->
+                            QuickSettingsContent(
+                                quickSettingsUiState = sampleQuickSettingsUiState(),
+                                quickSettingsController = FakeQuickSettingsController(),
+                                onNavigateToSettings = {},
+                                modifier = mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                            )
+                        }
+                    ),
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    },
                     state = state,
                     onDismissQuickSettings = { dismissCount++ }
                 )
@@ -307,7 +355,12 @@ class SideRailCaptureLayoutsTest {
         }
         composeTestRule.waitForIdle()
 
-        assertSingleInHierarchyBottomSheet()
+        assertSingleInHierarchySideSheet()
+        val sheetBounds = boundsOf(QUICK_SETTINGS_SIDE_SHEET_TAG)
+        val sheetCenterY = (sheetBounds.top.value + sheetBounds.bottom.value) / 2f
+        val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
+        val rootCenterY = (rootBounds.top.value + rootBounds.bottom.value) / 2f
+        assertThat(sheetCenterY).isWithin(2f).of(rootCenterY)
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(hiddenFromA11yAncestor)
 
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).performTouchInput {
@@ -327,10 +380,18 @@ class SideRailCaptureLayoutsTest {
         var observedActiveLayout: String? = null
 
         val observedDirections = mutableMapOf<String, LayoutDirection>()
-        val baseSlots = PlaceholderCaptureSlots.sideRail(
+        val baseSlots = previewSideRailSlots(
             includeImageWell = true,
-            includeElapsedTime = true,
-            tagQuickSettingsOverlay = true
+            includeElapsedTime = true
+        ).copy(
+            quickSettingsOverlay = { mod ->
+                QuickSettingsContent(
+                    sampleQuickSettingsUiState(),
+                    FakeQuickSettingsController(),
+                    {},
+                    mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                )
+            }
         )
         val instrumentedSlots = baseSlots.copy(
             topBar = { mod ->
@@ -393,7 +454,7 @@ class SideRailCaptureLayoutsTest {
                         slots = instrumentedSlots,
                         viewfinder = { mod ->
                             observedActiveLayout = LocalActiveCaptureLayout.current
-                            PlaceholderViewfinder(modifier = mod)
+                            Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
                         },
                         state = state
                     )
@@ -433,7 +494,7 @@ class SideRailCaptureLayoutsTest {
         val unmirroredEndRail = boundsOf(END_SIDE_RAIL_TAG)
         assertThat(unmirroredStartRail.left.value).isWithin(TOLERANCE).of(0f)
         assertThat(unmirroredEndRail.right.value).isWithin(TOLERANCE).of(1280f)
-        assertSingleInHierarchyBottomSheet()
+        assertSingleInHierarchySideSheet()
         assertThat(observedDirections).containsKey("quickSettingsOverlay")
 
         observedDirections.forEach { (slotName, dir) ->
@@ -458,7 +519,7 @@ class SideRailCaptureLayoutsTest {
         val mirroredEndRail = boundsOf(END_SIDE_RAIL_TAG)
         assertThat(mirroredStartRail.right.value).isWithin(TOLERANCE).of(1280f)
         assertThat(mirroredEndRail.left.value).isWithin(TOLERANCE).of(0f)
-        assertSingleInHierarchyBottomSheet()
+        assertSingleInHierarchySideSheet()
 
         observedDirections.forEach { (slotName, dir) ->
             assertWithMessage("Slot $slotName must receive LayoutDirection.Rtl when mirrored")
@@ -482,7 +543,7 @@ class SideRailCaptureLayoutsTest {
         var observedActiveLayout: String? = null
         val observedDirections = mutableMapOf<String, LayoutDirection>()
 
-        val baseSlots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true)
+        val baseSlots = previewSideRailSlots(includeElapsedTime = true)
         val instrumentedSlots = baseSlots.copy(
             topBar = { mod ->
                 observedDirections["topBar"] = LocalLayoutDirection.current
@@ -528,7 +589,7 @@ class SideRailCaptureLayoutsTest {
                         slots = instrumentedSlots,
                         viewfinder = { mod ->
                             observedActiveLayout = LocalActiveCaptureLayout.current
-                            PlaceholderViewfinder(modifier = mod)
+                            Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
                         }
                     )
                 }
@@ -605,8 +666,10 @@ class SideRailCaptureLayoutsTest {
             hostView = LocalView.current
             MaterialTheme {
                 FoldableLayout(
-                    slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
-                    viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+                    slots = previewSideRailSlots(includeElapsedTime = true),
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    },
                     screenFlashOverlay = { mod ->
                         Box(modifier = mod.fillMaxSize().testTag(SCREEN_FLASH_OVERLAY))
                     }
@@ -648,8 +711,10 @@ class SideRailCaptureLayoutsTest {
             hostView = LocalView.current
             MaterialTheme {
                 CompactPortraitLayout(
-                    slots = PlaceholderCaptureSlots.sideRail(),
-                    viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+                    slots = previewSideRailSlots(),
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    }
                 )
             }
         }
@@ -672,7 +737,7 @@ class SideRailCaptureLayoutsTest {
         var flipDirection: LayoutDirection? = null
         lateinit var hostView: View
 
-        val baseSlots = PlaceholderCaptureSlots.sideRail()
+        val baseSlots = previewSideRailSlots()
         val instrumentedSlots = baseSlots.copy(
             flipCameraButton = { mod ->
                 flipDirection = LocalLayoutDirection.current
@@ -689,7 +754,9 @@ class SideRailCaptureLayoutsTest {
                 ) {
                     CompactPortraitLayout(
                         slots = instrumentedSlots,
-                        viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+                        viewfinder = { mod ->
+                            Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                        }
                     )
                 }
             }
@@ -724,7 +791,16 @@ class SideRailCaptureLayoutsTest {
         var showErrorDialog by mutableStateOf(false)
         val state = CaptureScaffoldState(isInitiallyExpanded = true)
 
-        val baseSlots = PlaceholderCaptureSlots.sideRail(tagQuickSettingsOverlay = true)
+        val baseSlots = previewSideRailSlots().copy(
+            quickSettingsOverlay = { mod ->
+                QuickSettingsContent(
+                    quickSettingsUiState = sampleQuickSettingsUiState(),
+                    quickSettingsController = FakeQuickSettingsController(),
+                    onNavigateToSettings = {},
+                    modifier = mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                )
+            }
+        )
         val slots = baseSlots.copy(
             errorDialog = { mod ->
                 if (showErrorDialog) {
@@ -737,7 +813,9 @@ class SideRailCaptureLayoutsTest {
             MaterialTheme {
                 FoldableLayout(
                     slots = slots,
-                    viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    },
                     state = state,
                     controlsVisible = controlsVisible,
                     isErrorDialogShowing = showErrorDialog
@@ -775,15 +853,15 @@ class SideRailCaptureLayoutsTest {
      * Asserts that exactly one Quick Settings sheet is displayed in the composition hierarchy, not
      * in a popup or dialog window, with its drag handle.
      */
-    private fun assertSingleInHierarchyBottomSheet() {
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+    private fun assertSingleInHierarchySideSheet() {
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .assertIsDisplayed()
             .assert(!isPopup())
             .assert(!isDialog())
             .assert(!hasAnyAncestor(isPopup()))
             .assert(!hasAnyAncestor(isDialog()))
         assertThat(
-            composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_BOTTOM_SHEET).fetchSemanticsNodes()
+            composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG).fetchSemanticsNodes()
         ).hasSize(1)
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).assertIsDisplayed()
     }

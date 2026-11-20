@@ -35,8 +35,8 @@ import com.google.jetpackcamera.model.Media
 import com.google.jetpackcamera.model.MediaDescriptor
 import java.io.File
 import java.io.IOException
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
@@ -64,12 +64,17 @@ private const val TAG = "LocalMediaRepository"
 private const val IMAGE_MIME_TYPE = "image/jpeg"
 private const val VIDEO_MIME_TYPE = "video/mp4"
 
+/**
+ * A [MediaRepository] backed by the device's MediaStore and app cache.
+ *
+ * @param ioCoroutineContext The [CoroutineContext] used for blocking I/O work.
+ */
 class LocalMediaRepository(
     private val context: Context,
-    private val iODispatcher: CoroutineDispatcher,
+    private val ioCoroutineContext: CoroutineContext,
     private val filePathGenerator: FilePathGenerator
 ) : MediaRepository {
-    private val repositoryScope = CoroutineScope(iODispatcher + SupervisorJob())
+    private val repositoryScope = CoroutineScope(ioCoroutineContext + SupervisorJob())
     private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
 
     private val cacheMutex = Mutex()
@@ -217,7 +222,7 @@ class LocalMediaRepository(
         }
     }
 
-    private suspend fun exists(uri: Uri): Boolean = withContext(iODispatcher) {
+    private suspend fun exists(uri: Uri): Boolean = withContext(ioCoroutineContext) {
         // 1. File URI check (for cached media)
         if (uri.scheme == ContentResolver.SCHEME_FILE) {
             val path = uri.path ?: return@withContext false
@@ -280,7 +285,7 @@ class LocalMediaRepository(
     /**
      * Returns the most recent app-specific media URI from the MediaStore.
      */
-    private suspend fun findLatestAppSpecificUri(): Uri? = withContext(iODispatcher) {
+    private suspend fun findLatestAppSpecificUri(): Uri? = withContext(ioCoroutineContext) {
         val imagePair =
             getLastSavedMediaUriWithDate(
                 context.contentResolver,
@@ -426,7 +431,7 @@ class LocalMediaRepository(
     override suspend fun saveToMediaStore(
         mediaDescriptor: MediaDescriptor.Content,
         outputFilename: String?
-    ): Uri? = withContext(iODispatcher) {
+    ): Uri? = withContext(ioCoroutineContext) {
         val finalOutputFilename: String
         val mimeType: String
         val mediaUrl: Uri
@@ -538,7 +543,7 @@ class LocalMediaRepository(
      * Loads an image from bitmap
      */
     @Throws(IOException::class)
-    private suspend fun loadImage(uri: Uri): Bitmap? = withContext(iODispatcher) {
+    private suspend fun loadImage(uri: Uri): Bitmap? = withContext(ioCoroutineContext) {
         try {
             val loadedBitmap = when {
                 uri.scheme == ContentResolver.SCHEME_FILE -> {
@@ -592,7 +597,7 @@ class LocalMediaRepository(
      * @return The [Bitmap] thumbnail, or `null` if retrieval fails.
      */
     private suspend fun getThumbnail(uri: Uri, collectionUri: Uri): Bitmap? =
-        withContext(iODispatcher) {
+        withContext(ioCoroutineContext) {
             if (uri.scheme != ContentResolver.SCHEME_CONTENT) {
                 Log.e(TAG, "URI is not managed by a content provider")
                 null

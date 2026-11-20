@@ -26,11 +26,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -58,6 +62,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+
+private const val ROW_CUTOUT_AWARE_TAG = "row_cutout_aware"
+private const val BOX_DYNAMIC_ITEM_0_TAG = "box_dynamic_item_0"
+private const val BOX_DYNAMIC_ITEM_1_TAG = "box_dynamic_item_1"
+private val DYNAMIC_ITEM_TAGS = listOf(BOX_DYNAMIC_ITEM_0_TAG, BOX_DYNAMIC_ITEM_1_TAG)
 
 /**
  * Tests for [CutoutAwareRow] verifying layout positioning around display cutouts
@@ -296,12 +305,12 @@ class CutoutAwareRowTest {
             .isAtMost(360.dp)
 
         val windowRects = listOf(android.graphics.Rect(20, 4, 60, 44))
-        val rowBounds = IntRect(left = 10, top = 4, right = 370, bottom = 52)
+        val anchor = WindowAnchor(left = 10, top = 4, width = 360)
         assertThat(
             resolveLocalCutoutRects(
                 cutoutRectsOverride = null,
                 windowCutoutRects = windowRects,
-                rowBoundsInWindow = rowBounds,
+                windowAnchor = anchor,
                 isRtl = false,
                 rtlReferenceWidth = 360
             )
@@ -311,40 +320,84 @@ class CutoutAwareRowTest {
             resolveLocalCutoutRects(
                 cutoutRectsOverride = null,
                 windowCutoutRects = windowRects,
-                rowBoundsInWindow = rowBounds,
+                windowAnchor = anchor,
                 isRtl = true,
                 rtlReferenceWidth = 360
             )
         ).containsExactly(IntRect(left = 310, top = 0, right = 350, bottom = 40))
 
-        // Verify fallbackViewWidth / fallbackViewHeight when rowBoundsInWindow is null on pass 1.
+        // Rotated rows, like natural ones, report no cutouts until the first placement resolves
+        // a window anchor, so offset rows are never treated as sitting at the window origin.
         val landscapeLeftCutout = listOf(android.graphics.Rect(0, 300, 48, 340))
-        assertThat(
-            resolveLocalCutoutRects(
-                cutoutRectsOverride = null,
-                windowCutoutRects = landscapeLeftCutout,
-                rowBoundsInWindow = null,
-                isRtl = false,
-                rtlReferenceWidth = 360,
-                windowRotation = DeviceRotation.Rotated270,
-                fallbackViewWidth = 800,
-                fallbackViewHeight = 360
-            )
-        ).containsExactly(IntRect(left = 20, top = 0, right = 60, bottom = 48))
+        for (rotation in listOf(DeviceRotation.Rotated90, DeviceRotation.Rotated270)) {
+            assertThat(
+                resolveLocalCutoutRects(
+                    cutoutRectsOverride = null,
+                    windowCutoutRects = landscapeLeftCutout,
+                    windowAnchor = null,
+                    isRtl = false,
+                    rtlReferenceWidth = 360,
+                    windowRotation = rotation
+                )
+            ).isEmpty()
+        }
+    }
 
-        val landscapeRightCutout = listOf(android.graphics.Rect(752, 20, 800, 60))
+    @Test
+    fun cutoutAwareRow_shrinkingChildCount_evictsStaleLockedMinX() {
+        var itemCount by mutableIntStateOf(2)
+        var cutouts by mutableStateOf(listOf(IntRect(44, 0, 90, 48)))
+
+        composeTestRule.setContent {
+            CutoutAwareRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                horizontalSpacing = 8.dp,
+                cutoutClearance = 8.dp,
+                cutoutRectsOverride = cutouts
+            ) {
+                for (i in 0 until itemCount) {
+                    Box(Modifier.size(24.dp).testTag(DYNAMIC_ITEM_TAGS[i]))
+                }
+            }
+        }
+
+        // With cutout at [44, 90] + 8dp clearance -> [36, 98], second item is locked at 98dp.
         assertThat(
-            resolveLocalCutoutRects(
-                cutoutRectsOverride = null,
-                windowCutoutRects = landscapeRightCutout,
-                rowBoundsInWindow = null,
-                isRtl = false,
-                rtlReferenceWidth = 360,
-                windowRotation = DeviceRotation.Rotated90,
-                fallbackViewWidth = 800,
-                fallbackViewHeight = 360
-            )
-        ).containsExactly(IntRect(left = 20, top = 0, right = 60, bottom = 48))
+            composeTestRule.onNodeWithTag(BOX_DYNAMIC_ITEM_1_TAG).getUnclippedBoundsInRoot().left
+        ).isEqualTo(98.dp)
+
+        // Remove second item from composition so lockedMinX prunes indices >= 1, then clear
+        // cutouts.
+        itemCount = 1
+        composeTestRule.waitForIdle()
+        cutouts = emptyList()
+        itemCount = 2
+        composeTestRule.waitForIdle()
+
+        assertThat(
+            composeTestRule.onNodeWithTag(BOX_DYNAMIC_ITEM_1_TAG).getUnclippedBoundsInRoot().left
+        ).isEqualTo(32.dp)
+    }
+
+    @Test
+    fun cutoutAwareRow_exposesIsTraversalGroupSemantics() {
+        composeTestRule.setContent {
+            CutoutAwareRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp)
+                    .testTag(ROW_CUTOUT_AWARE_TAG),
+                cutoutRectsOverride = emptyList()
+            ) {
+                Box(Modifier.size(24.dp))
+            }
+        }
+
+        composeTestRule.onNodeWithTag(ROW_CUTOUT_AWARE_TAG).assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.IsTraversalGroup, true)
+        )
     }
 
     @Test

@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.net.Uri
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -41,6 +42,18 @@ import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.MediaDescriptor
+import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -62,6 +75,100 @@ class CaptureSideRailsTest {
     private fun boundsOf(tag: String): DpRect =
         composeTestRule.onNodeWithTag(tag).getUnclippedBoundsInRoot()
 
+    private fun realSideRailSlots(
+        includeImageWell: Boolean = true,
+        includeElapsedTime: Boolean = false
+    ): CaptureSlots = CaptureSlots(
+        topBar = { mod ->
+            IndicatorPill(modifier = mod, orientation = orientation) {
+                VideoQualityIcon(
+                    videoQuality = VideoQuality.FHD,
+                    modifier = Modifier.testTag(VIDEO_QUALITY_TAG)
+                )
+            }
+        },
+        zoomControls = { mod ->
+            ZoomBar(
+                zoomControlUiState = ZoomControlUiState.Enabled(
+                    zoomLevels = listOf(1f, 2f),
+                    primaryLensFacing = LensFacing.BACK,
+                    primaryZoomRatio = 1f
+                ),
+                onChangeZoom = {},
+                orientation = orientation,
+                modifier = mod
+            )
+        },
+        quickSettingsButton = { mod ->
+            ToggleQuickSettingsButton(
+                isOpen = false,
+                enabled = true,
+                onClick = {},
+                modifier = mod
+            )
+        },
+        flipCameraButton = { mod ->
+            FlipCameraButton(
+                flipLensUiState = FlipLensUiState.Available(
+                    selectedLensFacing = LensFacing.BACK,
+                    availableLensFacings = listOf(
+                        SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                        SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                    )
+                ),
+                onClick = {},
+                modifier = mod.testTag(FLIP_CAMERA_BUTTON)
+            )
+        },
+        captureButton = { mod ->
+            CaptureButton(
+                captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD),
+                modifier = mod
+            )
+        },
+        imageWell = if (includeImageWell) {
+            { mod ->
+                ImageWell(
+                    imageWellUiState = ImageWellUiState.Content(
+                        mediaDescriptor = MediaDescriptor.Content.Image(
+                            uri = Uri.EMPTY,
+                            thumbnail = null
+                        )
+                    ),
+                    onClick = {},
+                    modifier = mod
+                )
+            }
+        } else {
+            {}
+        },
+        captureModeToggle = { mod ->
+            CaptureModeToggleButton(
+                uiState = CaptureModeToggleUiState.Available(
+                    selectedCaptureMode = CaptureMode.IMAGE_ONLY,
+                    imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+                    videoOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+                ),
+                onChangeCaptureMode = {},
+                orientation = orientation,
+                controlSize = controlSize,
+                modifier = mod.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+            )
+        },
+        elapsedTimeDisplay = if (includeElapsedTime) {
+            { mod ->
+                ElapsedTimeText(
+                    elapsedTimeUiStateProvider = {
+                        ElapsedTimeUiState.Enabled(elapsedTimeNanos = 12_000_000_000L)
+                    },
+                    modifier = mod.testTag(ELAPSED_TIME_TAG)
+                )
+            }
+        } else {
+            {}
+        }
+    )
+
     @Test
     fun startSideRail_ltrAndRtl_preservesStrictTopToBottomSlotOrder_andChildLayoutDirection() {
         var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
@@ -69,7 +176,7 @@ class CaptureSideRailsTest {
         var zoomDirection: LayoutDirection? = null
         var quickSettingsDirection: LayoutDirection? = null
 
-        val baseSlots = PlaceholderCaptureSlots.sideRail()
+        val baseSlots = realSideRailSlots()
         val instrumentedSlots = baseSlots.copy(
             topBar = { mod ->
                 indicatorDirection = LocalLayoutDirection.current
@@ -136,7 +243,7 @@ class CaptureSideRailsTest {
         var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
         var modeToggleDirection: LayoutDirection? = null
 
-        val baseSlots = PlaceholderCaptureSlots.sideRail(
+        val baseSlots = realSideRailSlots(
             includeImageWell = true,
             includeElapsedTime = true
         )
@@ -210,8 +317,7 @@ class CaptureSideRailsTest {
 
     @Test
     fun sideRails_compactHeightMode_fitsWithin360dpWithoutClippingOrOverlap() {
-        val compactSlots = PlaceholderCaptureSlots.sideRail(
-            isCompactHeight = true,
+        val compactSlots = realSideRailSlots(
             includeImageWell = true,
             includeElapsedTime = true
         )
@@ -290,8 +396,7 @@ class CaptureSideRailsTest {
         var includeImageWell by mutableStateOf(true)
 
         composeTestRule.setContent {
-            val slots = PlaceholderCaptureSlots.sideRail(
-                isCompactHeight = false,
+            val slots = realSideRailSlots(
                 includeImageWell = includeImageWell,
                 includeElapsedTime = false
             )
@@ -324,14 +429,16 @@ class CaptureSideRailsTest {
         val captureBounds = boundsOf(CAPTURE_BUTTON)
         assertThat((captureBounds.top - flipBounds.bottom).value).isWithin(1f).of(48f)
 
-        val clusterCenterY = (flipBounds.top.value + captureBounds.bottom.value) / 2f
+        val captureCenterY = (captureBounds.top.value + captureBounds.bottom.value) / 2f
         val railCenterY = (railBounds.top.value + railBounds.bottom.value) / 2f
-        assertThat(clusterCenterY).isWithin(1f).of(railCenterY)
+        assertThat(captureCenterY).isWithin(1f).of(railCenterY)
+        assertThat(captureBounds.top.value).isWithin(1f).of(captureBoundsWithWell.top.value)
+        assertThat(flipBounds.top.value).isWithin(1f).of(flipBoundsWithWell.top.value)
     }
 
     @Test
     fun startSideRail_omittedIndicatorAndQuickSettings_keepsZoomCentered() {
-        val defaultSlots = PlaceholderCaptureSlots.default()
+        val defaultSlots = realSideRailSlots()
         val zoomOnlySlots = CaptureSlots(
             zoomControls = defaultSlots.zoomControls
         )
@@ -357,7 +464,7 @@ class CaptureSideRailsTest {
 
     @Test
     fun sideRails_tabletPortraitThumbZoneBias_shiftsCenterClusterDownWithoutCollision() {
-        val slots = PlaceholderCaptureSlots.sideRail()
+        val slots = realSideRailSlots()
 
         composeTestRule.setContent {
             Row(modifier = Modifier.height(1280.dp)) {
@@ -392,8 +499,9 @@ class CaptureSideRailsTest {
         val imageWellBounds = boundsOf(IMAGE_WELL_TAG)
         val modeToggleBounds = boundsOf(CAPTURE_MODE_TOGGLE_BUTTON)
 
-        // Top indicator stays anchored near topPadding (32dp) while bottom buttons clear 48dp.
-        assertThat(indicatorBounds.top.value).isWithin(1f).of(32f)
+        // The vertical indicator pill stays anchored at topPadding (32dp); its first icon is
+        // inset by the pill's 6dp vertical container padding. Bottom buttons clear 48dp.
+        assertThat(indicatorBounds.top.value).isWithin(1f).of(32f + 6f)
         assertThat(quickSettingsBounds.bottom.value).isWithin(1f).of(1280f - 48f)
         assertThat(modeToggleBounds.bottom.value).isWithin(1f).of(1280f - 48f)
 
@@ -650,7 +758,7 @@ class CaptureSideRailsTest {
     }
 
     @Test
-    fun startSideRail_topBarLeadingContent_orders_preservesRtlAndState_andBudget() {
+    fun startSideRail_topBarLeadingContent_ordersAndPreservesState_withinBudget() {
         val leadingTag = "TopBarLeadingContent"
         var layoutDirection by mutableStateOf(LayoutDirection.Ltr)
         var showLeading by mutableStateOf(true)
@@ -658,7 +766,7 @@ class CaptureSideRailsTest {
         var topBarInstanceCount = 0
         val rememberedTopBarIds = mutableListOf<Int>()
 
-        val baseSlots = PlaceholderCaptureSlots.sideRail()
+        val baseSlots = realSideRailSlots()
 
         composeTestRule.setContent {
             CompositionLocalProvider(
@@ -714,5 +822,42 @@ class CaptureSideRailsTest {
         val tightTopBar = boundsOf(VIDEO_QUALITY_TAG)
         val tightZoom = boundsOf(ZOOM_BUTTON_ROW_TAG)
         assertThat(tightTopBar.bottom).isAtMost(tightZoom.top)
+    }
+
+    @Test
+    fun endSideRail_imageWellAppearing_keepsCaptureAndFlipButtonsStatic() {
+        var showImageWell by mutableStateOf(false)
+        val baseSlots = realSideRailSlots()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                EndSideRail(
+                    slots = baseSlots.copy(
+                        imageWell = { mod ->
+                            if (showImageWell) {
+                                Box(modifier = mod.size(48.dp).testTag(IMAGE_WELL_TAG))
+                            }
+                        }
+                    ),
+                    modifier = Modifier.height(800.dp)
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val initialCapture = boundsOf(CAPTURE_BUTTON)
+        val initialFlip = boundsOf(FLIP_CAMERA_BUTTON)
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertDoesNotExist()
+
+        showImageWell = true
+        composeTestRule.waitForIdle()
+
+        val updatedCapture = boundsOf(CAPTURE_BUTTON)
+        val updatedFlip = boundsOf(FLIP_CAMERA_BUTTON)
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertIsDisplayed()
+        assertThat(updatedCapture.top.value).isWithin(TOLERANCE).of(initialCapture.top.value)
+        assertThat(updatedCapture.bottom.value).isWithin(TOLERANCE).of(initialCapture.bottom.value)
+        assertThat(updatedFlip.top.value).isWithin(TOLERANCE).of(initialFlip.top.value)
+        assertThat(updatedFlip.bottom.value).isWithin(TOLERANCE).of(initialFlip.bottom.value)
     }
 }
