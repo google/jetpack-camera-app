@@ -25,13 +25,9 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.darkColorScheme
@@ -66,7 +62,6 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
-import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
@@ -629,42 +624,32 @@ object CaptureScaffoldDefaults {
     }
 
     /**
-     * Default top status indicator pill reading slices from a deferred [uiState] provider.
+     * Default status indicator pill reading slices from a deferred [uiState] provider.
+     *
+     * Stacks indicators along [orientation]: a full-width horizontal pill in the compact top bar,
+     * or a vertical pill that wraps its icons in side rails.
      */
     @Composable
     fun TopBar(
         uiState: () -> CaptureUiState.Ready,
         modifier: Modifier = Modifier,
-        orientation: Orientation = Orientation.Horizontal,
-        controlSize: ControlSize = ControlSize.Standard
+        orientation: Orientation = Orientation.Horizontal
     ) {
         val currentUiState by rememberUpdatedState(uiState)
-        // TODO(#649): Replace vertical placeholder with VerticalIndicatorPill once #649 merges.
-        if (orientation == Orientation.Vertical) {
-            val hasVideoQuality by remember {
-                derivedStateOf { currentUiState().videoQuality != VideoQuality.UNSPECIFIED }
-            }
-            Box(
-                modifier = modifier
-                    .size(
-                        width = 24.dp,
-                        height = if (controlSize != ControlSize.Standard) 96.dp else 112.dp
-                    )
-                    .background(
-                        color = Color.White.copy(alpha = 0.25f),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    .let { if (hasVideoQuality) it.testTag(VIDEO_QUALITY_TAG) else it }
-            )
-            return
-        }
         val flashModeState = remember { derivedStateOf { currentUiState().flashModeUiState } }
         val hdrState = remember { derivedStateOf { currentUiState().hdrUiState } }
         val videoQualityState = remember { derivedStateOf { currentUiState().videoQuality } }
         val stabilizationState =
             remember { derivedStateOf { currentUiState().stabilizationUiState } }
 
-        IndicatorPill(modifier = modifier.fillMaxWidth()) {
+        IndicatorPill(
+            modifier = if (orientation == Orientation.Vertical) {
+                modifier
+            } else {
+                modifier.fillMaxWidth()
+            },
+            orientation = orientation
+        ) {
             FlashModeIndicator(flashModeUiState = flashModeState.value)
             HdrIndicator(hdrUiState = hdrState.value)
             VideoQualityIcon(
@@ -862,8 +847,7 @@ fun CaptureScaffold(
         CaptureScaffoldDefaults.TopBar(
             uiState = captureUiState,
             modifier = slotModifier,
-            orientation = orientation,
-            controlSize = controlSize
+            orientation = orientation
         )
     },
     captureButton: @Composable CaptureSlotScope.(Modifier) -> Unit = { slotModifier ->
