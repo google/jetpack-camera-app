@@ -551,6 +551,7 @@ object CaptureScaffoldDefaults {
         controlSize: ControlSize = ControlSize.Standard
     ) {
         if (!isRecording && uiState is CaptureModeToggleUiState.Available) {
+            val gravityRotationState = LocalGravityRotationState.current
             CaptureModeToggleButton(
                 uiState = uiState,
                 onChangeCaptureMode = { newCaptureMode ->
@@ -561,7 +562,8 @@ object CaptureScaffoldDefaults {
                 },
                 modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
                 orientation = orientation,
-                controlSize = controlSize
+                controlSize = controlSize,
+                iconRotationDegrees = { gravityRotationState.value }
             )
         }
     }

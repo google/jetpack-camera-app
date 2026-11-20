@@ -816,7 +816,8 @@ private fun LockSwitchCaptureButtonNucleus(
                             (switchHeight * LOCK_ICON_HEIGHT_SCALE)
                                 .coerceAtMost(LOCK_ICON_MAX_VISUAL_SIZE)
                         )
-                        .align(Alignment.Center),
+                        .align(Alignment.Center)
+                        .animateToUpright(),
                     tint = Color.White,
                     painter = if (shouldBeLocked()) {
                         painterResource(R.drawable.ic_lock)
