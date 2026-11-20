@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
+import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 
 /**
@@ -32,10 +33,14 @@ import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
  *   [StabilizationMode].
  * @param cameraState The real-time state from the camera, which reports the currently active
  *   [StabilizationMode].
+ * @param optionVisibility Optional developer visibility configuration for the stabilization
+ *   setting. [OptionVisibility.Hidden] means the setting is locked, so the user cannot select a
+ *   mode.
  *
  * @return A [StabilizationUiState] representing the current stabilization status.
- * - [StabilizationUiState.Disabled] if the user setting is `OFF`, or if `AUTO` is selected but
- *   the camera is not actively using `ON` or `OPTICAL` stabilization.
+ * - [StabilizationUiState.Off] if the user setting is `OFF` and the user can change the setting.
+ * - [StabilizationUiState.Disabled] if the setting is locked to `OFF`, or if `AUTO` is selected
+ *   but the camera is not actively using `ON` or `OPTICAL` stabilization.
  * - [StabilizationUiState.Auto] if the user setting is `AUTO` and the camera has resolved it
  *   to an active stabilization mode (e.g., `ON` or `OPTICAL`).
  * - [StabilizationUiState.Specific] if the user has selected a specific mode like `ON`,
@@ -48,7 +53,8 @@ import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
  */
 fun StabilizationUiState.Companion.from(
     cameraAppSettings: CameraAppSettings,
-    cameraState: CameraState
+    cameraState: CameraState,
+    optionVisibility: OptionVisibility<StabilizationMode>? = null
 ): StabilizationUiState {
     val expectedMode = cameraAppSettings.stabilizationMode
     val actualMode = cameraState.stabilizationMode
@@ -56,7 +62,13 @@ fun StabilizationUiState.Companion.from(
         "CameraState should never resolve to AUTO stabilization mode"
     }
     return when (expectedMode) {
-        StabilizationMode.OFF -> StabilizationUiState.Disabled
+        StabilizationMode.OFF ->
+            if (optionVisibility is OptionVisibility.Hidden) {
+                StabilizationUiState.Disabled
+            } else {
+                StabilizationUiState.Off
+            }
+
         StabilizationMode.AUTO -> {
             if (actualMode !in setOf(StabilizationMode.ON, StabilizationMode.OPTICAL)) {
                 StabilizationUiState.Disabled

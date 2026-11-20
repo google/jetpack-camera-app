@@ -1092,7 +1092,8 @@ fun CaptureButton(
 /**
  * A composable that displays an icon indicating the current video stabilization mode.
  *
- * The icon is only visible when a stabilization mode other than 'OFF' is actively being applied.
+ * The icon is visible when a stabilization mode is actively being applied, or when the user has
+ * turned stabilization off.
  *
  * @param stabilizationUiState the [StabilizationUiState] for this component.
  * @param modifier the modifier for this component.
@@ -1100,17 +1101,25 @@ fun CaptureButton(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modifier = Modifier) {
-    val activeState = (stabilizationUiState as? StabilizationUiState.Enabled)?.takeIf {
-        it.active && it.stabilizationMode != StabilizationMode.OFF
+    val visibleState = when (stabilizationUiState) {
+        is StabilizationUiState.Enabled -> stabilizationUiState.takeIf {
+            it.active && it.stabilizationMode != StabilizationMode.OFF
+        }
+
+        StabilizationUiState.Off -> stabilizationUiState
+
+        StabilizationUiState.Disabled -> null
     }
-    val displayedState = rememberLastNonNull(activeState)
+    val displayedState = rememberLastNonNull(visibleState)
     IndicatorPillIcon(
-        visible = activeState != null,
+        visible = visibleState != null,
         modifier = modifier
     ) {
         if (displayedState != null) {
             Icon(
-                modifier = Modifier.size(IconButtonDefaults.smallIconSize),
+                modifier = Modifier
+                    .size(IconButtonDefaults.smallIconSize)
+                    .testTag(STABILIZATION_TAG),
                 painter = when (displayedState) {
                     is StabilizationUiState.Specific ->
                         when (displayedState.stabilizationMode) {
@@ -1152,23 +1161,47 @@ fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modi
                                 )
                         }
                     }
+
+                    StabilizationUiState.Off ->
+                        painterResource(R.drawable.ic_video_stable_off)
+
+                    StabilizationUiState.Disabled ->
+                        throw IllegalStateException("Disabled stabilization has no icon.")
                 },
-                contentDescription = when (displayedState.stabilizationMode) {
-                    StabilizationMode.AUTO ->
-                        stringResource(R.string.stabilization_icon_description_auto)
+                contentDescription = when (displayedState) {
+                    is StabilizationUiState.Specific ->
+                        when (displayedState.stabilizationMode) {
+                            StabilizationMode.ON ->
+                                stringResource(
+                                    R.string.stabilization_icon_description_preview_and_video
+                                )
 
-                    StabilizationMode.ON ->
-                        stringResource(
-                            R.string.stabilization_icon_description_preview_and_video
-                        )
+                            StabilizationMode.HIGH_QUALITY ->
+                                stringResource(R.string.stabilization_icon_description_video_only)
 
-                    StabilizationMode.HIGH_QUALITY ->
-                        stringResource(R.string.stabilization_icon_description_video_only)
+                            StabilizationMode.OPTICAL ->
+                                stringResource(R.string.stabilization_icon_description_optical)
 
-                    StabilizationMode.OPTICAL ->
-                        stringResource(R.string.stabilization_icon_description_optical)
+                            else -> null
+                        }
 
-                    else -> null
+                    is StabilizationUiState.Auto ->
+                        when (displayedState.stabilizationMode) {
+                            StabilizationMode.ON ->
+                                stringResource(
+                                    R.string.stabilization_icon_description_auto_preview_and_video
+                                )
+
+                            StabilizationMode.OPTICAL ->
+                                stringResource(R.string.stabilization_icon_description_auto_optical)
+
+                            else -> null
+                        }
+
+                    StabilizationUiState.Off ->
+                        stringResource(R.string.stabilization_icon_description_off)
+
+                    StabilizationUiState.Disabled -> null
                 }
             )
         }

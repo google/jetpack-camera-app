@@ -25,9 +25,15 @@ import com.google.jetpackcamera.model.StabilizationMode
  */
 sealed interface StabilizationUiState {
     /**
-     * Video stabilization is disabled and not available for the current configuration.
+     * No video stabilization is applied, and the user did not turn it off. This is the case when
+     * automatic stabilization applies no stabilization, or when the setting is locked to off.
      */
     data object Disabled : StabilizationUiState
+
+    /**
+     * The user turned video stabilization off.
+     */
+    data object Off : StabilizationUiState
 
     /**
      * Video stabilization is enabled.

@@ -57,6 +57,7 @@ const val ZOOM_BUTTON_5_TAG = "ZoomButton5Tag"
 
 const val ELAPSED_TIME_TAG = "ElapsedTimeTag"
 const val VIDEO_QUALITY_TAG = "VideoQualityTag"
+const val STABILIZATION_TAG = "StabilizationTag"
 
 // quick settings tags
 // todo(kc): rename quick_settings_drop_down to something more appropriate?
