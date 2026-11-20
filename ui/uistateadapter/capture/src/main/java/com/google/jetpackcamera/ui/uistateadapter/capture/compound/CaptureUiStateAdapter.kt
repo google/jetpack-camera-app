@@ -180,8 +180,9 @@ fun captureUiState(
             ),
             sessionFirstFrameTimestamp = roundedCameraState.sessionFirstFrameTimestamp,
             stabilizationUiState = StabilizationUiState.from(
-                cameraAppSettings,
-                roundedCameraState
+                cameraAppSettings = cameraAppSettings,
+                cameraState = roundedCameraState,
+                optionVisibility = effectiveFeaturePolicy?.stabilizationMode?.visibility
             ),
             flashModeUiState = flashModeUiState,
             videoQuality = if (cameraAppSettings.captureMode != CaptureMode.IMAGE_ONLY) {
