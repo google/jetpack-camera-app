@@ -49,8 +49,11 @@ import com.google.jetpackcamera.ui.controller.CameraController
  *    [CameraController.setDisplayRotation] and [onDeviceRotationChanged] while [isRecording] is
  *    `false`.
  * 3. While [isRecording] is `true`, freezes display rotation updates and locks the host
- *    [Activity]'s `requestedOrientation` to [ActivityInfo.SCREEN_ORIENTATION_LOCKED], restoring its
- *    previous `requestedOrientation` and flushing any pending sensor rotation once recording ends.
+ *    [Activity]'s `requestedOrientation` to [ActivityInfo.SCREEN_ORIENTATION_LOCKED]. Once
+ *    recording ends, it flushes any pending sensor rotation and re-evaluates the posture rather
+ *    than restoring a stale value: [ActivityInfo.SCREEN_ORIENTATION_NOSENSOR] on a full-screen
+ *    compact phone (smallest width below `600dp` and not in multi-window mode), otherwise
+ *    [ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED].
  *
  * [enabled] has no default value so that host screens make an explicit readiness or runtime
  * permission decision before starting the camera session.
