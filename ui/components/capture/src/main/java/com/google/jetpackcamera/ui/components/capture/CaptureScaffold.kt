@@ -22,7 +22,9 @@ import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Column
@@ -31,12 +33,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -60,7 +66,7 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScaffoldContent
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
@@ -76,6 +82,7 @@ import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -89,8 +96,21 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
+ * Delay before the recording elapsed-time pill starts fading out after video recording stops,
+ * giving the user a brief hold to read the final duration.
+ */
+private const val ELAPSED_TIME_EXIT_DELAY_MS = 1_500
+
+/**
+ * Shared recording-visibility [Transition] provided by [CaptureScaffold] to its
+ * `elapsedTimeDisplay` slot so [CaptureScaffoldDefaults.ElapsedTimeDisplay] attaches its delayed
+ * exit animation to the same transition that gates `captureModeCarousel`.
+ */
+private val LocalElapsedTimeTransition = compositionLocalOf<Transition<Boolean>?> { null }
+
+/**
  * Mode-agnostic state holder for [CaptureScaffold] and [CaptureScaffoldLayout], managing Quick
- * Settings visibility (compatible with both bottom-sheet and side-rail / floating-card layouts)
+ * Settings visibility (compatible with both bottom-sheet and side-rail / side-sheet layouts)
  * and the scaffold [SnackbarHostState].
  *
  * @param isInitiallyExpanded whether the Quick Settings surface starts in the open state.
@@ -103,7 +123,7 @@ class CaptureScaffoldState(
     val snackbarHostState: SnackbarHostState = SnackbarHostState()
 ) {
     /**
-     * Whether the Quick Settings surface (bottom sheet or floating overlay card) is currently open.
+     * Whether the Quick Settings surface (bottom sheet or side sheet) is currently open.
      */
     var isQuickSettingsOpen: Boolean by mutableStateOf(isInitiallyExpanded)
         private set
@@ -560,6 +580,12 @@ object CaptureScaffoldDefaults {
 
     /**
      * Default recording elapsed-time readout, shown while [isRecording] is `true`.
+     *
+     * Fades in when recording starts and holds for 1,500 ms before fading out after recording
+     * stops so the user can read the final duration. When animations are disabled via
+     * [LocalDisableAnimations], renders and hides immediately without animation. Inside
+     * [CaptureScaffold], synchronizes with the scaffold's recording transition so the mode
+     * carousel stays hidden until the exit animation completes.
      */
     @Composable
     fun ElapsedTimeDisplay(
@@ -568,21 +594,44 @@ object CaptureScaffoldDefaults {
         modifier: Modifier = Modifier
     ) {
         val disableAnimations = LocalDisableAnimations.current
-        AnimatedVisibility(
-            visible = isRecording,
-            enter = if (disableAnimations) EnterTransition.None else fadeIn(),
-            exit = if (disableAnimations) {
-                ExitTransition.None
-            } else {
-                fadeOut(animationSpec = tween(delayMillis = 1_500))
+        if (disableAnimations) {
+            if (isRecording) {
+                ElapsedTimeText(
+                    modifier = modifier,
+                    elapsedTimeUiStateProvider = elapsedTimeUiStateProvider
+                )
             }
-        ) {
-            val elapsedTimeModifier =
-                remember(modifier) { modifier.testTag(ELAPSED_TIME_TAG) }
-            ElapsedTimeText(
-                modifier = elapsedTimeModifier,
-                elapsedTimeUiStateProvider = elapsedTimeUiStateProvider
-            )
+            return
+        }
+        val sharedTransition = LocalElapsedTimeTransition.current
+        if (sharedTransition != null) {
+            key(sharedTransition) {
+                sharedTransition.AnimatedVisibility(
+                    visible = { it },
+                    enter = fadeIn(),
+                    exit = fadeOut(
+                        animationSpec = tween(delayMillis = ELAPSED_TIME_EXIT_DELAY_MS)
+                    )
+                ) {
+                    ElapsedTimeText(
+                        modifier = modifier,
+                        elapsedTimeUiStateProvider = elapsedTimeUiStateProvider
+                    )
+                }
+            }
+        } else {
+            AnimatedVisibility(
+                visible = isRecording,
+                enter = fadeIn(),
+                exit = fadeOut(
+                    animationSpec = tween(delayMillis = ELAPSED_TIME_EXIT_DELAY_MS)
+                )
+            ) {
+                ElapsedTimeText(
+                    modifier = modifier,
+                    elapsedTimeUiStateProvider = elapsedTimeUiStateProvider
+                )
+            }
         }
     }
 
@@ -610,7 +659,10 @@ object CaptureScaffoldDefaults {
     }
 
     /**
-     * Default Quick Settings content.
+     * Default Quick Settings content without container-specific insets or padding.
+     *
+     * The hosting sheet ([CaptureScaffoldLayout]'s bottom sheet or the large-screen panel) owns
+     * the navigation bar inset and bottom padding, so this content can be hosted in either.
      */
     @Composable
     fun QuickSettings(
@@ -620,8 +672,8 @@ object CaptureScaffoldDefaults {
         modifier: Modifier = Modifier,
         showMoreSettingsButton: Boolean = true
     ) {
-        if (controller != null) {
-            QuickSettingsScaffoldContent(
+        if (controller != null && uiState is QuickSettingsUiState.Available) {
+            QuickSettingsContent(
                 quickSettingsUiState = uiState,
                 onNavigateToSettings = onNavigateToSettings,
                 quickSettingsController = controller,
@@ -753,9 +805,13 @@ private fun rememberZoomStateManager(
  * @param flipCameraButton composable slot for the camera lens flip button.
  * @param zoomControls composable slot for the zoom controls bar.
  * @param captureModeToggle composable slot for the capture mode toggle switch.
- * @param captureModeCarousel composable slot for the capture sub-mode carousel.
+ * @param captureModeCarousel composable slot for the capture sub-mode carousel. Shares the
+ *   reserved middle slot with [elapsedTimeDisplay] and is deferred while the elapsed-time readout
+ *   is active or completing its post-recording exit animation.
  * @param quickSettingsButton composable slot for the Quick Settings toggle button.
- * @param elapsedTimeDisplay composable slot for the recording elapsed-time readout.
+ * @param elapsedTimeDisplay composable slot for the recording elapsed-time readout. Shares the
+ *   reserved middle slot with [captureModeCarousel]; its post-recording exit animation is
+ *   cancelled immediately if the user switches [CaptureMode] while it is fading out.
  * @param imageWell optional composable slot for the post-capture media thumbnail well; omitted when
  *   `null` so only hosts with post-capture media review opt in.
  * @param quickSettings composable slot for the Quick Settings content.
@@ -912,6 +968,52 @@ fun CaptureScaffold(
     val isVideoRecordingActive = remember {
         derivedStateOf {
             currentCaptureUiStateProvider().videoRecordingState is VideoRecordingState.Active
+        }
+    }
+    val activeCaptureMode = remember {
+        derivedStateOf {
+            val uiState = currentCaptureUiStateProvider()
+            (uiState.captureModeToggleUiState as? CaptureModeToggleUiState.Available)
+                ?.selectedCaptureMode
+                ?: (
+                    (uiState.quickSettingsUiState as? QuickSettingsUiState.Available)
+                        ?.captureModeUiState as? CaptureModeUiState.Available
+                    )?.selectedCaptureMode
+                ?: (uiState.captureButtonUiState as? CaptureButtonUiState.Enabled.Idle)?.captureMode
+        }
+    }
+    val disableAnimations = LocalDisableAnimations.current
+    var lastKnownCaptureMode by remember { mutableStateOf<CaptureMode?>(null) }
+    var elapsedTimeResetEpoch by remember { mutableIntStateOf(0) }
+    val elapsedTimeTransition = key(elapsedTimeResetEpoch) {
+        updateTransition(
+            targetState = isVideoRecordingActive.value,
+            label = "ElapsedTimeVisibility"
+        )
+    }
+    val isElapsedTimeOccupyingSlot = remember(elapsedTimeTransition, disableAnimations) {
+        derivedStateOf {
+            if (disableAnimations) {
+                isVideoRecordingActive.value
+            } else {
+                elapsedTimeTransition.isRunning ||
+                    elapsedTimeTransition.currentState ||
+                    elapsedTimeTransition.targetState
+            }
+        }
+    }
+    val currentCaptureMode = activeCaptureMode.value
+    LaunchedEffect(currentCaptureMode) {
+        if (currentCaptureMode != null) {
+            val previous = lastKnownCaptureMode
+            lastKnownCaptureMode = currentCaptureMode
+            if (previous != null &&
+                previous != currentCaptureMode &&
+                !isVideoRecordingActive.value &&
+                isElapsedTimeOccupyingSlot.value
+            ) {
+                elapsedTimeResetEpoch++
+            }
         }
     }
 
@@ -1178,17 +1280,19 @@ fun CaptureScaffold(
             slotScope.zoomControls(slotModifier)
         },
         elapsedTimeDisplay = { slotModifier ->
-            val slotScope = rememberCaptureSlotScope(
-                overlayScope = this,
-                isRecordingState = isVideoRecordingActive,
-                scaffoldState = state,
-                onToggleQuickSettings = onToggleQuickSettings,
-                onDismissQuickSettings = onDismissQuickSettings,
-                onIncrementZoom = onIncrementZoom,
-                onAnimateZoomTo = onAnimateZoomTo,
-                onSetAbsoluteZoom = onSetAbsoluteZoom
-            )
-            slotScope.elapsedTimeDisplay(slotModifier)
+            CompositionLocalProvider(LocalElapsedTimeTransition provides elapsedTimeTransition) {
+                val slotScope = rememberCaptureSlotScope(
+                    overlayScope = this,
+                    isRecordingState = isVideoRecordingActive,
+                    scaffoldState = state,
+                    onToggleQuickSettings = onToggleQuickSettings,
+                    onDismissQuickSettings = onDismissQuickSettings,
+                    onIncrementZoom = onIncrementZoom,
+                    onAnimateZoomTo = onAnimateZoomTo,
+                    onSetAbsoluteZoom = onSetAbsoluteZoom
+                )
+                slotScope.elapsedTimeDisplay(slotModifier)
+            }
         },
         quickSettingsButton = { slotModifier ->
             val slotScope = rememberCaptureSlotScope(
@@ -1232,17 +1336,19 @@ fun CaptureScaffold(
             slotScope.captureModeToggle(slotModifier)
         },
         captureModeCarousel = { slotModifier ->
-            val slotScope = rememberCaptureSlotScope(
-                overlayScope = this,
-                isRecordingState = isVideoRecordingActive,
-                scaffoldState = state,
-                onToggleQuickSettings = onToggleQuickSettings,
-                onDismissQuickSettings = onDismissQuickSettings,
-                onIncrementZoom = onIncrementZoom,
-                onAnimateZoomTo = onAnimateZoomTo,
-                onSetAbsoluteZoom = onSetAbsoluteZoom
-            )
-            slotScope.captureModeCarousel(slotModifier)
+            if (!isElapsedTimeOccupyingSlot.value) {
+                val slotScope = rememberCaptureSlotScope(
+                    overlayScope = this,
+                    isRecordingState = isVideoRecordingActive,
+                    scaffoldState = state,
+                    onToggleQuickSettings = onToggleQuickSettings,
+                    onDismissQuickSettings = onDismissQuickSettings,
+                    onIncrementZoom = onIncrementZoom,
+                    onAnimateZoomTo = onAnimateZoomTo,
+                    onSetAbsoluteZoom = onSetAbsoluteZoom
+                )
+                slotScope.captureModeCarousel(slotModifier)
+            }
         },
         controlsVisible = controlsVisible && !blocksPreview,
         quickSettingsOverlay = { slotModifier ->
