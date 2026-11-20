@@ -198,6 +198,10 @@ class CameraXCameraSystem(
                     "CaptureSubModeFeatureKey.id (${key.id}) does not match " +
                         "provider.descriptor.id (${provider.descriptor.id})"
                 }
+                require(provider.maxInFlightCaptures >= 1) {
+                    "Provider ${key.id} maxInFlightCaptures must be at least 1, was " +
+                        "${provider.maxInFlightCaptures}"
+                }
                 val captureModeConfig = provider.featurePolicy.captureMode
                 require(
                     captureModeConfig == null ||
