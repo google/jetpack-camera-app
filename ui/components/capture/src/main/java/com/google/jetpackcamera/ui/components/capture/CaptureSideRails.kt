@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,21 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.MediaDescriptor
+import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeOption
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import kotlin.math.roundToInt
 
 /**
@@ -490,7 +506,9 @@ private fun VerticalRailShutterCluster(
         val minSecondaryHeightPx = Tokens.MinSecondaryControlHeight.roundToPx()
         val nominalCaptureDiameterPx = CaptureButtonDefaults.diameterFor(controlSize).roundToPx()
 
+        val flipPlaceable: Placeable?
         val capturePlaceable: Placeable?
+        val imageWellPlaceable: Placeable?
         val activePlaceables = if (constraints.hasBoundedHeight) {
             var remainingHeight = constraints.maxHeight
             var placedCount = 0
@@ -521,8 +539,8 @@ private fun VerticalRailShutterCluster(
             // Measure primary shutter first so it retains priority in extreme micro-heights, then
             // assemble in strict Flip -> Capture -> ImageWell visual order.
             capturePlaceable = measureSlot(ShutterClusterSlotId.Capture, isPrimary = true)
-            val flipPlaceable = measureSlot(ShutterClusterSlotId.FlipCamera, isPrimary = false)
-            val imageWellPlaceable = measureSlot(ShutterClusterSlotId.ImageWell, isPrimary = false)
+            flipPlaceable = measureSlot(ShutterClusterSlotId.FlipCamera, isPrimary = false)
+            imageWellPlaceable = measureSlot(ShutterClusterSlotId.ImageWell, isPrimary = false)
             listOfNotNull(
                 flipPlaceable,
                 capturePlaceable,
@@ -535,13 +553,13 @@ private fun VerticalRailShutterCluster(
                 minHeight = 0,
                 maxHeight = Constraints.Infinity
             )
-            val flipPlaceable = measurables.firstOrNull {
+            flipPlaceable = measurables.firstOrNull {
                 it.layoutId == ShutterClusterSlotId.FlipCamera
             }?.measure(looseConstraints)?.takeIf { it.height > 0 }
             capturePlaceable = measurables.firstOrNull {
                 it.layoutId == ShutterClusterSlotId.Capture
             }?.measure(looseConstraints)?.takeIf { it.height > 0 }
-            val imageWellPlaceable = measurables.firstOrNull {
+            imageWellPlaceable = measurables.firstOrNull {
                 it.layoutId == ShutterClusterSlotId.ImageWell
             }?.measure(looseConstraints)?.takeIf { it.height > 0 }
             listOfNotNull(
@@ -576,25 +594,178 @@ private fun VerticalRailShutterCluster(
                 }
             } ?: 0
             ).coerceIn(constraints.minWidth, constraints.maxWidth)
-        val clusterHeight = (totalChildrenHeight + actualTotalGapPx)
-            .coerceIn(constraints.minHeight, constraints.maxHeight)
+
+        // Anchor captureButton at the vertical center of the cluster by using symmetric wing
+        // heights above and below it when space permits, so appearing/disappearing secondary slots
+        // (such as an empty ImageWell) never shift captureButton or flipCameraButton.
+        val topWingPx = flipPlaceable?.let { it.height + targetGapPx } ?: 0
+        val bottomWingPx = imageWellPlaceable?.let { it.height + targetGapPx } ?: 0
+        val symmetricWingPx = maxOf(topWingPx, bottomWingPx)
+        val symmetricClusterHeight = capturePlaceable?.let { it.height + symmetricWingPx * 2 }
+        val useAnchoredCaptureLayout = symmetricClusterHeight != null &&
+            (!constraints.hasBoundedHeight || symmetricClusterHeight <= constraints.maxHeight)
+
+        val clusterHeight = if (useAnchoredCaptureLayout) {
+            symmetricClusterHeight!!.coerceIn(constraints.minHeight, constraints.maxHeight)
+        } else {
+            (totalChildrenHeight + actualTotalGapPx)
+                .coerceIn(constraints.minHeight, constraints.maxHeight)
+        }
 
         layout(clusterWidth, clusterHeight) {
-            var currentY = (clusterHeight - (totalChildrenHeight + actualTotalGapPx))
-                .coerceAtLeast(0) / 2
-            activePlaceables.forEachIndexed { index, placeable ->
-                placeable.place(
-                    x = (clusterWidth - placeable.width) / 2,
-                    y = currentY
+            if (useAnchoredCaptureLayout) {
+                val anchoredCapture = checkNotNull(capturePlaceable)
+                val captureY = (clusterHeight - anchoredCapture.height) / 2
+                anchoredCapture.place(
+                    x = (clusterWidth - anchoredCapture.width) / 2,
+                    y = captureY
                 )
-                currentY += placeable.height
-                if (index < gapCount) {
-                    currentY += baseGapPx + if (index < extraGapPixels) 1 else 0
+                flipPlaceable?.let { placeable ->
+                    placeable.place(
+                        x = (clusterWidth - placeable.width) / 2,
+                        y = captureY - targetGapPx - placeable.height
+                    )
+                }
+                imageWellPlaceable?.let { placeable ->
+                    placeable.place(
+                        x = (clusterWidth - placeable.width) / 2,
+                        y = captureY + anchoredCapture.height + targetGapPx
+                    )
+                }
+            } else {
+                var currentY = (clusterHeight - (totalChildrenHeight + actualTotalGapPx))
+                    .coerceAtLeast(0) / 2
+                activePlaceables.forEachIndexed { index, placeable ->
+                    placeable.place(
+                        x = (clusterWidth - placeable.width) / 2,
+                        y = currentY
+                    )
+                    currentY += placeable.height
+                    if (index < gapCount) {
+                        currentY += baseGapPx + if (index < extraGapPixels) 1 else 0
+                    }
                 }
             }
         }
     }
 }
+
+internal fun previewSideRailSlots(
+    includeImageWell: Boolean = true,
+    includeElapsedTime: Boolean = false
+): CaptureSlots = CaptureSlots(
+    topBar = { mod ->
+        IndicatorPill(modifier = mod, orientation = orientation) {
+            VideoQualityIcon(
+                videoQuality = VideoQuality.FHD,
+                modifier = Modifier.testTag(VIDEO_QUALITY_TAG)
+            )
+        }
+    },
+    zoomControls = { mod ->
+        ZoomBar(
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                zoomLevels = listOf(0.5f, 1f, 2f),
+                primaryLensFacing = LensFacing.BACK,
+                primaryZoomRatio = 1f
+            ),
+            onChangeZoom = {},
+            orientation = orientation,
+            modifier = mod
+        )
+    },
+    quickSettingsButton = { mod ->
+        ToggleQuickSettingsButton(
+            isOpen = false,
+            enabled = true,
+            onClick = {},
+            modifier = mod
+        )
+    },
+    flipCameraButton = { mod ->
+        FlipCameraButton(
+            flipLensUiState = FlipLensUiState.Available(
+                selectedLensFacing = LensFacing.BACK,
+                availableLensFacings = listOf(
+                    SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                    SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                )
+            ),
+            onClick = {},
+            modifier = mod.testTag(FLIP_CAMERA_BUTTON)
+        )
+    },
+    captureButton = { mod ->
+        CaptureButton(
+            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD),
+            modifier = mod
+        )
+    },
+    imageWell = if (includeImageWell) {
+        { mod ->
+            ImageWell(
+                imageWellUiState = ImageWellUiState.Content(
+                    mediaDescriptor = MediaDescriptor.Content.Image(
+                        uri = Uri.EMPTY,
+                        thumbnail = null
+                    )
+                ),
+                onClick = {},
+                modifier = mod
+            )
+        }
+    } else {
+        {}
+    },
+    captureModeToggle = { mod ->
+        CaptureModeToggleButton(
+            uiState = CaptureModeToggleUiState.Available(
+                selectedCaptureMode = CaptureMode.IMAGE_ONLY,
+                imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+                videoOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+            ),
+            onChangeCaptureMode = {},
+            orientation = orientation,
+            controlSize = controlSize,
+            modifier = mod.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+        )
+    },
+    captureModeCarousel = { mod ->
+        CaptureModeCarousel(
+            uiState = CaptureSubModeUiState.Available(
+                selectedSubMode = CaptureSubModeId.DEFAULT,
+                availableSubModes = listOf(
+                    SingleSelectableUiState.SelectableUi(
+                        CaptureSubModeOption(
+                            id = CaptureSubModeId.DEFAULT,
+                            labelResId = R.string.quick_settings_text_capture_mode_image_only
+                        )
+                    ),
+                    SingleSelectableUiState.SelectableUi(
+                        CaptureSubModeOption(
+                            id = CaptureSubModeId("submode_two"),
+                            labelResId = R.string.quick_settings_text_capture_mode_video_only
+                        )
+                    )
+                )
+            ),
+            onSelectSubMode = {},
+            modifier = mod
+        )
+    },
+    elapsedTimeDisplay = if (includeElapsedTime) {
+        { mod ->
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(elapsedTimeNanos = 12_000_000_000L)
+                },
+                modifier = mod.testTag(ELAPSED_TIME_TAG)
+            )
+        }
+    } else {
+        {}
+    }
+)
 
 @Preview(name = "StartSideRail - Standard (800dp) LTR", showBackground = true)
 @Composable
@@ -602,7 +773,7 @@ private fun StartSideRailStandardLtrPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             StartSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
             )
         }
@@ -615,7 +786,7 @@ private fun StartSideRailStandardRtlPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             StartSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
             )
         }
@@ -628,7 +799,7 @@ private fun StartSideRailTabletPortraitPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             StartSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewTabletPortraitRailHeight),
                 topPadding = Tokens.PreviewTabletPortraitTopPadding,
                 bottomPadding = Tokens.PreviewTabletPortraitBottomPadding,
@@ -646,7 +817,7 @@ private fun StartSideRailCompactLtrPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             StartSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = true),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewCompactRailHeight),
                 isCompactHeight = true
             )
@@ -660,7 +831,7 @@ private fun StartSideRailCompactRtlPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             StartSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = true),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewCompactRailHeight),
                 isCompactHeight = true
             )
@@ -674,7 +845,7 @@ private fun EndSideRailStandardLtrPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             EndSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
             )
         }
@@ -687,7 +858,7 @@ private fun EndSideRailStandardRtlPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             EndSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
             )
         }
@@ -700,7 +871,7 @@ private fun EndSideRailTabletPortraitPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             EndSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewTabletPortraitRailHeight),
                 topPadding = Tokens.PreviewTabletPortraitTopPadding,
                 bottomPadding = Tokens.PreviewTabletPortraitBottomPadding,
@@ -718,8 +889,7 @@ private fun EndSideRailCompactLtrPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             EndSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(
-                    isCompactHeight = true,
+                slots = previewSideRailSlots(
                     includeImageWell = true,
                     includeElapsedTime = true
                 ),
@@ -737,8 +907,7 @@ private fun EndSideRailCompactRtlPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             EndSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(
-                    isCompactHeight = true,
+                slots = previewSideRailSlots(
                     includeImageWell = true,
                     includeElapsedTime = true
                 ),

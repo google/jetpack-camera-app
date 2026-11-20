@@ -101,7 +101,7 @@ class AdaptiveCaptureLayoutTest {
         onActiveLayoutObserved: (String) -> Unit = {},
         onToolbarControlSizeObserved: (ControlSize) -> Unit = {},
         viewfinderContent: @Composable (Modifier) -> Unit = { vfMod ->
-            PlaceholderViewfinder(modifier = vfMod)
+            Box(modifier = vfMod.fillMaxSize())
         }
     ) {
         MaterialTheme {
@@ -573,7 +573,7 @@ class AdaptiveCaptureLayoutTest {
         composeTestRule.setContent {
             Box(modifier = Modifier.size(windowSizeState.value)) {
                 OrchestratedLayoutUnderTest(
-                    slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
+                    slots = previewSideRailSlots(includeElapsedTime = true),
                     onModeObserved = { observedMode = it },
                     onActiveLayoutObserved = { observedLayout = it },
                     viewfinderContent = { vfModifier ->

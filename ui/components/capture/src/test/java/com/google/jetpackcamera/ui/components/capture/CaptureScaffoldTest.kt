@@ -22,28 +22,45 @@ import android.net.Uri
 import android.util.Range
 import android.view.Surface
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertTextEquals
-import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -55,6 +72,7 @@ import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
@@ -64,6 +82,7 @@ import com.google.jetpackcamera.ui.controller.testing.FakeCaptureController
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
 import com.google.jetpackcamera.ui.controller.testing.FakeSnackBarController
 import com.google.jetpackcamera.ui.controller.testing.FakeZoomController
+import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
@@ -72,6 +91,8 @@ import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeOption
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -224,45 +245,6 @@ class CaptureScaffoldTest {
         composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertIsDisplayed()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON).assertDoesNotExist()
-    }
-
-    @Test
-    fun quickSettingsDefaults_compactLayoutsGetScrollableSheetContent_othersGetBareContent() {
-        var activeLayout by mutableStateOf("CompactShortLayout")
-        val quickSettingsController = FakeQuickSettingsController()
-
-        composeTestRule.setContent {
-            CompositionLocalProvider(LocalActiveCaptureLayout provides activeLayout) {
-                // Shorter than the content, so sheet content must scroll to stay reachable.
-                Box(modifier = Modifier.height(SHORT_QUICK_SETTINGS_HEIGHT)) {
-                    CaptureScaffoldDefaults.QuickSettings(
-                        uiState = availableQuickSettingsUiState,
-                        controller = quickSettingsController,
-                        onNavigateToSettings = {}
-                    )
-                }
-            }
-        }
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
-
-        activeLayout = "CompactPortraitLayout"
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
-
-        // TODO(#648): Foldable and tablet layouts temporarily use the scrollable bottom sheet
-        // content until #648 introduces the Quick Settings side sheet.
-        activeLayout = "FoldableLayout"
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
-
-        activeLayout = "TabletLandscapeLayout"
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
-
-        activeLayout = "UnknownNonSheetLayout"
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(!hasScrollAction())
     }
 
     @Test
@@ -688,7 +670,7 @@ class CaptureScaffoldTest {
     }
 
     @Test
-    fun cameraSessionEffect_whileRecording_locksActivityOrientationAndRestoresOnStop() {
+    fun cameraSessionEffect_whileRecording_locksOrientation_restoresNoSensorOnCompactPhone() {
         var isRecording by mutableStateOf(false)
         var hostActivity: Activity? = null
         val cameraController = FakeCameraController()
@@ -716,6 +698,7 @@ class CaptureScaffoldTest {
         assertThat(activity.requestedOrientation)
             .isEqualTo(ActivityInfo.SCREEN_ORIENTATION_LOCKED)
 
+        // A full-screen compact phone (sw < 600dp) returns to its portrait-locked posture.
         composeTestRule.runOnIdle { isRecording = false }
         composeTestRule.waitForIdle()
         assertThat(activity.requestedOrientation)
@@ -769,6 +752,43 @@ class CaptureScaffoldTest {
     }
 
     @Test
+    @Config(qualifiers = "sw800dp-w800dp-h1280dp")
+    fun cameraSessionEffect_whileRecording_locksOrientation_restoresUnspecifiedOnLargeScreen() {
+        var isRecording by mutableStateOf(false)
+        var hostActivity: Activity? = null
+        val cameraController = FakeCameraController()
+
+        composeTestRule.setContent {
+            val activity = LocalActivity.current
+            if (hostActivity == null && activity != null) {
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                hostActivity = activity
+            }
+            CameraSessionEffect(
+                cameraController = cameraController,
+                enabled = true,
+                isRecording = isRecording
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        val activity = checkNotNull(hostActivity)
+        assertThat(activity.requestedOrientation)
+            .isEqualTo(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+
+        composeTestRule.runOnIdle { isRecording = true }
+        composeTestRule.waitForIdle()
+        assertThat(activity.requestedOrientation)
+            .isEqualTo(ActivityInfo.SCREEN_ORIENTATION_LOCKED)
+
+        // Large screens (sw >= 600dp) follow the sensor again once recording ends.
+        composeTestRule.runOnIdle { isRecording = false }
+        composeTestRule.waitForIdle()
+        assertThat(activity.requestedOrientation)
+            .isEqualTo(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+    }
+
+    @Test
     fun cameraControlIconButton_rendersAndInvokesOnClick() {
         var clicked = false
 
@@ -815,10 +835,718 @@ class CaptureScaffoldTest {
         composeTestRule.onNodeWithTag(TOP_BAR_LEADING_TAG).assertIsDisplayed()
     }
 
+    private fun idleUiStateForMode(
+        mode: CaptureMode,
+        subModes: CaptureSubModeUiState,
+        includeQuickSettingsCaptureMode: Boolean = true,
+        finalElapsedTimeNanos: Long = 0L
+    ) = LOADING_CAPTURE_UI_STATE_SKELETON.copy(
+        videoRecordingState = VideoRecordingState.Inactive(
+            finalElapsedTimeNanos = finalElapsedTimeNanos
+        ),
+        elapsedTimeUiState = ElapsedTimeUiState.Enabled(finalElapsedTimeNanos),
+        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
+            captureMode = mode,
+            isEnabled = true
+        ),
+        captureModeToggleUiState = CaptureModeToggleUiState.Available(
+            selectedCaptureMode = mode,
+            imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+            videoOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+        ),
+        quickSettingsUiState = availableQuickSettingsUiState.copy(
+            captureModeUiState = if (includeQuickSettingsCaptureMode) {
+                CaptureModeUiState.Available(
+                    selectedCaptureMode = mode,
+                    availableCaptureModes = listOf(
+                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+                    )
+                )
+            } else {
+                CaptureModeUiState.Unavailable
+            }
+        ),
+        captureSubModeUiState = subModes
+    )
+
+    private fun recordingUiState(
+        mode: CaptureMode = CaptureMode.VIDEO_ONLY,
+        elapsedTimeNanos: Long = 5_000_000_000L,
+        includeQuickSettingsCaptureMode: Boolean = true
+    ) = LOADING_CAPTURE_UI_STATE_SKELETON.copy(
+        videoRecordingState = VideoRecordingState.Active.Recording(
+            maxDurationMillis = 0L,
+            audioStreamState = AudioStreamState.Active(0.0),
+            elapsedTimeNanos = elapsedTimeNanos
+        ),
+        elapsedTimeUiState = ElapsedTimeUiState.Enabled(elapsedTimeNanos),
+        captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording,
+        captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
+        quickSettingsUiState = availableQuickSettingsUiState.copy(
+            captureModeUiState = if (includeQuickSettingsCaptureMode) {
+                CaptureModeUiState.Available(
+                    selectedCaptureMode = mode,
+                    availableCaptureModes = listOf(
+                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+                    )
+                )
+            } else {
+                CaptureModeUiState.Unavailable
+            }
+        ),
+        captureSubModeUiState = CaptureSubModeUiState.Unavailable
+    )
+
+    private val videoCarouselState = CaptureSubModeUiState.Available(
+        selectedSubMode = CaptureSubModeId.DEFAULT,
+        availableSubModes = listOf(
+            SingleSelectableUiState.SelectableUi(
+                CaptureSubModeOption(
+                    id = CaptureSubModeId.DEFAULT,
+                    labelResId = R.string.quick_settings_text_capture_mode_video_only
+                )
+            ),
+            SingleSelectableUiState.SelectableUi(
+                CaptureSubModeOption(
+                    id = DUAL_SUB_MODE_ID,
+                    labelResId = R.string.quick_settings_text_capture_mode_standard
+                )
+            )
+        )
+    )
+
+    private val photoCarouselState = CaptureSubModeUiState.Available(
+        selectedSubMode = CaptureSubModeId.DEFAULT,
+        availableSubModes = listOf(
+            SingleSelectableUiState.SelectableUi(
+                CaptureSubModeOption(
+                    id = CaptureSubModeId.DEFAULT,
+                    labelResId = R.string.quick_settings_text_capture_mode_image_only
+                )
+            ),
+            SingleSelectableUiState.SelectableUi(
+                CaptureSubModeOption(
+                    id = NIGHT_SUB_MODE_ID,
+                    labelResId = R.string.quick_settings_text_capture_mode_standard
+                )
+            )
+        )
+    )
+
+    @Test
+    fun captureScaffold_startingRecording_hidesCarouselBeforeElapsedTimeFadesIn() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(CaptureMode.VIDEO_ONLY, videoCarouselState)
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+
+        // Starting: carousel disappears immediately, elapsed time not yet visible.
+        captureUiState = captureUiState.copy(
+            videoRecordingState = VideoRecordingState.Starting(),
+            elapsedTimeUiState = ElapsedTimeUiState.Enabled(0L),
+            captureSubModeUiState = CaptureSubModeUiState.Unavailable
+        )
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+
+        // Active: elapsed time fades in while carousel remains absent.
+        captureUiState = recordingUiState(elapsedTimeNanos = 0L)
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffold_stoppingRecording_holdsElapsedTimeDuringExitDelay_thenShowsCarousel() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(CaptureMode.VIDEO_ONLY, videoCarouselState)
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+
+        // Start recording and settle fade-in.
+        captureUiState = recordingUiState(elapsedTimeNanos = FIVE_SECONDS_NANOS)
+        composeTestRule.mainClock.advanceTimeBy(ENTER_SETTLE_MS)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
+            .assertIsDisplayed()
+            .assertTextEquals("0:05")
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        // Stop recording while staying in VIDEO_ONLY (carousel UI state becomes Available at once).
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        // Immediately after stop, elapsed time stays visible and carousel is deferred.
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
+            .assertIsDisplayed()
+            .assertTextEquals("0:05")
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        // Still inside the 1,500ms hold window.
+        composeTestRule.mainClock.advanceTimeBy(1_400L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
+            .assertIsDisplayed()
+            .assertTextEquals("0:05")
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        // Mid-fadeOut (~1,650ms after stop): still no overlap with carousel.
+        composeTestRule.mainClock.advanceTimeBy(250L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertExists()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        // After the 1,500ms delay + 300ms fade-out completes, elapsed time unmounts and carousel
+        // appears.
+        composeTestRule.mainClock.advanceTimeBy(400L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DUAL_SUB_MODE_ID.carouselOptionTag).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffold_stoppingRecordingAndSwitchingMode_cancelsExitAndShowsNewCarousel() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(CaptureMode.VIDEO_ONLY, videoCarouselState)
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        // Record and settle fade-in.
+        captureUiState = recordingUiState(elapsedTimeNanos = FIVE_SECONDS_NANOS)
+        composeTestRule.mainClock.advanceTimeBy(ENTER_SETTLE_MS)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
+
+        // Stop recording and verify exit hold is active at 500ms.
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeBy(500L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        // Rapidly switch from VIDEO_ONLY to IMAGE_ONLY during the 1,500ms hold window.
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.IMAGE_ONLY,
+            subModes = photoCarouselState,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeBy(MODE_SWITCH_SETTLE_MS)
+
+        // Exit animation must cancel immediately and show the photo carousel without waiting 1.8s.
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(NIGHT_SUB_MODE_ID.carouselOptionTag).assertIsDisplayed()
+
+        // Switching back to VIDEO_ONLY must not resurrect the cancelled elapsed time readout.
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeBy(MODE_SWITCH_SETTLE_MS)
+
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DUAL_SUB_MODE_ID.carouselOptionTag).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffold_interruptedShortRecording_neverOverlapsCarouselWhileExiting() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(CaptureMode.VIDEO_ONLY, videoCarouselState)
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        // Start recording and interrupt after only 64ms (mid-fadeIn before currentState == true).
+        captureUiState = recordingUiState(elapsedTimeNanos = 1_000_000_000L)
+        composeTestRule.mainClock.advanceTimeBy(64L)
+
+        // Stop recording before fade-in settles.
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            finalElapsedTimeNanos = 1_000_000_000L
+        )
+        repeat(130) {
+            composeTestRule.mainClock.advanceTimeByFrame()
+            val hasElapsed = composeTestRule
+                .onAllNodes(hasTestTag(ELAPSED_TIME_TAG))
+                .fetchSemanticsNodes().isNotEmpty()
+            val hasCarousel = composeTestRule
+                .onAllNodes(hasTestTag(CAPTURE_MODE_CAROUSEL))
+                .fetchSemanticsNodes().isNotEmpty()
+            assertThat(hasElapsed && hasCarousel).isFalse()
+        }
+
+        // After advancing > 2 seconds, exit has completed and carousel is visible.
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffold_reRecordingDuringExitDelay_keepsElapsedTimeWithoutCarouselFlash() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(CaptureMode.VIDEO_ONLY, videoCarouselState)
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        captureUiState = recordingUiState(elapsedTimeNanos = FIVE_SECONDS_NANOS)
+        composeTestRule.mainClock.advanceTimeBy(ENTER_SETTLE_MS)
+
+        // Stop first recording and wait 500ms into exit delay.
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeBy(500L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        // Start second recording mid-cooldown.
+        captureUiState = captureUiState.copy(
+            videoRecordingState = VideoRecordingState.Starting(),
+            elapsedTimeUiState = ElapsedTimeUiState.Enabled(0L),
+            captureSubModeUiState = CaptureSubModeUiState.Unavailable
+        )
+        composeTestRule.mainClock.advanceTimeBy(100L)
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        captureUiState = recordingUiState(elapsedTimeNanos = 1_000_000_000L)
+        composeTestRule.mainClock.advanceTimeBy(1_500L)
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
+            .assertIsDisplayed()
+            .assertTextEquals("0:01")
+    }
+
+    @Test
+    fun captureScaffold_stoppingRecordingWhenQuickSettingsModeUnavailable_preservesExitDelay() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(
+                mode = CaptureMode.VIDEO_ONLY,
+                subModes = videoCarouselState,
+                includeQuickSettingsCaptureMode = false
+            )
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        // During recording with quickSettings.captureModeUiState Unavailable, activeCaptureMode
+        // drops to null; returning to VIDEO_ONLY must NOT falsely trigger a mode change.
+        captureUiState = recordingUiState(
+            elapsedTimeNanos = FIVE_SECONDS_NANOS,
+            includeQuickSettingsCaptureMode = false
+        )
+        composeTestRule.mainClock.advanceTimeBy(ENTER_SETTLE_MS)
+
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            includeQuickSettingsCaptureMode = false,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeBy(500L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(1_600L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffold_whenAnimationsDisabled_swapsElapsedTimeAndCarouselImmediately() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(CaptureMode.VIDEO_ONLY, videoCarouselState)
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CompositionLocalProvider(LocalDisableAnimations provides true) {
+                    CaptureScaffold(
+                        captureUiState = { captureUiState },
+                        surfaceRequest = null
+                    )
+                }
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+
+        captureUiState = recordingUiState(elapsedTimeNanos = FIVE_SECONDS_NANOS)
+        // With animations disabled nothing on screen keeps requesting frames, so apply the state
+        // change before advancing the paused clock.
+        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.advanceTimeBy(MODE_SWITCH_SETTLE_MS)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.advanceTimeBy(MODE_SWITCH_SETTLE_MS)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffoldLayout_quickSettingsOpen_blocksBackgroundFocus() {
+        lateinit var scaffoldState: CaptureScaffoldState
+        lateinit var focusManager: FocusManager
+        val nestedRequester = FocusRequester()
+        val directRequester = FocusRequester()
+        val nestedTag = "nested_background_focusable"
+        val directTag = "direct_background_focusable"
+        val sheetFocusableTag = "sheet_focusable"
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                focusManager = LocalFocusManager.current
+                scaffoldState = rememberCaptureScaffoldState(isInitiallyExpanded = false)
+                CaptureScaffoldLayout(
+                    state = scaffoldState,
+                    viewfinder = { Box(Modifier.fillMaxSize()) },
+                    captureButton = { modifier ->
+                        // A focusable nested inside its own focus group, which
+                        // `focusProperties { canFocus = false }` alone would not block.
+                        Box(modifier = modifier.focusGroup()) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .testTag(nestedTag)
+                                    .focusRequester(nestedRequester)
+                                    .focusable()
+                            )
+                        }
+                    },
+                    flipCameraButton = { modifier ->
+                        Box(
+                            modifier = modifier
+                                .size(48.dp)
+                                .testTag(directTag)
+                                .focusRequester(directRequester)
+                                .focusable()
+                        )
+                    },
+                    quickSettingsOverlay = { modifier ->
+                        Box(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .testTag(sheetFocusableTag)
+                                    .focusable()
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        // Background controls are reachable while Quick Settings is closed.
+        composeTestRule.runOnIdle { nestedRequester.requestFocus() }
+        composeTestRule.onNodeWithTag(nestedTag).assertIsFocused()
+
+        // Opening Quick Settings while a background control holds focus (as after a keyboard
+        // press on the Quick Settings button) moves focus into the sheet.
+        composeTestRule.runOnIdle { scaffoldState.showQuickSettings() }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(sheetFocusableTag).assertIsFocused()
+        composeTestRule.onNodeWithTag(nestedTag).assertIsNotFocused()
+
+        composeTestRule.runOnIdle {
+            assertThat(nestedRequester.requestFocus()).isFalse()
+            assertThat(directRequester.requestFocus()).isFalse()
+        }
+        composeTestRule.onNodeWithTag(nestedTag).assertIsNotFocused()
+        composeTestRule.onNodeWithTag(directTag).assertIsNotFocused()
+
+        repeat(4) {
+            composeTestRule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+            composeTestRule.onNodeWithTag(nestedTag).assertIsNotFocused()
+            composeTestRule.onNodeWithTag(directTag).assertIsNotFocused()
+        }
+    }
+
+    @Test
+    fun captureScaffoldLayout_initialHiddenAndOpen_doesNotSpuriouslyInvokeDismissCallback() {
+        var dismissCount = 0
+        lateinit var scaffoldState: CaptureScaffoldState
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                scaffoldState = rememberCaptureScaffoldState(isInitiallyExpanded = false)
+                CaptureScaffoldLayout(
+                    state = scaffoldState,
+                    onDismissQuickSettings = { dismissCount++ },
+                    viewfinder = { Box(Modifier.fillMaxSize()) },
+                    quickSettingsOverlay = { modifier ->
+                        Box(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                        )
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+        assertThat(dismissCount).isEqualTo(0)
+
+        composeTestRule.runOnIdle {
+            scaffoldState.showQuickSettings()
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isTrue()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        assertThat(dismissCount).isEqualTo(0)
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).performClick()
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
+        assertThat(dismissCount).isEqualTo(1)
+
+        composeTestRule.runOnIdle {
+            scaffoldState.showQuickSettings()
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
+            .performSemanticsAction(SemanticsActions.Dismiss)
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
+        assertThat(dismissCount).isEqualTo(2)
+    }
+
+    @Test
+    fun captureScaffoldLayout_partialDownwardDrag_settlesBackToExpandedWithoutOrphanedScrim() {
+        var dismissCount = 0
+        lateinit var scaffoldState: CaptureScaffoldState
+        val populatedQuickSettings = sampleQuickSettingsUiState()
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                scaffoldState = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+                CaptureScaffoldLayout(
+                    state = scaffoldState,
+                    onDismissQuickSettings = { dismissCount++ },
+                    viewfinder = { Box(Modifier.fillMaxSize()) },
+                    quickSettingsOverlay = { modifier ->
+                        CaptureScaffoldDefaults.QuickSettings(
+                            uiState = populatedQuickSettings,
+                            controller = FakeQuickSettingsController(),
+                            onNavigateToSettings = {},
+                            modifier = modifier
+                        )
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val initialSheetTop = composeTestRule
+            .onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+            .getUnclippedBoundsInRoot()
+            .top
+        val rootBottom = composeTestRule.onRoot().getUnclippedBoundsInRoot().bottom
+        assertThat(initialSheetTop).isLessThan(rootBottom - 100.dp)
+
+        // Drag downward slightly (well below positional/velocity threshold) and release.
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
+            .performTouchInput {
+                down(center)
+                moveBy(Offset(0f, 16f))
+                up()
+            }
+        composeTestRule.waitForIdle()
+
+        val settledSheetTop = composeTestRule
+            .onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+            .getUnclippedBoundsInRoot()
+            .top
+        assertThat(settledSheetTop).isEqualTo(initialSheetTop)
+        assertThat(scaffoldState.isQuickSettingsOpen).isTrue()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertIsDisplayed()
+        assertThat(dismissCount).isEqualTo(0)
+    }
+
+    @Test
+    fun captureScaffoldLayout_swipeDownToHidden_dismissesQuickSettingsAndInvokesCallbackOnce() {
+        var dismissCount = 0
+        lateinit var scaffoldState: CaptureScaffoldState
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                scaffoldState = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+                CaptureScaffoldLayout(
+                    state = scaffoldState,
+                    onDismissQuickSettings = { dismissCount++ },
+                    viewfinder = { Box(Modifier.fillMaxSize()) },
+                    quickSettingsOverlay = { modifier ->
+                        Box(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                        )
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isTrue()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertIsDisplayed()
+
+        val rootHeightPx = with(composeTestRule.density) {
+            composeTestRule.onRoot().getUnclippedBoundsInRoot().bottom.toPx()
+        }
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
+            .performTouchInput {
+                swipeDown(
+                    startY = centerY,
+                    endY = centerY + rootHeightPx,
+                    durationMillis = 150L
+                )
+            }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
+        assertThat(dismissCount).isEqualTo(1)
+    }
+
+    @Test
+    fun rememberCaptureScaffoldState_restoresQuickSettingsStateAcrossSavedInstanceState() {
+        val restorationTester = StateRestorationTester(composeTestRule)
+        var scaffoldState: CaptureScaffoldState? = null
+
+        restorationTester.setContent {
+            scaffoldState = rememberCaptureScaffoldState()
+        }
+
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isFalse()
+
+        composeTestRule.runOnIdle {
+            scaffoldState!!.showQuickSettings()
+        }
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isTrue()
+
+        scaffoldState = null
+        restorationTester.emulateSavedInstanceStateRestore()
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isTrue()
+
+        composeTestRule.runOnIdle {
+            scaffoldState!!.dismissQuickSettings()
+        }
+        scaffoldState = null
+        restorationTester.emulateSavedInstanceStateRestore()
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isFalse()
+    }
+
     private companion object {
         const val TOP_START_BUTTON_TAG = "test_top_start_button"
         const val TOP_BAR_LEADING_TAG = "test_top_bar_leading"
         const val ICON_BUTTON_TAG = "test_icon_button"
         val SHORT_QUICK_SETTINGS_HEIGHT = 120.dp
+        val DUAL_SUB_MODE_ID = CaptureSubModeId("concurrent_dual")
+        val NIGHT_SUB_MODE_ID = CaptureSubModeId("night_mode")
+        const val FIVE_SECONDS_NANOS = 5_000_000_000L
+        const val ENTER_SETTLE_MS = 1_000L
+        const val MODE_SWITCH_SETTLE_MS = 64L
     }
 }
