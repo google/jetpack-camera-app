@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,10 +42,18 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -90,11 +99,15 @@ internal fun QuickSettingsBottomSheetScaffold(
     modifier: Modifier = Modifier,
     content: @Composable (isSheetVisible: Boolean) -> Unit
 ) {
+    val currentOnDismissQuickSettings by rememberUpdatedState(onDismissQuickSettings)
     val bottomSheetState = rememberBottomSheetState(
         initialValue = if (state.isQuickSettingsOpen) SheetValue.Expanded else SheetValue.Hidden,
         confirmValueChange = { targetValue ->
             if (targetValue == SheetValue.Hidden) {
-                state.dismissQuickSettings()
+                if (state.isQuickSettingsOpen) {
+                    state.dismissQuickSettings()
+                    currentOnDismissQuickSettings()
+                }
             } else if (targetValue == SheetValue.Expanded) {
                 state.showQuickSettings()
             }
@@ -114,6 +127,24 @@ internal fun QuickSettingsBottomSheetScaffold(
             if (bottomSheetState.isVisible || bottomSheetState.targetValue != SheetValue.Hidden) {
                 bottomSheetState.hide()
             }
+        }
+    }
+
+    val isSheetVisible = state.isQuickSettingsOpen ||
+        bottomSheetState.isVisible ||
+        bottomSheetState.targetValue == SheetValue.Expanded
+    val focusManager = LocalFocusManager.current
+    val sheetFocusRequester = remember { FocusRequester() }
+    var sheetHasFocus by remember { mutableStateOf(false) }
+    // Suppression only blocks focus from entering the background, so move focus already there
+    // into the sheet on open, and release it on hide so it isn't left on an off-screen sheet.
+    LaunchedEffect(isSheetVisible) {
+        if (isSheetVisible) {
+            if (!sheetFocusRequester.requestFocus()) {
+                focusManager.clearFocus(force = true)
+            }
+        } else if (sheetHasFocus) {
+            focusManager.clearFocus(force = true)
         }
     }
 
@@ -160,6 +191,9 @@ internal fun QuickSettingsBottomSheetScaffold(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .onFocusChanged { sheetHasFocus = it.hasFocus }
+                    .focusRequester(sheetFocusRequester)
+                    .focusGroup()
                     .verticalScroll(rememberScrollState())
                     .windowInsetsPadding(
                         WindowInsets.navigationBarsIgnoringVisibility
@@ -173,9 +207,6 @@ internal fun QuickSettingsBottomSheetScaffold(
         },
         snackbarHost = {}
     ) {
-        val isSheetVisible = state.isQuickSettingsOpen ||
-            bottomSheetState.isVisible ||
-            bottomSheetState.targetValue == SheetValue.Expanded
         content(isSheetVisible)
     }
 }
