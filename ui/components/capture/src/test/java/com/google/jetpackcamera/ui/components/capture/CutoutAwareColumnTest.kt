@@ -82,7 +82,7 @@ private const val PILL_PUBLIC_VERTICAL_TAG = "pill_public_vertical"
 private const val PILL_PUBLIC_DELEGATED_VERTICAL_TAG = "pill_public_delegated_vertical"
 
 /**
- * Tests for [CutoutAwareColumn] and [VerticalIndicatorPill] verifying vertical cutout avoidance,
+ * Tests for [CutoutAwareColumn] and [IndicatorPill] verifying vertical cutout avoidance,
  * LTR/RTL width and coordinate symmetry, pill segment grouping/splitting, vertical animation
  * stability, traversal-group semantics, and immediate semantics pruning on exiting indicators.
  */
