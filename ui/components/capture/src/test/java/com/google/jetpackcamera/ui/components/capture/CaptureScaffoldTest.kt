@@ -15,10 +15,13 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.app.Activity
+import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.net.Uri
 import android.util.Range
 import android.view.Surface
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
@@ -664,6 +667,79 @@ class CaptureScaffoldTest {
         } finally {
             shadowDisplay.setRotation(Surface.ROTATION_0)
         }
+    }
+
+    @Test
+    fun cameraSessionEffect_whileRecording_locksOrientation_restoresNoSensorOnCompactPhone() {
+        var isRecording by mutableStateOf(false)
+        var hostActivity: Activity? = null
+        val cameraController = FakeCameraController()
+
+        composeTestRule.setContent {
+            val activity = LocalActivity.current
+            if (hostActivity == null && activity != null) {
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                hostActivity = activity
+            }
+            CameraSessionEffect(
+                cameraController = cameraController,
+                enabled = true,
+                isRecording = isRecording
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        val activity = checkNotNull(hostActivity)
+        assertThat(activity.requestedOrientation)
+            .isEqualTo(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+
+        composeTestRule.runOnIdle { isRecording = true }
+        composeTestRule.waitForIdle()
+        assertThat(activity.requestedOrientation)
+            .isEqualTo(ActivityInfo.SCREEN_ORIENTATION_LOCKED)
+
+        // A full-screen compact phone (sw < 600dp) returns to its portrait-locked posture.
+        composeTestRule.runOnIdle { isRecording = false }
+        composeTestRule.waitForIdle()
+        assertThat(activity.requestedOrientation)
+            .isEqualTo(ActivityInfo.SCREEN_ORIENTATION_NOSENSOR)
+    }
+
+    @Test
+    @Config(qualifiers = "sw800dp-w800dp-h1280dp")
+    fun cameraSessionEffect_whileRecording_locksOrientation_restoresUnspecifiedOnLargeScreen() {
+        var isRecording by mutableStateOf(false)
+        var hostActivity: Activity? = null
+        val cameraController = FakeCameraController()
+
+        composeTestRule.setContent {
+            val activity = LocalActivity.current
+            if (hostActivity == null && activity != null) {
+                activity.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+                hostActivity = activity
+            }
+            CameraSessionEffect(
+                cameraController = cameraController,
+                enabled = true,
+                isRecording = isRecording
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        val activity = checkNotNull(hostActivity)
+        assertThat(activity.requestedOrientation)
+            .isEqualTo(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
+
+        composeTestRule.runOnIdle { isRecording = true }
+        composeTestRule.waitForIdle()
+        assertThat(activity.requestedOrientation)
+            .isEqualTo(ActivityInfo.SCREEN_ORIENTATION_LOCKED)
+
+        // Large screens (sw >= 600dp) follow the sensor again once recording ends.
+        composeTestRule.runOnIdle { isRecording = false }
+        composeTestRule.waitForIdle()
+        assertThat(activity.requestedOrientation)
+            .isEqualTo(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED)
     }
 
     @Test

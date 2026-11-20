@@ -95,6 +95,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.takeOrElse
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.ui.components.TooltipIconButton
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutDefaults
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolver
@@ -272,7 +273,9 @@ fun CaptureScaffoldLayout(
     topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)? = null,
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
-    errorDialog: @Composable (Modifier) -> Unit = {}
+    errorDialog: @Composable (Modifier) -> Unit = {},
+    deviceRotation: DeviceRotation = rememberDeviceRotation(),
+    windowRotation: DeviceRotation = rememberWindowRotation()
 ) {
     // Omitting PartiallyExpanded from enabledValues is sufficient: BottomSheetScaffold creates no
     // PartiallyExpanded anchor and SheetState.partialExpand() fails fast when it is skipped.
@@ -332,12 +335,21 @@ fun CaptureScaffoldLayout(
     }
 
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
+    val gravityRotationState = rememberGravityRotationState(
+        deviceRotation = deviceRotation,
+        windowRotation = windowRotation
+    )
     val dismissQuickSettingsLabel =
         stringResource(R.string.quick_settings_btn_close_expanded_settings_description)
     val quickSettingsScrimDescription =
         stringResource(R.string.quick_settings_scrim_description)
 
-    CompositionLocalProvider(LocalOverlapTargetBounds provides overlapTargetBounds) {
+    CompositionLocalProvider(
+        LocalOverlapTargetBounds provides overlapTargetBounds,
+        LocalDeviceRotation provides deviceRotation,
+        LocalWindowRotation provides windowRotation,
+        LocalGravityRotationState provides gravityRotationState
+    ) {
         Box(modifier = modifier.fillMaxSize()) {
             BottomSheetScaffold(
                 modifier = Modifier.fillMaxSize(),
