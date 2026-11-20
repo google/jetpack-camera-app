@@ -80,7 +80,6 @@ internal fun OverlapAwareCaptureSlot(
  * @property topBar Status indicator bar or column content adapting to
  *   [PreviewOverlaySlotScope.orientation].
  * @property topBarLeadingContent Optional leading content placed directly before [topBar].
- * @property topBarTrailingContent Optional trailing content aligned to the end of [topBar].
  * @property zoomControls Zoom control bar or button cluster, adapting to
  *   [PreviewOverlaySlotScope.orientation].
  * @property quickSettingsButton Trigger button that toggles the Quick Settings surface.
@@ -100,7 +99,6 @@ internal fun OverlapAwareCaptureSlot(
 internal data class CaptureSlots(
     val topBar: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     val topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)? = null,
-    val topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     val zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     val quickSettingsButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     val captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},

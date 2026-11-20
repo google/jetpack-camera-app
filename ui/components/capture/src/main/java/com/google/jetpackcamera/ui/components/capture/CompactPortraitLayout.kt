@@ -236,7 +236,6 @@ internal fun CompactPortraitLayout(
     val topStartContent = slots.topStartContent
     val viewfinderTopEndContent = slots.viewfinderTopEndContent
     val topBarLeadingContent = slots.topBarLeadingContent
-    val topBarTrailingContent = slots.topBarTrailingContent
     val errorDialog = slots.errorDialog
 
     val overlapTargetBounds = remember { mutableStateOf(Rect.Zero) }
@@ -294,7 +293,6 @@ internal fun CompactPortraitLayout(
                             onRequiresImmersiveChange = onRequiresImmersiveChange,
                             indicatorRow = indicatorRow,
                             topBarLeadingContent = topBarLeadingContent,
-                            topBarTrailingContent = topBarTrailingContent,
                             elapsedTimeDisplay = elapsedTimeDisplay,
                             zoomControls = zoomLevelDisplay,
                             imageWell = imageWell,
@@ -337,8 +335,7 @@ internal fun CompactPortraitLayout(
                                 topBarHeight = topBarHeight,
                                 topBarTopPadding = topBarTopPadding,
                                 indicatorRow = indicatorRow,
-                                topBarLeadingContent = topBarLeadingContent,
-                                topBarTrailingContent = topBarTrailingContent
+                                topBarLeadingContent = topBarLeadingContent
                             )
                             Box {
                                 viewfinder(Modifier)
@@ -440,7 +437,6 @@ private fun CompactTopBarBox(
     topBarTopPadding: Dp,
     indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)?,
-    topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val localeDirection = LocalLayoutDirection.current
@@ -460,12 +456,6 @@ private fun CompactTopBarBox(
                 topBarLeadingContent = topBarLeadingContent,
                 indicatorRow = indicatorRow
             )
-            OverlapAwareStyleProvider(
-                modifier = Modifier.align(Alignment.CenterEnd),
-                orientation = Orientation.Horizontal
-            ) {
-                topBarTrailingContent(Modifier)
-            }
         }
     }
 }
@@ -665,7 +655,6 @@ internal fun AdaptivePortraitCaptureLayout(
     onRequiresImmersiveChange: (Boolean) -> Unit,
     indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)?,
-    topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     elapsedTimeDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     zoomControls: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     imageWell: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
@@ -757,8 +746,7 @@ internal fun AdaptivePortraitCaptureLayout(
                     topBarTopPadding = topBarTopPadding,
                     modifier = Modifier.layoutId(CaptureSlotId.TopBar),
                     indicatorRow = indicatorRow,
-                    topBarLeadingContent = topBarLeadingContent,
-                    topBarTrailingContent = topBarTrailingContent
+                    topBarLeadingContent = topBarLeadingContent
                 )
 
                 if (controlsVisible) {

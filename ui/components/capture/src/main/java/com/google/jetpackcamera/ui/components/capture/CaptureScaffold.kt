@@ -742,8 +742,7 @@ private fun rememberZoomStateManager(
  * Opinionated camera capture scaffold exposing individual control and chrome slots ([topBar],
  * [captureButton], [flipCameraButton], [zoomControls], [captureModeToggle], [captureModeCarousel],
  * [quickSettingsButton], [elapsedTimeDisplay], opt-in [imageWell], [quickSettings], [errorDialog],
- * [topStartContent], [viewfinderTopEndContent], [topBarLeadingContent], [topBarTrailingContent],
- * and [overlay]).
+ * [topStartContent], [viewfinderTopEndContent], [topBarLeadingContent], and [overlay]).
  *
  * Host screens remain in control of their own screen policy (permissions, camera session start/stop
  * via [CameraSessionEffect], capture event navigation, and benchmarking), and pass a deferred
@@ -802,7 +801,6 @@ private fun rememberZoomStateManager(
  *   viewfinder.
  * @param topBarLeadingContent optional composable slot placed at the start of the top bar directly
  *   adjacent to [topBar].
- * @param topBarTrailingContent optional composable slot aligned to the end of the top bar.
  * @param overlay optional overlay composable slot drawn above the viewfinder and controls.
  */
 @Composable
@@ -927,7 +925,6 @@ fun CaptureScaffold(
     topStartContent: (@Composable CaptureSlotScope.(Modifier) -> Unit)? = null,
     viewfinderTopEndContent: (@Composable CaptureSlotScope.(Modifier) -> Unit)? = null,
     topBarLeadingContent: (@Composable CaptureSlotScope.(Modifier) -> Unit)? = null,
-    topBarTrailingContent: (@Composable CaptureSlotScope.(Modifier) -> Unit)? = null,
     overlay: (@Composable CaptureSlotScope.(Modifier) -> Unit)? = null
 ) {
     val currentCaptureUiStateProvider by rememberUpdatedState(captureUiState)
@@ -1335,21 +1332,6 @@ fun CaptureScaffold(
                     onSetAbsoluteZoom = onSetAbsoluteZoom
                 )
                 slotScope.leadingContent(slotModifier)
-            }
-        },
-        topBarTrailingContent = { slotModifier ->
-            if (topBarTrailingContent != null) {
-                val slotScope = rememberCaptureSlotScope(
-                    overlayScope = this,
-                    isRecordingState = isVideoRecordingActive,
-                    scaffoldState = state,
-                    onToggleQuickSettings = onToggleQuickSettings,
-                    onDismissQuickSettings = onDismissQuickSettings,
-                    onIncrementZoom = onIncrementZoom,
-                    onAnimateZoomTo = onAnimateZoomTo,
-                    onSetAbsoluteZoom = onSetAbsoluteZoom
-                )
-                slotScope.topBarTrailingContent(slotModifier)
             }
         },
         onRequiresImmersiveChange = onRequiresImmersiveChange,

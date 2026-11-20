@@ -104,6 +104,7 @@ internal fun CompactShortLayout(
     controlsVisible: Boolean = true,
     isErrorDialogShowing: Boolean = false,
     onDismissQuickSettings: () -> Unit = {},
+    onRequiresImmersiveChange: (Boolean) -> Unit = {},
     overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     screenFlashOverlay: @Composable (Modifier) -> Unit = {}
 ) {
@@ -145,6 +146,7 @@ internal fun CompactShortLayout(
             controlsVisible = controlsVisible,
             isErrorDialogShowing = isErrorDialogShowing,
             onDismissQuickSettings = onDismissQuickSettings,
+            onRequiresImmersiveChange = onRequiresImmersiveChange,
             overlay = overlay,
             screenFlashOverlay = screenFlashOverlay
         )

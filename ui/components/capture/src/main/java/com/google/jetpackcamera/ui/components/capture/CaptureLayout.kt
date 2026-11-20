@@ -50,8 +50,8 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * Positions the [viewfinder], individual control slots ([captureButton], [imageWell],
  * [flipCameraButton], [zoomLevelDisplay], [elapsedTimeDisplay], [quickSettingsButton],
  * [indicatorRow], [captureModeToggle], [captureModeCarousel]), [quickSettingsOverlay],
- * [topStartContent], [viewfinderTopEndContent], [topBarLeadingContent], [topBarTrailingContent],
- * [overlay], [screenFlashOverlay], [snackBar], and [errorDialog] without depending on
+ * [topStartContent], [viewfinderTopEndContent], [topBarLeadingContent], [overlay],
+ * [screenFlashOverlay], [snackBar], and [errorDialog] without depending on
  * [CaptureUiState].
  *
  * @param modifier the [Modifier] for this component.
@@ -81,7 +81,6 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  *   viewfinder.
  * @param topBarLeadingContent optional composable content placed at the start of the top
  *   status/indicator bar directly adjacent to [indicatorRow].
- * @param topBarTrailingContent optional composable content aligned to the end of the top bar.
  * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
  *   tallest viewfinder to clear a persistent navigation bar, and `false` otherwise or on dispose.
  * @param errorDialog the camera error alert dialog composable.
@@ -109,14 +108,12 @@ fun CaptureScaffoldLayout(
     topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)? = null,
-    topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {}
 ) {
     val slots = CaptureSlots(
         topBar = indicatorRow,
         topBarLeadingContent = topBarLeadingContent,
-        topBarTrailingContent = topBarTrailingContent,
         zoomControls = zoomLevelDisplay,
         quickSettingsButton = quickSettingsButton,
         captureButton = captureButton,

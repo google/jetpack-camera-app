@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.components.capture
 import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -353,6 +354,52 @@ class CompactShortLayoutTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
     }
 
+    @Config(qualifiers = "w320dp-h340dp")
+    @Test
+    fun compactShortLayout_wideTopStartAndTopEndContent_neverOverlapEachOtherOrElapsedTime() {
+        composeTestRule.setContent {
+            MaterialTheme {
+                CompactShortLayout(
+                    slots = previewSideRailSlots(includeElapsedTime = true).copy(
+                        topStartContent = { mod ->
+                            Box(
+                                modifier = mod.size(400.dp, 40.dp).testTag(TOP_START)
+                            )
+                        },
+                        viewfinderTopEndContent = { mod ->
+                            Box(
+                                modifier = mod.size(400.dp, 40.dp).testTag(TOP_END)
+                            )
+                        }
+                    ),
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val topStart = boundsOf(TOP_START)
+        val topEnd = boundsOf(TOP_END)
+        val elapsedTime = boundsOf(ELAPSED_TIME_TAG)
+        // Top-end gets only the width left beside top-start, so the two never overlap, and the
+        // elapsed time moves below them when it no longer fits between them.
+        assertThat(topStart.width.value).isGreaterThan(0f)
+        assertThat(topEnd.left.value).isAtLeast(topStart.right.value - OVERLAP_TOLERANCE)
+        assertThat(elapsedTime.width.value).isGreaterThan(0f)
+        assertWithMessage("top-start overlaps top-end")
+            .that(overlaps(topStart, topEnd)).isFalse()
+        assertWithMessage("elapsed time overlaps top-start")
+            .that(overlaps(elapsedTime, topStart)).isFalse()
+        assertWithMessage("elapsed time overlaps top-end")
+            .that(overlaps(elapsedTime, topEnd)).isFalse()
+    }
+
+    private fun overlaps(a: DpRect, b: DpRect): Boolean =
+        a.left < b.right - OVERLAP_TOLERANCE.dp && b.left < a.right - OVERLAP_TOLERANCE.dp &&
+            a.top < b.bottom - OVERLAP_TOLERANCE.dp && b.top < a.bottom - OVERLAP_TOLERANCE.dp
+
     private fun assertNoClippingAndNoOverlapInWindow(
         contextLabel: String,
         windowWidth: Float,
@@ -429,6 +476,9 @@ class CompactShortLayoutTest {
     }
 
     private companion object {
+        const val TOP_START = "top_start"
+        const val TOP_END = "top_end"
+        const val OVERLAP_TOLERANCE = 0.5f
         val START_RAIL_TAGS = listOf(
             VIDEO_QUALITY_TAG,
             QUICK_SETTINGS_DROP_DOWN
