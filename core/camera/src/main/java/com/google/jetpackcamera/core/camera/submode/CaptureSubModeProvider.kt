@@ -18,6 +18,7 @@ package com.google.jetpackcamera.core.camera.submode
 import android.content.Context
 import androidx.camera.core.CameraInfo
 import androidx.camera.lifecycle.ProcessCameraProvider
+import com.google.jetpackcamera.core.camera.DEFAULT_MAX_IN_FLIGHT_CAPTURES
 import com.google.jetpackcamera.model.CaptureSubModeDescriptor
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -37,6 +38,18 @@ interface CaptureSubModeProvider {
      * Metadata descriptor (ID, parent [com.google.jetpackcamera.model.CaptureMode], label resource, sort order).
      */
     val descriptor: CaptureSubModeDescriptor
+
+    /**
+     * Maximum number of image captures that may be in flight concurrently while this sub-mode is
+     * active.
+     *
+     * Standard single-camera sessions allow up to [DEFAULT_MAX_IN_FLIGHT_CAPTURES] concurrent
+     * captures so post-processing and disk saves do not block rapid shutter taps. Multi-frame
+     * extension sub-modes (such as Night Mode or Auto) process a single capture sequence at a time
+     * and override this to `1`.
+     */
+    val maxInFlightCaptures: Int
+        get() = DEFAULT_MAX_IN_FLIGHT_CAPTURES
 
     /**
      * Declarative [CameraFeaturePolicy] enforced while this sub-mode is active.

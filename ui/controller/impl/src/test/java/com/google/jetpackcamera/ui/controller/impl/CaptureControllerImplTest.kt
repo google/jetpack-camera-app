@@ -21,7 +21,9 @@ import android.net.Uri
 import androidx.camera.core.ImageCapture
 import androidx.test.core.app.ApplicationProvider
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.core.camera.DEFAULT_MAX_IN_FLIGHT_CAPTURES
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.core.location.LocationProvider
@@ -373,6 +375,49 @@ class CaptureControllerImplTest {
         val event = captureEvents.receive()
         assertThat(event).isInstanceOf(VideoCaptureEvent.VideoSaved::class.java)
         assertThat(fakeCameraSystem.lastVideoRecordingLocation).isNull()
+    }
+
+    @Test
+    fun captureImage_inFlightAtMax_isIgnored() = runCameraTest {
+        var callbackInvoked = false
+        val controller = createCaptureController(
+            externalCaptureMode = ExternalCaptureMode.MultipleImageCapture,
+            externalCapturesCallback = {
+                callbackInvoked = true
+                Pair(SaveLocation.Explicit(testImageUri), IntProgress(1, 1..2))
+            }
+        )
+        fakeCameraSystem.setCurrentCameraState(
+            CameraState(
+                isCameraRunning = true,
+                inFlightCapturesCount = 1,
+                maxInFlightCaptures = 1
+            )
+        )
+
+        controller.captureImage(contentResolver)
+        advanceUntilIdle()
+
+        assertThat(callbackInvoked).isFalse()
+        assertThat(captureEvents.tryReceive().getOrNull()).isNull()
+    }
+
+    @Test
+    fun captureImage_inFlightBelowMax_capturesImage() = runCameraTest {
+        val controller = createCaptureController()
+        fakeCameraSystem.setCurrentCameraState(
+            CameraState(
+                isCameraRunning = true,
+                inFlightCapturesCount = 1,
+                maxInFlightCaptures = DEFAULT_MAX_IN_FLIGHT_CAPTURES
+            )
+        )
+
+        controller.captureImage(contentResolver)
+        advanceUntilIdle()
+
+        val event = captureEvents.receive()
+        assertThat(event).isInstanceOf(ImageCaptureEvent.SingleImageSaved::class.java)
     }
 
     private fun runCameraTest(testBody: suspend TestScope.() -> Unit) = runTest(testDispatcher) {

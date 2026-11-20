@@ -93,6 +93,8 @@ class NightCaptureSubModeProvider internal constructor(
         quickSettingsTitleResId = R.string.quick_settings_title_night_settings
     )
 
+    override val maxInFlightCaptures: Int = 1
+
     override val featurePolicy = CameraFeaturePolicy(
         stabilizationMode = SettingConfig(
             defaultValue = StabilizationMode.OFF,

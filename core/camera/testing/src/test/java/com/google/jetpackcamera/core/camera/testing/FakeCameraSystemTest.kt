@@ -177,6 +177,19 @@ class FakeCameraSystemTest {
             .isEqualTo(CaptureMode.VIDEO_ONLY)
     }
 
+    @Test
+    fun takePicture_resetsInFlightCapturesCountAfterCompletion() = runTest(testDispatcher) {
+        initAndRunCamera()
+        advanceUntilIdle()
+
+        cameraSystem.takePicture()
+        advanceUntilIdle()
+
+        Truth.assertThat(
+            cameraSystem.getCurrentCameraState().value.inFlightCapturesCount
+        ).isEqualTo(0)
+    }
+
     private fun TestScope.initAndRunCamera() {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             cameraSystem.initialize(

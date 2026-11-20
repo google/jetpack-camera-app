@@ -99,6 +99,16 @@ class CaptureControllerImpl(
         }
         Log.d(TAG, "captureImage")
         scope.launch {
+            val cameraState = cameraSystemProvider().getCurrentCameraState().value
+            if (cameraState.inFlightCapturesCount >= cameraState.maxInFlightCaptures) {
+                Log.d(
+                    TAG,
+                    "captureImage ignored: in-flight captures " +
+                        "(${cameraState.inFlightCapturesCount}) at limit " +
+                        "(${cameraState.maxInFlightCaptures})"
+                )
+                return@launch
+            }
             val (saveLocation, progress) = nextSaveLocation(
                 saveMode,
                 externalCaptureMode,
