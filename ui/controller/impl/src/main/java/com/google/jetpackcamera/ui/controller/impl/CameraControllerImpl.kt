@@ -101,6 +101,12 @@ class CameraControllerImpl(
         }
     }
 
+    override fun setWindowRotation(windowRotation: DeviceRotation) {
+        scope.launch {
+            cameraSystemProvider().setWindowRotation(windowRotation)
+        }
+    }
+
     override fun dismissCameraError() {
         scope.launch {
             cameraSystemProvider().clearCameraError()

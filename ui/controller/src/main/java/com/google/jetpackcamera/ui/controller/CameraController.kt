@@ -47,6 +47,14 @@ interface CameraController {
     fun setDisplayRotation(deviceRotation: DeviceRotation)
 
     /**
+     * Informs the camera system of the current host OS display/window rotation so preview framing,
+     * [androidx.camera.core.ViewPort], and stream-sharing buffers match the active window.
+     *
+     * @param windowRotation The host display/window [DeviceRotation] to set.
+     */
+    fun setWindowRotation(windowRotation: DeviceRotation) {}
+
+    /**
      * Acknowledges and dismisses the currently active camera error dialog.
      */
     fun dismissCameraError() {}

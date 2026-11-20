@@ -69,7 +69,10 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     var lastPictureTakenLocation: Location? = null
         private set
 
-    /** The most recent [Location] passed to [startVideoRecording], or `null` if none was provided. */
+    /**
+     * The most recent [Location] passed to [startVideoRecording], or `null` if none was
+     * provided.
+     */
     var lastVideoRecordingLocation: Location? = null
         private set
 
@@ -77,6 +80,8 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
     private var screenFlashEvents = Channel<CameraSystem.ScreenFlashEvent>(capacity = UNLIMITED)
     private val zoomChanges = MutableStateFlow<CameraZoomRatio?>(null)
     private val currentSettings = MutableStateFlow(defaultCameraSettings)
+    var windowRotation: DeviceRotation = DeviceRotation.Natural
+        private set
     var externalCaptureMode: ExternalCaptureMode = ExternalCaptureMode.Standard
         private set
 
@@ -275,6 +280,10 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         currentSettings.update { old ->
             old.copy(deviceRotation = deviceRotation)
         }
+    }
+
+    override fun setWindowRotation(windowRotation: DeviceRotation) {
+        this.windowRotation = windowRotation
     }
 
     override suspend fun setImageFormat(imageFormat: ImageOutputFormat) {

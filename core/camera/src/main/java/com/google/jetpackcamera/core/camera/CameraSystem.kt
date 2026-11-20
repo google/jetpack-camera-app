@@ -233,6 +233,14 @@ interface CameraSystem {
     fun setDeviceRotation(deviceRotation: DeviceRotation)
 
     /**
+     * Sets the host OS display/window rotation used to orient the live preview stream,
+     * [androidx.camera.core.ViewPort], and stream-sharing OpenGL output buffers.
+     *
+     * @param windowRotation The host display/window [DeviceRotation] to set.
+     */
+    fun setWindowRotation(windowRotation: DeviceRotation) {}
+
+    /**
      * Sets the image output format.
      *
      * @param imageFormat The [ImageOutputFormat] to set.
