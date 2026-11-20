@@ -1004,7 +1004,7 @@ fun PreviewDisplay(
                                     with(coordinateTransformer) {
                                         val surfaceCoords = it.transform()
                                         Log.d(
-                                            "TAG",
+                                            TAG,
                                             "onTapToFocus: " +
                                                 "input{$it} -> surface{$surfaceCoords}"
                                         )
