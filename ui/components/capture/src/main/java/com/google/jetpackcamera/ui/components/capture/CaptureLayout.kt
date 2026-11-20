@@ -208,15 +208,18 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * @param imageWell the image well composable.
  * @param flipCameraButton the flip camera button composable.
  * @param zoomLevelDisplay the zoom level display composable.
- * @param elapsedTimeDisplay the elapsed time display composable.
+ * @param elapsedTimeDisplay the recording elapsed-time display composable. Shares the fixed-height
+ *   slot reserved between the shutter row and the lower controls row with [captureModeCarousel];
+ *   callers are expected to keep them mutually exclusive so they do not overlap.
  * @param quickSettingsButton the quick settings button composable.
  * @param indicatorRow the top indicator row composable.
  * @param captureModeToggle the capture mode toggle composable.
  * @param captureModeCarousel content for the fixed-height slot reserved between the shutter row
- *   and the lower controls row. The slot is always reserved, so supplying or omitting content here
- *   never moves the surrounding controls. The content is centered on the slot and may be taller
- *   than it, for example to provide a larger touch target, extending equally into the gaps above
- *   and below the slot without overlapping the neighboring rows.
+ *   and the lower controls row (shared with [elapsedTimeDisplay]). The slot is always reserved, so
+ *   supplying or omitting content here never moves the surrounding controls. The content is
+ *   centered on the slot and may be taller than it, for example to provide a larger touch target,
+ *   extending equally into the gaps above and below the slot without overlapping the neighboring
+ *   rows.
  * @param quickSettingsOverlay the quick settings overlay composable.
  * @param overlay optional overlay composable drawn above the viewfinder and controls.
  * @param controlsVisible whether the camera controls should be composed and visible.
@@ -581,7 +584,7 @@ private enum class CaptureSlotId {
     TopStartContent,
     ViewfinderTopEndContent,
     TopBar,
-    ElapsedTime,
+    SnackbarHost,
     ZoomBar,
     CaptureRow,
     ModeSwitcher,
@@ -699,14 +702,11 @@ private fun AdaptivePortraitCaptureLayout(
                 }
 
                 if (controlsVisible) {
-                    Column(
-                        modifier = Modifier.layoutId(CaptureSlotId.ElapsedTime),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Box(
+                        modifier = Modifier.layoutId(CaptureSlotId.SnackbarHost),
+                        contentAlignment = Alignment.BottomCenter
                     ) {
                         snackbarHost(Modifier)
-                        OverlapAwareStyleProvider {
-                            elapsedTimeDisplay(Modifier)
-                        }
                     }
 
                     Box(
@@ -764,6 +764,9 @@ private fun AdaptivePortraitCaptureLayout(
                     ) {
                         OverlapAwareStyleProvider {
                             captureModeCarousel(Modifier)
+                        }
+                        OverlapAwareStyleProvider {
+                            elapsedTimeDisplay(Modifier)
                         }
                     }
 
@@ -825,8 +828,8 @@ private fun AdaptivePortraitCaptureLayout(
             val topStartPlaceable = measurables
                 .firstOrNull { it.layoutId == CaptureSlotId.TopStartContent }
                 ?.measure(looseConstraints)
-            val elapsedTimePlaceable = measurables
-                .firstOrNull { it.layoutId == CaptureSlotId.ElapsedTime }
+            val snackbarHostPlaceable = measurables
+                .firstOrNull { it.layoutId == CaptureSlotId.SnackbarHost }
                 ?.measure(looseConstraints)
 
             val zoomBar = measureInBand(CaptureSlotId.ZoomBar, CameraRowIds.ZOOM_BAR)
@@ -921,13 +924,12 @@ private fun AdaptivePortraitCaptureLayout(
 
                 topBarPlaceable?.placeRelative(0, 0)
 
-                // The elapsed time readout is not a solver row: it is an optional caption that
-                // hangs above the zoom bar, so it is placed relative to that band rather than
-                // reserving a band of its own.
+                // The snackbar host is not a solver row: it hangs above the zoom bar, so it is
+                // placed relative to that band rather than reserving a band of its own.
                 zoomBar?.let { (_, zoomTop) ->
-                    elapsedTimePlaceable?.let { elapsed ->
-                        val elapsedX = (constraints.maxWidth - elapsed.width) / 2
-                        elapsed.placeRelative(elapsedX, zoomTop - elapsed.height)
+                    snackbarHostPlaceable?.let { snackbar ->
+                        val snackbarX = (constraints.maxWidth - snackbar.width) / 2
+                        snackbar.placeRelative(snackbarX, zoomTop - snackbar.height)
                     }
                 }
 
@@ -977,10 +979,6 @@ private fun VerticalMaterialControls(
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
             Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
                 snackbarHost(Modifier)
-
-                OverlapAwareStyleProvider {
-                    elapsedTimeDisplay(Modifier)
-                }
 
                 // zoom controls row
                 OverlapAwareStyleProvider {
@@ -1043,6 +1041,9 @@ private fun VerticalMaterialControls(
                 ) {
                     OverlapAwareStyleProvider {
                         captureModeCarousel(Modifier)
+                    }
+                    OverlapAwareStyleProvider {
+                        elapsedTimeDisplay(Modifier)
                     }
                 }
 

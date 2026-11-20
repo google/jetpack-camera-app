@@ -48,6 +48,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -68,6 +69,7 @@ import com.google.jetpackcamera.core.camera.InitialRecordingSettings
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CameraError
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
@@ -86,6 +88,8 @@ import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeOption
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -709,6 +713,435 @@ class CaptureScaffoldTest {
         composeTestRule.onNodeWithTag(TOP_BAR_LEADING_TAG).assertIsDisplayed()
     }
 
+    private fun idleUiStateForMode(
+        mode: CaptureMode,
+        subModes: CaptureSubModeUiState,
+        includeQuickSettingsCaptureMode: Boolean = true,
+        finalElapsedTimeNanos: Long = 0L
+    ) = LOADING_CAPTURE_UI_STATE_SKELETON.copy(
+        videoRecordingState = VideoRecordingState.Inactive(
+            finalElapsedTimeNanos = finalElapsedTimeNanos
+        ),
+        elapsedTimeUiState = ElapsedTimeUiState.Enabled(finalElapsedTimeNanos),
+        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
+            captureMode = mode,
+            isEnabled = true
+        ),
+        captureModeToggleUiState = CaptureModeToggleUiState.Available(
+            selectedCaptureMode = mode,
+            imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+            videoOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+        ),
+        quickSettingsUiState = availableQuickSettingsUiState.copy(
+            captureModeUiState = if (includeQuickSettingsCaptureMode) {
+                CaptureModeUiState.Available(
+                    selectedCaptureMode = mode,
+                    availableCaptureModes = listOf(
+                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+                    )
+                )
+            } else {
+                CaptureModeUiState.Unavailable
+            }
+        ),
+        captureSubModeUiState = subModes
+    )
+
+    private fun recordingUiState(
+        mode: CaptureMode = CaptureMode.VIDEO_ONLY,
+        elapsedTimeNanos: Long = 5_000_000_000L,
+        includeQuickSettingsCaptureMode: Boolean = true
+    ) = LOADING_CAPTURE_UI_STATE_SKELETON.copy(
+        videoRecordingState = VideoRecordingState.Active.Recording(
+            maxDurationMillis = 0L,
+            audioStreamState = AudioStreamState.Active(0.0),
+            elapsedTimeNanos = elapsedTimeNanos
+        ),
+        elapsedTimeUiState = ElapsedTimeUiState.Enabled(elapsedTimeNanos),
+        captureButtonUiState = CaptureButtonUiState.Enabled.Recording.LockedRecording,
+        captureModeToggleUiState = CaptureModeToggleUiState.Unavailable,
+        quickSettingsUiState = availableQuickSettingsUiState.copy(
+            captureModeUiState = if (includeQuickSettingsCaptureMode) {
+                CaptureModeUiState.Available(
+                    selectedCaptureMode = mode,
+                    availableCaptureModes = listOf(
+                        SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+                        SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+                    )
+                )
+            } else {
+                CaptureModeUiState.Unavailable
+            }
+        ),
+        captureSubModeUiState = CaptureSubModeUiState.Unavailable
+    )
+
+    private val videoCarouselState = CaptureSubModeUiState.Available(
+        selectedSubMode = CaptureSubModeId.DEFAULT,
+        availableSubModes = listOf(
+            SingleSelectableUiState.SelectableUi(
+                CaptureSubModeOption(
+                    id = CaptureSubModeId.DEFAULT,
+                    labelResId = R.string.quick_settings_text_capture_mode_video_only
+                )
+            ),
+            SingleSelectableUiState.SelectableUi(
+                CaptureSubModeOption(
+                    id = DUAL_SUB_MODE_ID,
+                    labelResId = R.string.quick_settings_text_capture_mode_standard
+                )
+            )
+        )
+    )
+
+    private val photoCarouselState = CaptureSubModeUiState.Available(
+        selectedSubMode = CaptureSubModeId.DEFAULT,
+        availableSubModes = listOf(
+            SingleSelectableUiState.SelectableUi(
+                CaptureSubModeOption(
+                    id = CaptureSubModeId.DEFAULT,
+                    labelResId = R.string.quick_settings_text_capture_mode_image_only
+                )
+            ),
+            SingleSelectableUiState.SelectableUi(
+                CaptureSubModeOption(
+                    id = NIGHT_SUB_MODE_ID,
+                    labelResId = R.string.quick_settings_text_capture_mode_standard
+                )
+            )
+        )
+    )
+
+    @Test
+    fun captureScaffold_startingRecording_hidesCarouselBeforeElapsedTimeFadesIn() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(CaptureMode.VIDEO_ONLY, videoCarouselState)
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+
+        // Starting: carousel disappears immediately, elapsed time not yet visible.
+        captureUiState = captureUiState.copy(
+            videoRecordingState = VideoRecordingState.Starting(),
+            elapsedTimeUiState = ElapsedTimeUiState.Enabled(0L),
+            captureSubModeUiState = CaptureSubModeUiState.Unavailable
+        )
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+
+        // Active: elapsed time fades in while carousel remains absent.
+        captureUiState = recordingUiState(elapsedTimeNanos = 0L)
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffold_stoppingRecording_holdsElapsedTimeDuringExitDelay_thenShowsCarousel() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(CaptureMode.VIDEO_ONLY, videoCarouselState)
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+
+        // Start recording and settle fade-in.
+        captureUiState = recordingUiState(elapsedTimeNanos = FIVE_SECONDS_NANOS)
+        composeTestRule.mainClock.advanceTimeBy(ENTER_SETTLE_MS)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
+            .assertIsDisplayed()
+            .assertTextEquals("0:05")
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        // Stop recording while staying in VIDEO_ONLY (carousel UI state becomes Available at once).
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        // Immediately after stop, elapsed time stays visible and carousel is deferred.
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
+            .assertIsDisplayed()
+            .assertTextEquals("0:05")
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        // Still inside the 1,500ms hold window.
+        composeTestRule.mainClock.advanceTimeBy(1_400L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
+            .assertIsDisplayed()
+            .assertTextEquals("0:05")
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        // Mid-fadeOut (~1,650ms after stop): still no overlap with carousel.
+        composeTestRule.mainClock.advanceTimeBy(250L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertExists()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        // After the 1,500ms delay + 300ms fade-out completes, elapsed time unmounts and carousel
+        // appears.
+        composeTestRule.mainClock.advanceTimeBy(400L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DUAL_SUB_MODE_ID.carouselOptionTag).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffold_stoppingRecordingAndSwitchingMode_cancelsExitAndShowsNewCarousel() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(CaptureMode.VIDEO_ONLY, videoCarouselState)
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        // Record and settle fade-in.
+        captureUiState = recordingUiState(elapsedTimeNanos = FIVE_SECONDS_NANOS)
+        composeTestRule.mainClock.advanceTimeBy(ENTER_SETTLE_MS)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
+
+        // Stop recording and verify exit hold is active at 500ms.
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeBy(500L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        // Rapidly switch from VIDEO_ONLY to IMAGE_ONLY during the 1,500ms hold window.
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.IMAGE_ONLY,
+            subModes = photoCarouselState,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeBy(MODE_SWITCH_SETTLE_MS)
+
+        // Exit animation must cancel immediately and show the photo carousel without waiting 1.8s.
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(NIGHT_SUB_MODE_ID.carouselOptionTag).assertIsDisplayed()
+
+        // Switching back to VIDEO_ONLY must not resurrect the cancelled elapsed time readout.
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeBy(MODE_SWITCH_SETTLE_MS)
+
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(DUAL_SUB_MODE_ID.carouselOptionTag).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffold_interruptedShortRecording_neverOverlapsCarouselWhileExiting() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(CaptureMode.VIDEO_ONLY, videoCarouselState)
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        // Start recording and interrupt after only 64ms (mid-fadeIn before currentState == true).
+        captureUiState = recordingUiState(elapsedTimeNanos = 1_000_000_000L)
+        composeTestRule.mainClock.advanceTimeBy(64L)
+
+        // Stop recording before fade-in settles.
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            finalElapsedTimeNanos = 1_000_000_000L
+        )
+        repeat(130) {
+            composeTestRule.mainClock.advanceTimeByFrame()
+            val hasElapsed = composeTestRule
+                .onAllNodes(hasTestTag(ELAPSED_TIME_TAG))
+                .fetchSemanticsNodes().isNotEmpty()
+            val hasCarousel = composeTestRule
+                .onAllNodes(hasTestTag(CAPTURE_MODE_CAROUSEL))
+                .fetchSemanticsNodes().isNotEmpty()
+            assertThat(hasElapsed && hasCarousel).isFalse()
+        }
+
+        // After advancing > 2 seconds, exit has completed and carousel is visible.
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffold_reRecordingDuringExitDelay_keepsElapsedTimeWithoutCarouselFlash() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(CaptureMode.VIDEO_ONLY, videoCarouselState)
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        captureUiState = recordingUiState(elapsedTimeNanos = FIVE_SECONDS_NANOS)
+        composeTestRule.mainClock.advanceTimeBy(ENTER_SETTLE_MS)
+
+        // Stop first recording and wait 500ms into exit delay.
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeBy(500L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        // Start second recording mid-cooldown.
+        captureUiState = captureUiState.copy(
+            videoRecordingState = VideoRecordingState.Starting(),
+            elapsedTimeUiState = ElapsedTimeUiState.Enabled(0L),
+            captureSubModeUiState = CaptureSubModeUiState.Unavailable
+        )
+        composeTestRule.mainClock.advanceTimeBy(100L)
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        captureUiState = recordingUiState(elapsedTimeNanos = 1_000_000_000L)
+        composeTestRule.mainClock.advanceTimeBy(1_500L)
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG)
+            .assertIsDisplayed()
+            .assertTextEquals("0:01")
+    }
+
+    @Test
+    fun captureScaffold_stoppingRecordingWhenQuickSettingsModeUnavailable_preservesExitDelay() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(
+                mode = CaptureMode.VIDEO_ONLY,
+                subModes = videoCarouselState,
+                includeQuickSettingsCaptureMode = false
+            )
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        // During recording with quickSettings.captureModeUiState Unavailable, activeCaptureMode
+        // drops to null; returning to VIDEO_ONLY must NOT falsely trigger a mode change.
+        captureUiState = recordingUiState(
+            elapsedTimeNanos = FIVE_SECONDS_NANOS,
+            includeQuickSettingsCaptureMode = false
+        )
+        composeTestRule.mainClock.advanceTimeBy(ENTER_SETTLE_MS)
+
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            includeQuickSettingsCaptureMode = false,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeBy(500L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeBy(1_600L)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffold_whenAnimationsDisabled_swapsElapsedTimeAndCarouselImmediately() {
+        var captureUiState by mutableStateOf(
+            idleUiStateForMode(CaptureMode.VIDEO_ONLY, videoCarouselState)
+        )
+        composeTestRule.mainClock.autoAdvance = false
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                CompositionLocalProvider(LocalDisableAnimations provides true) {
+                    CaptureScaffold(
+                        captureUiState = { captureUiState },
+                        surfaceRequest = null
+                    )
+                }
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+
+        captureUiState = recordingUiState(elapsedTimeNanos = FIVE_SECONDS_NANOS)
+        composeTestRule.mainClock.advanceTimeBy(MODE_SWITCH_SETTLE_MS)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
+
+        captureUiState = idleUiStateForMode(
+            mode = CaptureMode.VIDEO_ONLY,
+            subModes = videoCarouselState,
+            finalElapsedTimeNanos = FIVE_SECONDS_NANOS
+        )
+        composeTestRule.mainClock.advanceTimeBy(MODE_SWITCH_SETTLE_MS)
+        composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()
+    }
+
     @Test
     fun captureScaffoldLayout_quickSettingsOpen_blocksBackgroundFocus() {
         lateinit var scaffoldState: CaptureScaffoldState
@@ -983,5 +1416,10 @@ class CaptureScaffoldTest {
         const val TOP_START_BUTTON_TAG = "test_top_start_button"
         const val TOP_BAR_LEADING_TAG = "test_top_bar_leading"
         const val ICON_BUTTON_TAG = "test_icon_button"
+        val DUAL_SUB_MODE_ID = CaptureSubModeId("concurrent_dual")
+        val NIGHT_SUB_MODE_ID = CaptureSubModeId("night_mode")
+        const val FIVE_SECONDS_NANOS = 5_000_000_000L
+        const val ENTER_SETTLE_MS = 1_000L
+        const val MODE_SWITCH_SETTLE_MS = 64L
     }
 }
