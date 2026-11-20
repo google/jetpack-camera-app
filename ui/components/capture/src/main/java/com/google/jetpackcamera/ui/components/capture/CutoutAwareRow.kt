@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.view.ViewCompat
 import com.google.jetpackcamera.core.common.ignoreResult
+import com.google.jetpackcamera.model.DeviceRotation
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -96,6 +97,7 @@ fun CutoutAwareLinearLayout(
     content: @Composable () -> Unit
 ) {
     val view = LocalView.current
+    val windowRotation = LocalWindowRotation.current
     val cutoutInsets = WindowInsets.displayCutout
     var windowAnchor by remember { mutableStateOf<WindowAnchor?>(null) }
     val lockedMinMain = remember { mutableMapOf<Int, Int>() }
@@ -107,14 +109,17 @@ fun CutoutAwareLinearLayout(
             modifier = modifier
                 .semantics { isTraversalGroup = true }
                 .onGloballyPositioned { coordinates ->
-                    val anchor = coordinates.toWindowAnchor()
+                    val anchor = coordinates.toWindowAnchor(
+                        includeHeight = windowRotation != DeviceRotation.Natural
+                    )
                     if (windowAnchor != anchor) {
                         windowAnchor = anchor
                     }
                 }
                 .drawCutoutPillSegments(pillBackgroundColor) { pillSegments }
         ) { measurables, constraints ->
-            // Read WindowInsets.displayCutout inside measure to subscribe to inset updates.
+            // Read WindowInsets.displayCutout inside measure to subscribe to inset updates across
+            // all physical edges when counter-rotated.
             cutoutInsets.getTop(this).ignoreResult()
             cutoutInsets.getBottom(this).ignoreResult()
             cutoutInsets.getLeft(this, layoutDirection).ignoreResult()
@@ -174,7 +179,10 @@ fun CutoutAwareLinearLayout(
                     ?.displayCutout?.boundingRects.orEmpty(),
                 windowAnchor = windowAnchor,
                 isRtl = isRtl,
-                rtlReferenceWidth = rtlReferenceWidth
+                rtlReferenceWidth = rtlReferenceWidth,
+                // Side rails are never counter-rotated, so only horizontal rows map rotated
+                // cutouts.
+                windowRotation = if (isHorizontal) windowRotation else DeviceRotation.Natural
             )
 
             val keepOutRanges = if (isHorizontal) {
@@ -359,18 +367,28 @@ fun CutoutAwareColumn(
 /**
  * Window-space anchor of a cutout-aware container, capturing horizontal bounds and top offset so
  * vertical height animations do not invalidate cutout coordinate resolution.
+ *
+ * [height] is only populated while the container is counter-rotated, where the window-space
+ * bottom edge is needed to map cutouts into the rotated local frame; it stays `0` otherwise.
  */
 @Immutable
 internal data class WindowAnchor(
     val left: Int,
     val top: Int,
-    val width: Int
-)
+    val width: Int,
+    val height: Int = 0
+) {
+    val right: Int get() = left + width
+    val bottom: Int get() = top + height
+}
 
 /**
  * Computes the [WindowAnchor] for these [LayoutCoordinates] in window pixel coordinates.
+ *
+ * @param includeHeight whether to record the window-space height, which counter-rotated
+ *   containers need to resolve cutouts.
  */
-internal fun LayoutCoordinates.toWindowAnchor(): WindowAnchor {
+internal fun LayoutCoordinates.toWindowAnchor(includeHeight: Boolean = false): WindowAnchor {
     val bounds = boundsInWindow()
     val left = bounds.left.roundToInt()
     val top = bounds.top.roundToInt()
@@ -378,7 +396,8 @@ internal fun LayoutCoordinates.toWindowAnchor(): WindowAnchor {
     return WindowAnchor(
         left = left,
         top = top,
-        width = right - left
+        width = right - left,
+        height = if (includeHeight) bounds.bottom.roundToInt() - top else 0
     )
 }
 
@@ -387,30 +406,53 @@ internal fun LayoutCoordinates.toWindowAnchor(): WindowAnchor {
  * [cutoutRectsOverride] when provided or offsetting [windowCutoutRects] by [windowAnchor]. When
  * [isRtl] is `true`, horizontal bounds are mirrored into start-relative coordinates; vertical
  * layouts pass `isRtl = false` to keep coordinates in physical space.
+ *
+ * When [windowRotation] is not [DeviceRotation.Natural], the container is counter-rotated within
+ * the window, so window-space cutouts are rotated into its upright local frame using the anchor's
+ * window-space bounds.
  */
 internal fun resolveLocalCutoutRects(
     cutoutRectsOverride: List<IntRect>?,
     windowCutoutRects: List<Rect>,
     windowAnchor: WindowAnchor?,
     isRtl: Boolean,
-    rtlReferenceWidth: Int
+    rtlReferenceWidth: Int,
+    windowRotation: DeviceRotation = DeviceRotation.Natural
 ): List<IntRect> {
     val ltrRects = cutoutRectsOverride ?: run {
         val anchor = windowAnchor ?: return emptyList()
-        val offsetX = anchor.left
-        val offsetY = anchor.top
         windowCutoutRects.map { rect ->
-            IntRect(
-                left = rect.left - offsetX,
-                top = rect.top - offsetY,
-                right = rect.right - offsetX,
-                bottom = rect.bottom - offsetY
-            )
+            when (windowRotation) {
+                DeviceRotation.Natural -> IntRect(
+                    left = rect.left - anchor.left,
+                    top = rect.top - anchor.top,
+                    right = rect.right - anchor.left,
+                    bottom = rect.bottom - anchor.top
+                )
+                DeviceRotation.Rotated270 -> IntRect(
+                    left = anchor.bottom - rect.bottom,
+                    top = rect.left - anchor.left,
+                    right = anchor.bottom - rect.top,
+                    bottom = rect.right - anchor.left
+                )
+                DeviceRotation.Rotated90 -> IntRect(
+                    left = rect.top - anchor.top,
+                    top = anchor.right - rect.right,
+                    right = rect.bottom - anchor.top,
+                    bottom = anchor.right - rect.left
+                )
+                DeviceRotation.Rotated180 -> IntRect(
+                    left = anchor.right - rect.right,
+                    top = anchor.bottom - rect.bottom,
+                    right = anchor.right - rect.left,
+                    bottom = anchor.bottom - rect.top
+                )
+            }
         }
     }
     return if (isRtl) {
         val startEdgeX = if (cutoutRectsOverride == null && windowAnchor != null) {
-            windowAnchor.width
+            if (windowRotation.isLandscape) windowAnchor.height else windowAnchor.width
         } else {
             rtlReferenceWidth
         }

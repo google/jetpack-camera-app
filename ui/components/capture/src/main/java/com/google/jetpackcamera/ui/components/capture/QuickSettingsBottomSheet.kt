@@ -198,6 +198,8 @@ internal fun QuickSettingsBottomSheetScaffold(
                     .windowInsetsPadding(
                         WindowInsets.navigationBarsIgnoringVisibility
                             .union(WindowInsets.tappableElement)
+                            // Map the system bars into the counter-rotated portrait frame.
+                            .toPortraitWindowInsets(LocalWindowRotation.current)
                             .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
                     )
                     .padding(bottom = QuickSettingsSheetDefaults.BottomSheetContentBottomPadding)

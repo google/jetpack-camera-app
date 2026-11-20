@@ -47,6 +47,7 @@ import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
@@ -324,6 +325,22 @@ class CutoutAwareRowTest {
                 rtlReferenceWidth = 360
             )
         ).containsExactly(IntRect(left = 310, top = 0, right = 350, bottom = 40))
+
+        // Rotated rows, like natural ones, report no cutouts until the first placement resolves
+        // a window anchor, so offset rows are never treated as sitting at the window origin.
+        val landscapeLeftCutout = listOf(android.graphics.Rect(0, 300, 48, 340))
+        for (rotation in listOf(DeviceRotation.Rotated90, DeviceRotation.Rotated270)) {
+            assertThat(
+                resolveLocalCutoutRects(
+                    cutoutRectsOverride = null,
+                    windowCutoutRects = landscapeLeftCutout,
+                    windowAnchor = null,
+                    isRtl = false,
+                    rtlReferenceWidth = 360,
+                    windowRotation = rotation
+                )
+            ).isEmpty()
+        }
     }
 
     @Test

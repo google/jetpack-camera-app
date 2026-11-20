@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.max
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsSideSheet
 
 /**
@@ -297,7 +298,9 @@ internal fun SideRailCaptureScaffold(
 
     CompositionLocalProvider(
         LocalOverlapTargetBounds provides overlapTargetBounds,
-        LocalActiveCaptureLayout provides config.activeLayoutName
+        LocalActiveCaptureLayout provides config.activeLayoutName,
+        LocalWindowRotation provides DeviceRotation.Natural,
+        LocalGravityRotationState provides DefaultGravityRotationState
     ) {
         Box(
             modifier = modifier

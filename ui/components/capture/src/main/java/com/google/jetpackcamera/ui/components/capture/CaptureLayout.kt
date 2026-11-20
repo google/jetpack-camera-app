@@ -23,8 +23,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.darkColorScheme
@@ -35,10 +33,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.HorizontalAlignmentLine
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.jetpackcamera.ui.components.TooltipIconButton
+import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutMode
 import com.google.jetpackcamera.ui.components.capture.layout.rememberCameraLayoutMode
@@ -101,6 +98,8 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * @param errorDialog the camera error alert dialog composable.
  * @param isErrorDialogShowing whether a modal camera error dialog is currently visible above the
  *   capture chrome.
+ * @param deviceRotation physical gravity orientation of the device.
+ * @param windowRotation display/window rotation reported by Android.
  */
 @Composable
 fun CaptureScaffoldLayout(
@@ -128,11 +127,15 @@ fun CaptureScaffoldLayout(
     topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {},
-    isErrorDialogShowing: Boolean = false
+    isErrorDialogShowing: Boolean = false,
+    deviceRotation: DeviceRotation = rememberDeviceRotation(),
+    windowRotation: DeviceRotation = rememberWindowRotation()
 ) {
     CaptureScaffoldLayout(
         modifier = modifier,
         state = state,
+        deviceRotation = deviceRotation,
+        windowRotation = windowRotation,
         onDismissQuickSettings = onDismissQuickSettings,
         viewfinder = viewfinder,
         captureButton = captureButton,
@@ -164,6 +167,8 @@ fun CaptureScaffoldLayout(
 internal fun CaptureScaffoldLayout(
     modifier: Modifier = Modifier,
     state: CaptureScaffoldState = rememberCaptureScaffoldState(),
+    deviceRotation: DeviceRotation = LocalDeviceRotation.current,
+    windowRotation: DeviceRotation = LocalWindowRotation.current,
     onDismissQuickSettings: () -> Unit = {},
     viewfinder: @Composable (Modifier) -> Unit,
     captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
@@ -236,6 +241,8 @@ internal fun CaptureScaffoldLayout(
                         slots = resolvedSlots,
                         viewfinder = movableViewfinder,
                         state = state,
+                        deviceRotation = deviceRotation,
+                        windowRotation = windowRotation,
                         controlsVisible = controlsVisible,
                         isErrorDialogShowing = isErrorDialogShowing,
                         includeStatusBarsInTopBar = !isFullScreenCompactPhone,
@@ -519,96 +526,4 @@ private fun OrchestratorTabletLandscapePreview() {
             slots = previewSideRailSlots(includeElapsedTime = true)
         )
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@PreviewPortraitDevices
-@Composable
-private fun CaptureLayoutWithTooltipPreview() {
-    CaptureScaffoldLayout(
-        modifier = Modifier.background(Color.Black),
-        viewfinder = { modifier ->
-            Box(
-                modifier = modifier
-                    .fillMaxWidth()
-                    .aspectRatio(3f / 4f)
-                    .background(Color.DarkGray)
-            )
-        },
-        captureButton = { modifier ->
-            Box(
-                modifier = modifier
-                    .size(80.dp)
-                    .background(Color.White)
-            )
-        },
-        flipCameraButton = { modifier ->
-            Box(
-                modifier = modifier
-                    .size(48.dp)
-                    .background(Color.Cyan)
-            )
-        },
-        imageWell = { modifier ->
-            Box(
-                modifier = modifier
-                    .size(48.dp)
-                    .background(Color.Cyan)
-            )
-        },
-        zoomLevelDisplay = { modifier ->
-            Box(
-                modifier = modifier
-                    .height(48.dp)
-                    .fillMaxWidth()
-                    .background(Color.Magenta)
-            )
-        },
-        elapsedTimeDisplay = { modifier ->
-            Box(
-                modifier = modifier
-                    .height(24.dp)
-                    .fillMaxWidth(0.5f)
-                    .background(Color.Red)
-            )
-        },
-        quickSettingsButton = { modifier ->
-            Box(
-                modifier = modifier
-                    .size(48.dp)
-                    .background(Color.Yellow)
-            )
-        },
-        topBarLeadingContent = { modifier ->
-            TooltipIconButton(
-                modifier = modifier,
-                icon = {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_info_filled),
-                        contentDescription = null
-                    )
-                },
-                tooltipText = "Camera information",
-                isOutlined = true
-            )
-        },
-        indicatorRow = { modifier ->
-            IndicatorPill(modifier = modifier.fillMaxWidth()) {
-                IndicatorPillIcon(visible = true) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_flash_on_filled),
-                        contentDescription = null
-                    )
-                }
-            }
-        },
-        captureModeToggle = { modifier ->
-            Box(
-                modifier = modifier
-                    .height(48.dp)
-                    .fillMaxWidth(0.5f)
-                    .background(Color.Blue)
-            )
-        }
-    )
 }
