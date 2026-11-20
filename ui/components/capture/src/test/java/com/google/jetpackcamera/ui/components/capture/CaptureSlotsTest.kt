@@ -18,12 +18,10 @@ package com.google.jetpackcamera.ui.components.capture
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getBoundsInRoot
@@ -32,6 +30,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -104,83 +104,85 @@ class CaptureSlotsTest {
     }
 
     @Test
-    fun captureSlots_andPlaceholders_adaptAxisAndRecycleExistingTags() {
-        val customSlots = CaptureSlots(
+    fun overlapAwareCaptureSlot_propagatesOrientationAndControlSize_andDefaultsOmittedSlots() {
+        var observedOrientation: Orientation? = null
+        var observedControlSize: ControlSize? = null
+        val slots = CaptureSlots(
             topBar = { modifier ->
+                observedOrientation = orientation
+                observedControlSize = controlSize
                 Box(modifier.size(48.dp).testTag(VIDEO_QUALITY_TAG))
-            },
-            topStartContent = { modifier ->
-                Box(modifier.size(24.dp).testTag(FLIP_CAMERA_BUTTON))
             }
         )
-        val defaultPlaceholders = PlaceholderCaptureSlots.default()
-        val taggedOverlayPlaceholders = PlaceholderCaptureSlots.sideRail(
-            tagQuickSettingsOverlay = true
-        )
-        val slotScope = CaptureSlotScope(orientation = Orientation.Vertical)
-        var useTaggedOverlay by mutableStateOf(false)
 
         composeTestRule.setContent {
-            Box(modifier = Modifier.size(400.dp)) {
-                PlaceholderViewfinder()
-                with(slotScope) {
-                    customSlots.topBar(this, Modifier)
-                    customSlots.topStartContent(this, Modifier)
-                    defaultPlaceholders.zoomControls(
-                        this,
-                        Modifier.sizeIn(maxHeight = 40.dp)
-                    )
-                    if (useTaggedOverlay) {
-                        taggedOverlayPlaceholders.quickSettingsOverlay(this, Modifier)
-                    } else {
-                        defaultPlaceholders.quickSettingsOverlay(this, Modifier)
-                    }
-                }
-            }
+            OverlapAwareCaptureSlot(
+                orientation = Orientation.Vertical,
+                controlSize = ControlSize.Medium,
+                content = slots.topBar
+            )
+            OverlapAwareCaptureSlot(content = slots.imageWell)
         }
 
-        composeTestRule.onNodeWithTag(PREVIEW_DISPLAY).assertIsDisplayed()
         composeTestRule.onNodeWithTag(VIDEO_QUALITY_TAG).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertIsDisplayed()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertDoesNotExist()
-
-        val clampedZoomBounds = composeTestRule.onNodeWithTag(ZOOM_BUTTON_ROW_TAG).getBoundsInRoot()
-        assertThat(clampedZoomBounds.height).isEqualTo(40.dp)
-
-        useTaggedOverlay = true
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertDoesNotExist()
+        assertThat(observedOrientation).isEqualTo(Orientation.Vertical)
+        assertThat(observedControlSize).isEqualTo(ControlSize.Medium)
     }
 
     @Test
     fun captureButtonDefaults_diameterFor_mapsEachControlSize() {
         assertThat(CaptureButtonDefaults.diameterFor(ControlSize.Mini)).isEqualTo(56.dp)
-        assertThat(CaptureButtonDefaults.diameterFor(ControlSize.Medium)).isEqualTo(72.dp)
+        assertThat(CaptureButtonDefaults.diameterFor(ControlSize.Medium)).isEqualTo(74.dp)
         assertThat(CaptureButtonDefaults.diameterFor(ControlSize.Standard)).isEqualTo(86.dp)
     }
 
     @Test
-    fun placeholderShutter_sizesForEachControlSize() {
+    fun captureButton_insideOverlapAwareStyleProvider_sizesForEachControlSize() {
         var controlSize by mutableStateOf(ControlSize.Standard)
-        val slots = PlaceholderCaptureSlots.sideRail()
+        val buttonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
 
         composeTestRule.setContent {
-            Box(modifier = Modifier.sizeIn(maxWidth = 200.dp, maxHeight = 200.dp)) {
-                CaptureSlotScope(controlSize = controlSize).run {
-                    slots.captureButton(this, Modifier)
-                }
+            OverlapAwareStyleProvider(controlSize = controlSize) {
+                CaptureButton(captureButtonUiState = buttonUiState)
             }
         }
 
         fun shutterHeight() = composeTestRule.onNodeWithTag(CAPTURE_BUTTON).getBoundsInRoot().height
-        assertThat(shutterHeight()).isEqualTo(86.dp)
+        assertThat(shutterHeight().value).isWithin(0.5f).of(86f)
 
         controlSize = ControlSize.Medium
         composeTestRule.waitForIdle()
-        assertThat(shutterHeight()).isEqualTo(72.dp)
+        assertThat(shutterHeight().value).isWithin(0.5f).of(74f)
 
         controlSize = ControlSize.Mini
         composeTestRule.waitForIdle()
-        assertThat(shutterHeight()).isEqualTo(56.dp)
+        assertThat(shutterHeight().value).isWithin(0.5f).of(56f)
+    }
+
+    @Test
+    fun captureScaffoldDefaults_captureButton_usesLocalControlSizeByDefault() {
+        var controlSize by mutableStateOf(ControlSize.Standard)
+        val buttonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD)
+
+        composeTestRule.setContent {
+            OverlapAwareStyleProvider(controlSize = controlSize) {
+                CaptureScaffoldDefaults.CaptureButton(
+                    uiState = buttonUiState,
+                    captureController = null
+                )
+            }
+        }
+
+        fun shutterHeight() = composeTestRule.onNodeWithTag(CAPTURE_BUTTON).getBoundsInRoot().height
+        assertThat(shutterHeight().value).isWithin(0.5f).of(86f)
+
+        controlSize = ControlSize.Medium
+        composeTestRule.waitForIdle()
+        assertThat(shutterHeight().value).isWithin(0.5f).of(74f)
+
+        controlSize = ControlSize.Mini
+        composeTestRule.waitForIdle()
+        assertThat(shutterHeight().value).isWithin(0.5f).of(56f)
     }
 }

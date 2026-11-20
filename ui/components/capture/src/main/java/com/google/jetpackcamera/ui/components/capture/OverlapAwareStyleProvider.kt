@@ -22,12 +22,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -123,7 +123,7 @@ internal fun backgroundStyleFor(isOverlapping: Boolean): CameraControlBackground
  * their dimensions to the hosting container.
  */
 internal val LocalControlSize: ProvidableCompositionLocal<ControlSize> =
-    staticCompositionLocalOf { ControlSize.Standard }
+    compositionLocalOf { ControlSize.Standard }
 
 /**
  * Applies [LocalCameraControlBackgroundStyle] based on whether this

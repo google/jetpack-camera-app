@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,21 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
+import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.MediaDescriptor
+import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
+import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeOption
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
+import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
+import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
+import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import kotlin.math.roundToInt
 
 /**
@@ -596,13 +612,130 @@ private fun VerticalRailShutterCluster(
     }
 }
 
+internal fun previewSideRailSlots(
+    includeImageWell: Boolean = true,
+    includeElapsedTime: Boolean = false
+): CaptureSlots = CaptureSlots(
+    topBar = { mod ->
+        IndicatorPill(modifier = mod) {
+            VideoQualityIcon(
+                videoQuality = VideoQuality.FHD,
+                modifier = Modifier.testTag(VIDEO_QUALITY_TAG)
+            )
+        }
+    },
+    zoomControls = { mod ->
+        ZoomBar(
+            zoomControlUiState = ZoomControlUiState.Enabled(
+                zoomLevels = listOf(0.5f, 1f, 2f),
+                primaryLensFacing = LensFacing.BACK,
+                primaryZoomRatio = 1f
+            ),
+            onChangeZoom = {},
+            orientation = orientation,
+            modifier = mod
+        )
+    },
+    quickSettingsButton = { mod ->
+        ToggleQuickSettingsButton(
+            isOpen = false,
+            enabled = true,
+            onClick = {},
+            modifier = mod
+        )
+    },
+    flipCameraButton = { mod ->
+        FlipCameraButton(
+            flipLensUiState = FlipLensUiState.Available(
+                selectedLensFacing = LensFacing.BACK,
+                availableLensFacings = listOf(
+                    SingleSelectableUiState.SelectableUi(LensFacing.BACK),
+                    SingleSelectableUiState.SelectableUi(LensFacing.FRONT)
+                )
+            ),
+            onClick = {},
+            modifier = mod.testTag(FLIP_CAMERA_BUTTON)
+        )
+    },
+    captureButton = { mod ->
+        CaptureButton(
+            captureButtonUiState = CaptureButtonUiState.Enabled.Idle(CaptureMode.STANDARD),
+            modifier = mod
+        )
+    },
+    imageWell = if (includeImageWell) {
+        { mod ->
+            ImageWell(
+                imageWellUiState = ImageWellUiState.Content(
+                    mediaDescriptor = MediaDescriptor.Content.Image(
+                        uri = Uri.EMPTY,
+                        thumbnail = null
+                    )
+                ),
+                onClick = {},
+                modifier = mod
+            )
+        }
+    } else {
+        {}
+    },
+    captureModeToggle = { mod ->
+        CaptureModeToggleButton(
+            uiState = CaptureModeToggleUiState.Available(
+                selectedCaptureMode = CaptureMode.IMAGE_ONLY,
+                imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+                videoOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.VIDEO_ONLY)
+            ),
+            onChangeCaptureMode = {},
+            orientation = orientation,
+            controlSize = controlSize,
+            modifier = mod.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+        )
+    },
+    captureModeCarousel = { mod ->
+        CaptureModeCarousel(
+            uiState = CaptureSubModeUiState.Available(
+                selectedSubMode = CaptureSubModeId.DEFAULT,
+                availableSubModes = listOf(
+                    SingleSelectableUiState.SelectableUi(
+                        CaptureSubModeOption(
+                            id = CaptureSubModeId.DEFAULT,
+                            labelResId = R.string.quick_settings_text_capture_mode_image_only
+                        )
+                    ),
+                    SingleSelectableUiState.SelectableUi(
+                        CaptureSubModeOption(
+                            id = CaptureSubModeId("submode_two"),
+                            labelResId = R.string.quick_settings_text_capture_mode_video_only
+                        )
+                    )
+                )
+            ),
+            onSelectSubMode = {},
+            modifier = mod
+        )
+    },
+    elapsedTimeDisplay = if (includeElapsedTime) {
+        { mod ->
+            ElapsedTimeText(
+                elapsedTimeUiStateProvider = {
+                    ElapsedTimeUiState.Enabled(elapsedTimeNanos = 12_000_000_000L)
+                },
+                modifier = mod.testTag(ELAPSED_TIME_TAG)
+            )
+        }
+    } else {
+        {}
+    }
+)
+
 @Preview(name = "StartSideRail - Standard (800dp) LTR", showBackground = true)
 @Composable
 private fun StartSideRailStandardLtrPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             StartSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
             )
         }
@@ -615,7 +748,7 @@ private fun StartSideRailStandardRtlPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             StartSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
             )
         }
@@ -628,7 +761,7 @@ private fun StartSideRailTabletPortraitPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             StartSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewTabletPortraitRailHeight),
                 topPadding = Tokens.PreviewTabletPortraitTopPadding,
                 bottomPadding = Tokens.PreviewTabletPortraitBottomPadding,
@@ -646,7 +779,7 @@ private fun StartSideRailCompactLtrPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             StartSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = true),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewCompactRailHeight),
                 isCompactHeight = true
             )
@@ -660,7 +793,7 @@ private fun StartSideRailCompactRtlPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             StartSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = true),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewCompactRailHeight),
                 isCompactHeight = true
             )
@@ -674,7 +807,7 @@ private fun EndSideRailStandardLtrPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             EndSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
             )
         }
@@ -687,7 +820,7 @@ private fun EndSideRailStandardRtlPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             EndSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewStandardRailHeight)
             )
         }
@@ -700,7 +833,7 @@ private fun EndSideRailTabletPortraitPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             EndSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(isCompactHeight = false),
+                slots = previewSideRailSlots(),
                 modifier = Modifier.height(Tokens.PreviewTabletPortraitRailHeight),
                 topPadding = Tokens.PreviewTabletPortraitTopPadding,
                 bottomPadding = Tokens.PreviewTabletPortraitBottomPadding,
@@ -718,8 +851,7 @@ private fun EndSideRailCompactLtrPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             EndSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(
-                    isCompactHeight = true,
+                slots = previewSideRailSlots(
                     includeImageWell = true,
                     includeElapsedTime = true
                 ),
@@ -737,8 +869,7 @@ private fun EndSideRailCompactRtlPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         Box(modifier = Modifier.background(Tokens.PreviewBackgroundColor)) {
             EndSideRail(
-                slots = PlaceholderCaptureSlots.sideRail(
-                    isCompactHeight = true,
+                slots = previewSideRailSlots(
                     includeImageWell = true,
                     includeElapsedTime = true
                 ),

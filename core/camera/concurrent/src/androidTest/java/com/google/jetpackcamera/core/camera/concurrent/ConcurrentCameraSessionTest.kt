@@ -462,7 +462,7 @@ class ConcurrentCameraSessionTest {
     ): CameraSessionContext = CameraSessionContext(
         context = context,
         cameraProvider = cameraProvider,
-        backgroundDispatcher = Dispatchers.Default,
+        backgroundContext = Dispatchers.Default,
         screenFlashEvents = Channel(Channel.UNLIMITED),
         filePathGenerator = FakeFilePathGenerator(),
         focusMeteringEvents = Channel(Channel.UNLIMITED),

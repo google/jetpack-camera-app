@@ -16,17 +16,19 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import android.view.View
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
@@ -35,7 +37,7 @@ import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -46,6 +48,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
+import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
+import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -75,14 +80,13 @@ class CompactShortLayoutTest {
         composeTestRule.setContent {
             MaterialTheme {
                 CompactShortLayout(
-                    slots = PlaceholderCaptureSlots.sideRail(
-                        isCompactHeight = false,
+                    slots = previewSideRailSlots(
                         includeImageWell = true,
                         includeElapsedTime = true
                     ),
                     viewfinder = { mod ->
                         observedActiveLayout = LocalActiveCaptureLayout.current
-                        PlaceholderViewfinder(modifier = mod)
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
                     }
                 )
             }
@@ -117,12 +121,15 @@ class CompactShortLayoutTest {
         composeTestRule.setContent {
             MaterialTheme {
                 CompactShortLayout(
-                    slots = PlaceholderCaptureSlots.sideRail(
-                        isCompactHeight = false,
+                    slots = previewSideRailSlots(
                         includeImageWell = true,
                         includeElapsedTime = true
                     ),
-                    viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+                    viewfinder = { mod ->
+                        Box(
+                            modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()
+                        )
+                    }
                 )
             }
         }
@@ -143,11 +150,7 @@ class CompactShortLayoutTest {
         var rtlPolicy by mutableStateOf(CaptureRtlPolicy(mirrorSideRails = false))
         val observedDirections = mutableMapOf<String, LayoutDirection>()
 
-        val baseSlots = PlaceholderCaptureSlots.sideRail(
-            isCompactHeight = true,
-            includeImageWell = true,
-            includeElapsedTime = true
-        )
+        val baseSlots = previewSideRailSlots(includeImageWell = true, includeElapsedTime = true)
         val instrumentedSlots = baseSlots.copy(
             topBar = { mod ->
                 observedDirections["topBar"] = LocalLayoutDirection.current
@@ -179,7 +182,11 @@ class CompactShortLayoutTest {
                 ) {
                     CompactShortLayout(
                         slots = instrumentedSlots,
-                        viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+                        viewfinder = { mod ->
+                            Box(
+                                modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()
+                            )
+                        }
                     )
                 }
             }
@@ -235,12 +242,15 @@ class CompactShortLayoutTest {
             hostView = LocalView.current
             MaterialTheme {
                 CompactShortLayout(
-                    slots = PlaceholderCaptureSlots.sideRail(
-                        isCompactHeight = false,
+                    slots = previewSideRailSlots(
                         includeImageWell = true,
                         includeElapsedTime = true
                     ),
-                    viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+                    viewfinder = { mod ->
+                        Box(
+                            modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()
+                        )
+                    }
                 )
             }
         }
@@ -280,8 +290,21 @@ class CompactShortLayoutTest {
         composeTestRule.setContent {
             MaterialTheme {
                 CompactShortLayout(
-                    slots = PlaceholderCaptureSlots.sideRail(tagQuickSettingsOverlay = true),
-                    viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+                    slots = previewSideRailSlots().copy(
+                        quickSettingsOverlay = { mod ->
+                            QuickSettingsContent(
+                                quickSettingsUiState = sampleQuickSettingsUiState(),
+                                quickSettingsController = FakeQuickSettingsController(),
+                                onNavigateToSettings = {},
+                                modifier = mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                            )
+                        }
+                    ),
+                    viewfinder = { mod ->
+                        Box(
+                            modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()
+                        )
+                    },
                     state = state
                 )
             }
@@ -296,10 +319,9 @@ class CompactShortLayoutTest {
             .assert(!hasAnyAncestor(isDialog()))
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).assertIsDisplayed()
 
-        // Tapping the exposed scrim above the sheet dismisses Quick Settings.
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).performTouchInput {
-            click(Offset(right - 10f, top + 10f))
-        }
+        // Triggering the scrim's click action dismisses Quick Settings.
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
+            .performSemanticsAction(SemanticsActions.OnClick)
         composeTestRule.waitForIdle()
         assertThat(state.isQuickSettingsOpen).isFalse()
     }
@@ -309,12 +331,15 @@ class CompactShortLayoutTest {
         composeTestRule.setContent {
             MaterialTheme {
                 CompactShortLayout(
-                    slots = PlaceholderCaptureSlots.sideRail(
-                        isCompactHeight = false,
+                    slots = previewSideRailSlots(
                         includeImageWell = true,
                         includeElapsedTime = true
                     ),
-                    viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+                    viewfinder = { mod ->
+                        Box(
+                            modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()
+                        )
+                    }
                 )
             }
         }

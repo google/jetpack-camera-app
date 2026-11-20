@@ -668,7 +668,8 @@ class CaptureLayoutPositionTest {
     /**
      * Verifies that when the adaptive solver compacts the bottom toolbar (e.g. on a 460x920dp
      * window with 3-button navigation where `toolbarHeight = 46.dp`), [ToggleSwitch] and
-     * [ToggleQuickSettingsButton] scale down uniformly in both width and height.
+     * [ToggleQuickSettingsButton] scale down uniformly in both width and height, with the switch
+     * stopping at its 48dp touch-target floor.
      */
     @Test
     fun bottomToolbarControls_scaleProportionally_whenToolbarIsCompacted() {
@@ -703,15 +704,39 @@ class CaptureLayoutPositionTest {
         composeTestRule.waitForIdle()
 
         val expectedScale = 46f / 64f
+        // The toggle stops shrinking at the 48dp touch-target floor (48 / 64).
+        val expectedSwitchScale = 48f / 64f
         val switchBounds =
             composeTestRule.onNodeWithTag(TOGGLE_SWITCH_TAG).getUnclippedBoundsInRoot()
-        assertThat(switchBounds.width.value).isWithin(TOLERANCE).of(116f * expectedScale)
-        assertThat(switchBounds.height.value).isWithin(TOLERANCE).of(64f * expectedScale)
+        assertThat(switchBounds.width.value).isWithin(TOLERANCE).of(116f * expectedSwitchScale)
+        assertThat(switchBounds.height.value).isWithin(TOLERANCE).of(64f * expectedSwitchScale)
 
         val quickSettingsBounds =
             composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).getUnclippedBoundsInRoot()
-        assertThat(quickSettingsBounds.width.value).isWithin(TOLERANCE).of(48f * expectedScale)
+        assertThat(quickSettingsBounds.width.value).isWithin(TOLERANCE).of(56f * expectedScale)
         assertThat(quickSettingsBounds.height.value).isWithin(TOLERANCE).of(56f * expectedScale)
+    }
+
+    /**
+     * Verifies that without bottom toolbar compaction, [ToggleQuickSettingsButton] renders as a
+     * round `56dp x 56dp` medium icon button.
+     */
+    @Test
+    fun toggleQuickSettingsButton_uncompacted_is56dpCircle() {
+        composeTestRule.setContent {
+            Box {
+                ToggleQuickSettingsButton(
+                    isOpen = false,
+                    onClick = {}
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val quickSettingsBounds =
+            composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).getUnclippedBoundsInRoot()
+        assertThat(quickSettingsBounds.width.value).isWithin(TOLERANCE).of(56f)
+        assertThat(quickSettingsBounds.height.value).isWithin(TOLERANCE).of(56f)
     }
 
     /**

@@ -391,8 +391,8 @@ private fun CaptureLayoutPreview() {
 private fun OrchestratorCompactPortraitPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CaptureScaffoldLayout(
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
-            slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true)
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
         )
     }
 }
@@ -406,8 +406,8 @@ private fun OrchestratorCompactPortraitPreview() {
 private fun OrchestratorCompactHorizontalPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CaptureScaffoldLayout(
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
-            slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true)
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
         )
     }
 }
@@ -421,8 +421,8 @@ private fun OrchestratorCompactHorizontalPreview() {
 private fun OrchestratorCompactSlimPortraitPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CaptureScaffoldLayout(
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
-            slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true)
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
         )
     }
 }
@@ -436,8 +436,8 @@ private fun OrchestratorCompactSlimPortraitPreview() {
 private fun OrchestratorCompactSlimHorizontalPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CaptureScaffoldLayout(
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
-            slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true)
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
         )
     }
 }
@@ -451,9 +451,8 @@ private fun OrchestratorCompactSlimHorizontalPreview() {
 private fun OrchestratorCompactShortPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CaptureScaffoldLayout(
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
-            slots = PlaceholderCaptureSlots.sideRail(
-                isCompactHeight = true,
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(
                 includeElapsedTime = true
             )
         )
@@ -469,9 +468,8 @@ private fun OrchestratorCompactShortPreview() {
 private fun OrchestratorCompactShortSlimPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CaptureScaffoldLayout(
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
-            slots = PlaceholderCaptureSlots.sideRail(
-                isCompactHeight = true,
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(
                 includeElapsedTime = true
             )
         )
@@ -487,8 +485,8 @@ private fun OrchestratorCompactShortSlimPreview() {
 private fun OrchestratorFoldablePreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CaptureScaffoldLayout(
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
-            slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true)
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
         )
     }
 }
@@ -502,8 +500,8 @@ private fun OrchestratorFoldablePreview() {
 private fun OrchestratorTabletPortraitPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CaptureScaffoldLayout(
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
-            slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true)
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
         )
     }
 }
@@ -517,8 +515,8 @@ private fun OrchestratorTabletPortraitPreview() {
 private fun OrchestratorTabletLandscapePreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CaptureScaffoldLayout(
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
-            slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true)
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
         )
     }
 }
