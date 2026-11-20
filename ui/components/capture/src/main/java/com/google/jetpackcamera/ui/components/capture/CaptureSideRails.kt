@@ -652,7 +652,7 @@ private fun previewSideRailSlots(
     includeElapsedTime: Boolean = false
 ): CaptureSlots = CaptureSlots(
     topBar = { mod ->
-        IndicatorPill(modifier = mod) {
+        IndicatorPill(modifier = mod, orientation = orientation) {
             VideoQualityIcon(
                 videoQuality = VideoQuality.FHD,
                 modifier = Modifier.testTag(VIDEO_QUALITY_TAG)

@@ -80,7 +80,7 @@ class CaptureSideRailsTest {
         includeElapsedTime: Boolean = false
     ): CaptureSlots = CaptureSlots(
         topBar = { mod ->
-            IndicatorPill(modifier = mod) {
+            IndicatorPill(modifier = mod, orientation = orientation) {
                 VideoQualityIcon(
                     videoQuality = VideoQuality.FHD,
                     modifier = Modifier.testTag(VIDEO_QUALITY_TAG)
@@ -499,8 +499,9 @@ class CaptureSideRailsTest {
         val imageWellBounds = boundsOf(IMAGE_WELL_TAG)
         val modeToggleBounds = boundsOf(CAPTURE_MODE_TOGGLE_BUTTON)
 
-        // Top indicator stays anchored near topPadding (32dp) while bottom buttons clear 48dp.
-        assertThat(indicatorBounds.top.value).isWithin(1f).of(32f)
+        // The vertical indicator pill stays anchored at topPadding (32dp); its first icon is inset by
+        // the pill's 6dp vertical container padding. Bottom buttons clear 48dp.
+        assertThat(indicatorBounds.top.value).isWithin(1f).of(32f + 6f)
         assertThat(quickSettingsBounds.bottom.value).isWithin(1f).of(1280f - 48f)
         assertThat(modeToggleBounds.bottom.value).isWithin(1f).of(1280f - 48f)
 
