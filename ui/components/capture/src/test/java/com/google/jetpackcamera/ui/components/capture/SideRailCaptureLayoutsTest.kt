@@ -54,12 +54,12 @@ import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.common.truth.Truth.assertThat
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
-import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
-import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolution
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
+import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
+import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -193,7 +193,10 @@ class SideRailCaptureLayoutsTest {
         composeTestRule.setContent {
             MaterialTheme {
                 TabletPortraitLayout(
-                    slots = previewSideRailSlots(includeImageWell = true, includeElapsedTime = true),
+                    slots = previewSideRailSlots(
+                        includeImageWell = true,
+                        includeElapsedTime = true
+                    ),
                     viewfinder = { vfModifier ->
                         observedActiveLayout = LocalActiveCaptureLayout.current
                         Box(modifier = vfModifier.testTag(PREVIEW_DISPLAY).fillMaxSize())
@@ -234,8 +237,19 @@ class SideRailCaptureLayoutsTest {
         composeTestRule.setContent {
             MaterialTheme {
                 FoldableLayout(
-                    slots = previewSideRailSlots().copy(quickSettingsOverlay = { mod -> QuickSettingsContent(sampleQuickSettingsUiState(), FakeQuickSettingsController(), {}, mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)) }),
-                    viewfinder = { mod -> Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()) },
+                    slots = previewSideRailSlots().copy(
+                        quickSettingsOverlay = { mod ->
+                            QuickSettingsContent(
+                                quickSettingsUiState = sampleQuickSettingsUiState(),
+                                quickSettingsController = FakeQuickSettingsController(),
+                                onNavigateToSettings = {},
+                                modifier = mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                            )
+                        }
+                    ),
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    },
                     state = state,
                     onDismissQuickSettings = { dismissCount++ }
                 )
@@ -272,8 +286,19 @@ class SideRailCaptureLayoutsTest {
             backDispatcher = LocalOnBackPressedDispatcherOwner.current!!.onBackPressedDispatcher
             MaterialTheme {
                 TabletPortraitLayout(
-                    slots = previewSideRailSlots().copy(quickSettingsOverlay = { mod -> QuickSettingsContent(sampleQuickSettingsUiState(), FakeQuickSettingsController(), {}, mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)) }),
-                    viewfinder = { mod -> Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()) },
+                    slots = previewSideRailSlots().copy(
+                        quickSettingsOverlay = { mod ->
+                            QuickSettingsContent(
+                                quickSettingsUiState = sampleQuickSettingsUiState(),
+                                quickSettingsController = FakeQuickSettingsController(),
+                                onNavigateToSettings = {},
+                                modifier = mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                            )
+                        }
+                    ),
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    },
                     state = state,
                     onDismissQuickSettings = { dismissCount++ }
                 )
@@ -299,8 +324,19 @@ class SideRailCaptureLayoutsTest {
         composeTestRule.setContent {
             MaterialTheme {
                 TabletLandscapeLayout(
-                    slots = previewSideRailSlots().copy(quickSettingsOverlay = { mod -> QuickSettingsContent(sampleQuickSettingsUiState(), FakeQuickSettingsController(), {}, mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)) }),
-                    viewfinder = { mod -> Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()) },
+                    slots = previewSideRailSlots().copy(
+                        quickSettingsOverlay = { mod ->
+                            QuickSettingsContent(
+                                quickSettingsUiState = sampleQuickSettingsUiState(),
+                                quickSettingsController = FakeQuickSettingsController(),
+                                onNavigateToSettings = {},
+                                modifier = mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                            )
+                        }
+                    ),
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    },
                     state = state,
                     onDismissQuickSettings = { dismissCount++ }
                 )
@@ -615,7 +651,9 @@ class SideRailCaptureLayoutsTest {
             MaterialTheme {
                 FoldableLayout(
                     slots = previewSideRailSlots(includeElapsedTime = true),
-                    viewfinder = { mod -> Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()) },
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    },
                     screenFlashOverlay = { mod ->
                         Box(modifier = mod.fillMaxSize().testTag(SCREEN_FLASH_OVERLAY))
                     }
@@ -658,7 +696,9 @@ class SideRailCaptureLayoutsTest {
             MaterialTheme {
                 CompactPortraitLayout(
                     slots = previewSideRailSlots(),
-                    viewfinder = { mod -> Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()) }
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    }
                 )
             }
         }
@@ -698,7 +738,9 @@ class SideRailCaptureLayoutsTest {
                 ) {
                     CompactPortraitLayout(
                         slots = instrumentedSlots,
-                        viewfinder = { mod -> Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()) }
+                        viewfinder = { mod ->
+                            Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                        }
                     )
                 }
             }
@@ -733,7 +775,16 @@ class SideRailCaptureLayoutsTest {
         var showErrorDialog by mutableStateOf(false)
         val state = CaptureScaffoldState(isInitiallyExpanded = true)
 
-        val baseSlots = previewSideRailSlots().copy(quickSettingsOverlay = { mod -> QuickSettingsContent(sampleQuickSettingsUiState(), FakeQuickSettingsController(), {}, mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)) })
+        val baseSlots = previewSideRailSlots().copy(
+            quickSettingsOverlay = { mod ->
+                QuickSettingsContent(
+                    quickSettingsUiState = sampleQuickSettingsUiState(),
+                    quickSettingsController = FakeQuickSettingsController(),
+                    onNavigateToSettings = {},
+                    modifier = mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                )
+            }
+        )
         val slots = baseSlots.copy(
             errorDialog = { mod ->
                 if (showErrorDialog) {
@@ -746,7 +797,9 @@ class SideRailCaptureLayoutsTest {
             MaterialTheme {
                 FoldableLayout(
                     slots = slots,
-                    viewfinder = { mod -> Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()) },
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    },
                     state = state,
                     controlsVisible = controlsVisible,
                     isErrorDialogShowing = showErrorDialog

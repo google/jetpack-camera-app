@@ -19,22 +19,16 @@ import android.view.View
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
-import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
-import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
@@ -44,7 +38,6 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performSemanticsAction
-import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -55,6 +48,9 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
+import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
+import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -84,7 +80,10 @@ class CompactShortLayoutTest {
         composeTestRule.setContent {
             MaterialTheme {
                 CompactShortLayout(
-                    slots = previewSideRailSlots(includeImageWell = true, includeElapsedTime = true),
+                    slots = previewSideRailSlots(
+                        includeImageWell = true,
+                        includeElapsedTime = true
+                    ),
                     viewfinder = { mod ->
                         observedActiveLayout = LocalActiveCaptureLayout.current
                         Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
@@ -122,8 +121,15 @@ class CompactShortLayoutTest {
         composeTestRule.setContent {
             MaterialTheme {
                 CompactShortLayout(
-                    slots = previewSideRailSlots(includeImageWell = true, includeElapsedTime = true),
-                    viewfinder = { mod -> Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()) }
+                    slots = previewSideRailSlots(
+                        includeImageWell = true,
+                        includeElapsedTime = true
+                    ),
+                    viewfinder = { mod ->
+                        Box(
+                            modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()
+                        )
+                    }
                 )
             }
         }
@@ -176,7 +182,11 @@ class CompactShortLayoutTest {
                 ) {
                     CompactShortLayout(
                         slots = instrumentedSlots,
-                        viewfinder = { mod -> Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()) }
+                        viewfinder = { mod ->
+                            Box(
+                                modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()
+                            )
+                        }
                     )
                 }
             }
@@ -232,8 +242,15 @@ class CompactShortLayoutTest {
             hostView = LocalView.current
             MaterialTheme {
                 CompactShortLayout(
-                    slots = previewSideRailSlots(includeImageWell = true, includeElapsedTime = true),
-                    viewfinder = { mod -> Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()) }
+                    slots = previewSideRailSlots(
+                        includeImageWell = true,
+                        includeElapsedTime = true
+                    ),
+                    viewfinder = { mod ->
+                        Box(
+                            modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()
+                        )
+                    }
                 )
             }
         }
@@ -273,8 +290,21 @@ class CompactShortLayoutTest {
         composeTestRule.setContent {
             MaterialTheme {
                 CompactShortLayout(
-                    slots = previewSideRailSlots().copy(quickSettingsOverlay = { mod -> QuickSettingsContent(sampleQuickSettingsUiState(), FakeQuickSettingsController(), {}, mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)) }),
-                    viewfinder = { mod -> Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()) },
+                    slots = previewSideRailSlots().copy(
+                        quickSettingsOverlay = { mod ->
+                            QuickSettingsContent(
+                                quickSettingsUiState = sampleQuickSettingsUiState(),
+                                quickSettingsController = FakeQuickSettingsController(),
+                                onNavigateToSettings = {},
+                                modifier = mod.testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                            )
+                        }
+                    ),
+                    viewfinder = { mod ->
+                        Box(
+                            modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()
+                        )
+                    },
                     state = state
                 )
             }
@@ -301,8 +331,15 @@ class CompactShortLayoutTest {
         composeTestRule.setContent {
             MaterialTheme {
                 CompactShortLayout(
-                    slots = previewSideRailSlots(includeImageWell = true, includeElapsedTime = true),
-                    viewfinder = { mod -> Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()) }
+                    slots = previewSideRailSlots(
+                        includeImageWell = true,
+                        includeElapsedTime = true
+                    ),
+                    viewfinder = { mod ->
+                        Box(
+                            modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize()
+                        )
+                    }
                 )
             }
         }
