@@ -552,7 +552,6 @@ internal fun SideRailCaptureScaffold(
     }
 }
 
-
 /** Returns whether the host activity is in multi-window mode, updating on configuration changes. */
 @Composable
 private fun rememberIsInMultiWindowMode(): Boolean {
