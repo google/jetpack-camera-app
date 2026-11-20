@@ -22,7 +22,10 @@ import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.OptionVisibility
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.junit.runners.JUnit4
 
+@RunWith(JUnit4::class)
 class StabilizationUiStateAdapterTest {
 
     @Test
