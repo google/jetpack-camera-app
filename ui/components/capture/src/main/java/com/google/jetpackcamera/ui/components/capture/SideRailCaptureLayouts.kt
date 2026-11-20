@@ -16,15 +16,18 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.captionBar
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -32,18 +35,22 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.tooling.preview.Preview
@@ -89,6 +96,7 @@ internal data class SideRailPostureConfig(
  */
 internal object SideRailTokens {
     val TopOverlayRailClearanceGap = 12.dp
+    val TopHudSlotGap = 8.dp
 
     val FoldableConfig = SideRailPostureConfig(
         activeLayoutName = "FoldableLayout",
@@ -147,6 +155,7 @@ internal fun FoldableLayout(
     controlsVisible: Boolean = true,
     isErrorDialogShowing: Boolean = false,
     onDismissQuickSettings: () -> Unit = {},
+    onRequiresImmersiveChange: (Boolean) -> Unit = {},
     overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     screenFlashOverlay: @Composable (Modifier) -> Unit = {}
 ) {
@@ -159,6 +168,7 @@ internal fun FoldableLayout(
         controlsVisible = controlsVisible,
         isErrorDialogShowing = isErrorDialogShowing,
         onDismissQuickSettings = onDismissQuickSettings,
+        onRequiresImmersiveChange = onRequiresImmersiveChange,
         overlay = overlay,
         screenFlashOverlay = screenFlashOverlay
     )
@@ -181,6 +191,7 @@ internal fun TabletLandscapeLayout(
     controlsVisible: Boolean = true,
     isErrorDialogShowing: Boolean = false,
     onDismissQuickSettings: () -> Unit = {},
+    onRequiresImmersiveChange: (Boolean) -> Unit = {},
     overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     screenFlashOverlay: @Composable (Modifier) -> Unit = {}
 ) {
@@ -193,6 +204,7 @@ internal fun TabletLandscapeLayout(
         controlsVisible = controlsVisible,
         isErrorDialogShowing = isErrorDialogShowing,
         onDismissQuickSettings = onDismissQuickSettings,
+        onRequiresImmersiveChange = onRequiresImmersiveChange,
         overlay = overlay,
         screenFlashOverlay = screenFlashOverlay
     )
@@ -215,6 +227,7 @@ internal fun TabletPortraitLayout(
     controlsVisible: Boolean = true,
     isErrorDialogShowing: Boolean = false,
     onDismissQuickSettings: () -> Unit = {},
+    onRequiresImmersiveChange: (Boolean) -> Unit = {},
     overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     screenFlashOverlay: @Composable (Modifier) -> Unit = {}
 ) {
@@ -227,6 +240,7 @@ internal fun TabletPortraitLayout(
         controlsVisible = controlsVisible,
         isErrorDialogShowing = isErrorDialogShowing,
         onDismissQuickSettings = onDismissQuickSettings,
+        onRequiresImmersiveChange = onRequiresImmersiveChange,
         overlay = overlay,
         screenFlashOverlay = screenFlashOverlay
     )
@@ -252,6 +266,7 @@ internal fun SideRailCaptureScaffold(
     controlsVisible: Boolean,
     isErrorDialogShowing: Boolean,
     onDismissQuickSettings: () -> Unit,
+    onRequiresImmersiveChange: (Boolean) -> Unit,
     overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit,
     screenFlashOverlay: @Composable (Modifier) -> Unit
 ) {
@@ -293,7 +308,27 @@ internal fun SideRailCaptureScaffold(
         onBack = handleDismissQuickSettings
     )
 
-    val liveSafeInsets = WindowInsets.systemBars.union(WindowInsets.displayCutout)
+    // Side-rail layouts always ask the host to hide the navigation bar, so a persistent taskbar
+    // doesn't cover the viewfinder or sit beside the camera controls. Requesting it for the layout,
+    // rather than for the current preview size, keeps the bar and the controls from moving when the
+    // lens or aspect ratio changes.
+    val currentOnRequiresImmersiveChange by rememberUpdatedState(onRequiresImmersiveChange)
+    DisposableEffect(Unit) {
+        currentOnRequiresImmersiveChange(true)
+        onDispose { currentOnRequiresImmersiveChange(false) }
+    }
+
+    // With the navigation bar hidden, the rails don't reserve space for it, which keeps them
+    // centred on the viewfinder and stops them from shifting when the bar is revealed with a swipe.
+    // In multi-window mode the bars stay visible, so the rails clear them.
+    val isInMultiWindowMode = rememberIsInMultiWindowMode()
+    val liveSafeInsets = if (isInMultiWindowMode) {
+        WindowInsets.systemBars.union(WindowInsets.displayCutout)
+    } else {
+        WindowInsets.statusBars
+            .union(WindowInsets.captionBar)
+            .union(WindowInsets.displayCutout)
+    }
 
     CompositionLocalProvider(
         LocalOverlapTargetBounds provides overlapTargetBounds,
@@ -377,48 +412,46 @@ internal fun SideRailCaptureScaffold(
                         SideRailTokens.TopOverlayRailClearanceGap
 
                     CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                        Box(
+                        SideRailTopHud(
+                            gap = SideRailTokens.TopHudSlotGap,
                             modifier = Modifier
                                 .fillMaxSize()
                                 .padding(horizontal = topOverlayClearance)
-                        ) {
-                            OverlapAwareCaptureSlot(
-                                modifier = Modifier
-                                    .align(Alignment.TopStart)
-                                    .padding(top = config.hudVerticalPadding)
-                                    .suppressBackgroundForModal(isModalOpen),
-                                orientation = Orientation.Horizontal,
-                                controlSize = controlSize,
-                                content = slots.topStartContent
-                            )
-
-                            OverlapAwareCaptureSlot(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(top = config.hudVerticalPadding)
-                                    .suppressBackgroundForModal(isModalOpen),
-                                orientation = Orientation.Horizontal,
-                                controlSize = controlSize,
-                                content = slots.viewfinderTopEndContent
-                            )
-                        }
-
-                        if (controlsVisible) {
-                            Column(
-                                modifier = Modifier
-                                    .align(Alignment.TopCenter)
-                                    .padding(top = config.hudVerticalPadding)
-                                    .suppressBackgroundForModal(isModalOpen),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                PillSnackbarHost(snackbarHostState = state.snackbarHostState)
+                                .padding(top = config.hudVerticalPadding),
+                            start = {
                                 OverlapAwareCaptureSlot(
+                                    modifier = Modifier.suppressBackgroundForModal(isModalOpen),
                                     orientation = Orientation.Horizontal,
                                     controlSize = controlSize,
-                                    content = slots.elapsedTimeDisplay
+                                    content = slots.topStartContent
                                 )
+                            },
+                            end = {
+                                OverlapAwareCaptureSlot(
+                                    modifier = Modifier.suppressBackgroundForModal(isModalOpen),
+                                    orientation = Orientation.Horizontal,
+                                    controlSize = controlSize,
+                                    content = slots.viewfinderTopEndContent
+                                )
+                            },
+                            center = {
+                                Column(
+                                    modifier = Modifier.suppressBackgroundForModal(isModalOpen),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    PillSnackbarHost(snackbarHostState = state.snackbarHostState)
+                                    if (controlsVisible) {
+                                        OverlapAwareCaptureSlot(
+                                            orientation = Orientation.Horizontal,
+                                            controlSize = controlSize,
+                                            content = slots.elapsedTimeDisplay
+                                        )
+                                    }
+                                }
                             }
+                        )
 
+                        if (controlsVisible) {
                             OverlapAwareCaptureSlot(
                                 modifier = Modifier
                                     .align(Alignment.BottomCenter)
@@ -432,15 +465,6 @@ internal fun SideRailCaptureScaffold(
                                 controlSize = controlSize,
                                 content = slots.captureModeCarousel
                             )
-                        } else {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopCenter)
-                                    .padding(top = config.hudVerticalPadding)
-                                    .suppressBackgroundForModal(isModalOpen)
-                            ) {
-                                PillSnackbarHost(snackbarHostState = state.snackbarHostState)
-                            }
                         }
                     }
 
@@ -524,6 +548,73 @@ internal fun SideRailCaptureScaffold(
                     content = foregroundChrome
                 )
             }
+        }
+    }
+}
+
+
+/** Returns whether the host activity is in multi-window mode, updating on configuration changes. */
+@Composable
+private fun rememberIsInMultiWindowMode(): Boolean {
+    val configuration = LocalConfiguration.current
+    val activity = LocalActivity.current
+    return remember(configuration, activity) { activity?.isInMultiWindowMode == true }
+}
+
+/**
+ * Lays out the top HUD between the side rails so that its slots never overlap.
+ *
+ * Places [start] at the top-start and [end] at the top-end, limiting [end] to the width left beside
+ * [start]. Centers [center] between them when it clears both by [gap], and otherwise moves it below
+ * them.
+ */
+@Composable
+private fun SideRailTopHud(
+    gap: Dp,
+    start: @Composable () -> Unit,
+    end: @Composable () -> Unit,
+    center: @Composable () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Layout(contents = listOf(start, end, center), modifier = modifier) {
+            (startMeasurables, endMeasurables, centerMeasurables), constraints ->
+        val gapPx = gap.roundToPx()
+        val width = constraints.maxWidth
+        val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
+
+        val startPlaceables = startMeasurables.map { it.measure(looseConstraints) }
+        val startWidth = startPlaceables.maxOfOrNull { it.width } ?: 0
+        val endMaxWidth = if (startWidth > 0) {
+            (width - startWidth - gapPx).coerceAtLeast(0)
+        } else {
+            width
+        }
+        val endPlaceables = endMeasurables.map {
+            it.measure(looseConstraints.copy(maxWidth = endMaxWidth))
+        }
+        val endWidth = endPlaceables.maxOfOrNull { it.width } ?: 0
+        val edgeHeight = maxOf(
+            startPlaceables.maxOfOrNull { it.height } ?: 0,
+            endPlaceables.maxOfOrNull { it.height } ?: 0
+        )
+
+        val centerPlaceables = centerMeasurables.map { it.measure(looseConstraints) }
+        val centerWidth = centerPlaceables.maxOfOrNull { it.width } ?: 0
+        val centerHeight = centerPlaceables.maxOfOrNull { it.height } ?: 0
+        val edgeWidth = maxOf(startWidth, endWidth)
+        val centerFitsBetweenEdges = edgeWidth == 0 || centerWidth == 0 ||
+            centerWidth + 2 * (edgeWidth + gapPx) <= width
+        val centerY = if (centerFitsBetweenEdges || edgeHeight == 0) 0 else edgeHeight + gapPx
+
+        val height = if (constraints.hasBoundedHeight) {
+            constraints.maxHeight
+        } else {
+            maxOf(edgeHeight, centerY + centerHeight)
+        }
+        layout(width, height) {
+            startPlaceables.forEach { it.placeRelative(0, 0) }
+            endPlaceables.forEach { it.placeRelative(width - it.width, 0) }
+            centerPlaceables.forEach { it.placeRelative((width - it.width) / 2, centerY) }
         }
     }
 }

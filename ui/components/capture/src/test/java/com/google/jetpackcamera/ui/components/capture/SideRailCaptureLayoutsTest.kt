@@ -18,9 +18,12 @@ package com.google.jetpackcamera.ui.components.capture
 import android.view.View
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -47,6 +50,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.LayoutDirection
@@ -59,6 +63,7 @@ import com.google.common.truth.Truth.assertWithMessage
 import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutSolution
 import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutSolution
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
 import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
 import org.junit.Rule
@@ -866,6 +871,121 @@ class SideRailCaptureLayoutsTest {
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).assertIsDisplayed()
     }
 
+    @Config(qualifiers = "w1280dp-h800dp")
+    @Test
+    fun tabletLandscapeLayout_fullWidthCarousel_clearsRailsSoQuickSettingsButtonReceivesTaps() {
+        var quickSettingsClicks = 0
+        var carouselClicks = 0
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                TabletLandscapeLayout(
+                    slots = previewSideRailSlots().copy(
+                        quickSettingsButton = { mod ->
+                            ToggleQuickSettingsButton(
+                                isOpen = false,
+                                enabled = true,
+                                onClick = { quickSettingsClicks++ },
+                                modifier = mod
+                            )
+                        },
+                        captureModeCarousel = { mod ->
+                            Box(
+                                modifier = mod
+                                    .fillMaxWidth()
+                                    .height(160.dp)
+                                    .testTag(FULL_WIDTH_CAROUSEL_TAG)
+                                    .clickable { carouselClicks++ }
+                            )
+                        }
+                    ),
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val carousel = boundsOf(FULL_WIDTH_CAROUSEL_TAG)
+        assertThat(carousel.left.value).isAtLeast(boundsOf(START_SIDE_RAIL_TAG).right.value)
+        assertThat(carousel.right.value).isAtMost(boundsOf(END_SIDE_RAIL_TAG).left.value)
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).performClick()
+        composeTestRule.waitForIdle()
+        assertThat(quickSettingsClicks).isEqualTo(1)
+        assertThat(carouselClicks).isEqualTo(0)
+    }
+
+    @Test
+    fun sideRailLayouts_requestImmersiveOnEnterAndReleaseOnDispose() {
+        val reported = mutableListOf<Boolean>()
+        var showLayout by mutableStateOf(true)
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                if (showLayout) {
+                    FoldableLayout(
+                        slots = previewSideRailSlots(),
+                        viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+                        onRequiresImmersiveChange = { reported += it }
+                    )
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+        assertThat(reported).containsExactly(true)
+
+        showLayout = false
+        composeTestRule.waitForIdle()
+        assertThat(reported).containsExactly(true, false).inOrder()
+    }
+
+    @Test
+    fun foldableLayout_revealedNavigationBar_doesNotShiftRails() {
+        lateinit var hostView: View
+        composeTestRule.setContent {
+            hostView = LocalView.current
+            MaterialTheme {
+                FoldableLayout(
+                    slots = previewSideRailSlots(),
+                    viewfinder = { mod ->
+                        Box(modifier = mod.testTag(PREVIEW_DISPLAY).fillMaxSize())
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+        val startRailBefore = boundsOf(START_SIDE_RAIL_TAG)
+        val endRailBefore = boundsOf(END_SIDE_RAIL_TAG)
+
+        dispatchNavigationBarInsets(view = hostView, navigationBarHeightPx = 48, visible = true)
+        composeTestRule.waitForIdle()
+
+        assertThat(boundsOf(START_SIDE_RAIL_TAG)).isEqualTo(startRailBefore)
+        assertThat(boundsOf(END_SIDE_RAIL_TAG)).isEqualTo(endRailBefore)
+    }
+
+    private fun dispatchNavigationBarInsets(
+        view: View,
+        navigationBarHeightPx: Int,
+        visible: Boolean
+    ) {
+        val barInsets = Insets.of(0, 0, 0, navigationBarHeightPx)
+        val windowInsets = WindowInsetsCompat.Builder()
+            .setInsets(
+                WindowInsetsCompat.Type.navigationBars(),
+                if (visible) barInsets else Insets.NONE
+            )
+            .setInsetsIgnoringVisibility(WindowInsetsCompat.Type.navigationBars(), barInsets)
+            .setVisible(WindowInsetsCompat.Type.navigationBars(), visible)
+            .build()
+
+        composeTestRule.runOnUiThread {
+            ViewCompat.dispatchApplyWindowInsets(view, windowInsets)
+        }
+    }
+
     private fun dispatchStatusBarInsets(view: View, statusBarHeightPx: Int, visible: Boolean) {
         val barInsets = Insets.of(0, statusBarHeightPx, 0, 0)
         val windowInsets = WindowInsetsCompat.Builder()
@@ -884,6 +1004,7 @@ class SideRailCaptureLayoutsTest {
 
     private companion object {
         const val SQUARE_PREVIEW_FRAME_TAG = "square_preview_frame"
+        const val FULL_WIDTH_CAROUSEL_TAG = "full_width_carousel"
         const val MULTI_WINDOW_STATUS_BAR_PX = 32
         const val TOLERANCE = 0.5f
     }

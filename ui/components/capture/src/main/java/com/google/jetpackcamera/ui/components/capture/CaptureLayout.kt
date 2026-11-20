@@ -95,9 +95,10 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  *   viewfinder.
  * @param topBarLeadingContent optional composable content placed at the start of the top
  *   status/indicator bar directly adjacent to [indicatorRow].
- * @param topBarTrailingContent optional composable content aligned to the end of the top bar.
- * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
- *   tallest viewfinder to clear a persistent navigation bar, and `false` otherwise or on dispose.
+ * @param onRequiresImmersiveChange invoked with `true` while the active layout needs the host to
+ *   hide the navigation bar (always for side-rail layouts; for the compact portrait layout, when
+ *   the window is too short for the tallest viewfinder to clear it), and `false` otherwise or on
+ *   dispose.
  * @param errorDialog the camera error alert dialog composable.
  * @param isErrorDialogShowing whether a modal camera error dialog is currently visible above the
  *   capture chrome.
@@ -125,7 +126,6 @@ fun CaptureScaffoldLayout(
     topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)? = null,
-    topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {},
     isErrorDialogShowing: Boolean = false
@@ -152,7 +152,6 @@ fun CaptureScaffoldLayout(
         topStartContent = topStartContent,
         viewfinderTopEndContent = viewfinderTopEndContent,
         topBarLeadingContent = topBarLeadingContent,
-        topBarTrailingContent = topBarTrailingContent,
         onRequiresImmersiveChange = onRequiresImmersiveChange,
         errorDialog = errorDialog,
         isErrorDialogShowing = isErrorDialogShowing,
@@ -183,7 +182,6 @@ internal fun CaptureScaffoldLayout(
     topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)? = null,
-    topBarTrailingContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
     errorDialog: @Composable (Modifier) -> Unit = {},
     isErrorDialogShowing: Boolean = false,
@@ -211,7 +209,6 @@ internal fun CaptureScaffoldLayout(
             val resolvedSlots = slots ?: CaptureSlots(
                 topBar = indicatorRow,
                 topBarLeadingContent = topBarLeadingContent,
-                topBarTrailingContent = topBarTrailingContent,
                 zoomControls = zoomLevelDisplay,
                 quickSettingsButton = quickSettingsButton,
                 captureButton = captureButton,
@@ -255,6 +252,7 @@ internal fun CaptureScaffoldLayout(
                         controlsVisible = controlsVisible,
                         isErrorDialogShowing = isErrorDialogShowing,
                         onDismissQuickSettings = onDismissQuickSettings,
+                        onRequiresImmersiveChange = onRequiresImmersiveChange,
                         overlay = overlay,
                         screenFlashOverlay = screenFlashOverlay
                     )
@@ -268,6 +266,7 @@ internal fun CaptureScaffoldLayout(
                         controlsVisible = controlsVisible,
                         isErrorDialogShowing = isErrorDialogShowing,
                         onDismissQuickSettings = onDismissQuickSettings,
+                        onRequiresImmersiveChange = onRequiresImmersiveChange,
                         overlay = overlay,
                         screenFlashOverlay = screenFlashOverlay
                     )
@@ -281,6 +280,7 @@ internal fun CaptureScaffoldLayout(
                         controlsVisible = controlsVisible,
                         isErrorDialogShowing = isErrorDialogShowing,
                         onDismissQuickSettings = onDismissQuickSettings,
+                        onRequiresImmersiveChange = onRequiresImmersiveChange,
                         overlay = overlay,
                         screenFlashOverlay = screenFlashOverlay
                     )
@@ -295,6 +295,7 @@ internal fun CaptureScaffoldLayout(
                         controlsVisible = controlsVisible,
                         isErrorDialogShowing = isErrorDialogShowing,
                         onDismissQuickSettings = onDismissQuickSettings,
+                        onRequiresImmersiveChange = onRequiresImmersiveChange,
                         overlay = overlay,
                         screenFlashOverlay = screenFlashOverlay
                     )
