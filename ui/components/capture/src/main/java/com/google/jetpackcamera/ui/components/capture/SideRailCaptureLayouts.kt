@@ -39,6 +39,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import androidx.compose.ui.unit.max
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsSideSheet
 
 /**
  * Posture-specific padding, vertical alignment, and control sizing configuration for
@@ -71,7 +73,8 @@ internal data class SideRailPostureConfig(
     val centerVerticalFraction: Float,
     val hudVerticalPadding: Dp,
     val controlSize: ControlSize? = null,
-    val railWidth: Dp = Dp.Unspecified
+    val railWidth: Dp = Dp.Unspecified,
+    val useSideSheet: Boolean = !isCompactHeight
 ) {
     /**
      * The [ControlSize] requested for rail and HUD controls: [controlSize] when set, otherwise
@@ -131,7 +134,7 @@ internal object SideRailTokens {
 /**
  * Unfolded book-style foldable capture layout (`~673x841dp` to `~852x883dp`) anchoring balanced
  * vertical control rails (`centerVerticalFraction = 0.50f`) to the start and end edges over a
- * full-bleed camera viewfinder. Quick Settings opens in the [SideRailCaptureScaffold] bottom sheet.
+ * full-bleed camera viewfinder. Quick Settings opens in an in-hierarchy [QuickSettingsSideSheet].
  *
  * Provides [LocalActiveCaptureLayout] = `"FoldableLayout"`.
  */
@@ -164,8 +167,8 @@ internal fun FoldableLayout(
 /**
  * Landscape tablet capture layout (`~1280x800dp`) anchoring generous vertical control rails
  * (`centerVerticalFraction = 0.50f`, `20.dp` horizontal padding, `16.dp` section gap) to the start
- * and end edges over a full-bleed viewfinder. Quick Settings opens in the [SideRailCaptureScaffold]
- * bottom sheet.
+ * and end edges over a full-bleed viewfinder. Quick Settings opens in an in-hierarchy
+ * [QuickSettingsSideSheet].
  *
  * Provides [LocalActiveCaptureLayout] = `"TabletLandscapeLayout"`.
  */
@@ -198,8 +201,8 @@ internal fun TabletLandscapeLayout(
 /**
  * Portrait tablet capture layout (`~800x1280dp`) shifting the zoom controls and shutter cluster
  * into the lower ergonomic thumb zone (`centerVerticalFraction = 0.70f`, `bottomPadding = 48.dp`,
- * `horizontalPadding = 24.dp`) over a full-bleed viewfinder. Quick Settings opens in the
- * [SideRailCaptureScaffold] bottom sheet.
+ * `horizontalPadding = 24.dp`) over a full-bleed viewfinder. Quick Settings opens in an
+ * in-hierarchy [QuickSettingsSideSheet] biased toward the lower third.
  *
  * Provides [LocalActiveCaptureLayout] = `"TabletPortraitLayout"`.
  */
@@ -233,10 +236,11 @@ internal fun TabletPortraitLayout(
  * Shared full-bleed viewfinder and dual-rail capture scaffold backing [FoldableLayout],
  * [TabletLandscapeLayout], [TabletPortraitLayout], and [CompactShortLayout].
  *
- * Quick Settings opens in an in-hierarchy [QuickSettingsBottomSheetScaffold]. A back press or a tap
- * on the scrim above the sheet dismisses it and invokes [onDismissQuickSettings]. Dynamically
- * measures [StartSideRail] and [EndSideRail] widths via [onSizeChanged] so the top HUD overlays
- * clear both rails.
+ * Quick Settings opens in [QuickSettingsSideSheet] when [SideRailPostureConfig.useSideSheet] is
+ * `true` (tablet and foldable layouts) or in [QuickSettingsBottomSheetScaffold] otherwise
+ * ([CompactShortLayout]). A back press or a tap on the scrim dismisses it and invokes
+ * [onDismissQuickSettings]. Dynamically measures [StartSideRail] and [EndSideRail] widths via
+ * [onSizeChanged] so the top HUD overlays clear both rails.
  */
 @Composable
 internal fun SideRailCaptureScaffold(
@@ -284,7 +288,10 @@ internal fun SideRailCaptureScaffold(
         state.dismissQuickSettings()
         onDismissQuickSettings()
     }
-    BackHandler(enabled = isQuickSettingsVisible, onBack = handleDismissQuickSettings)
+    BackHandler(
+        enabled = !config.useSideSheet && isQuickSettingsVisible,
+        onBack = handleDismissQuickSettings
+    )
 
     val liveSafeInsets = WindowInsets.systemBars.union(WindowInsets.displayCutout)
 
@@ -310,24 +317,7 @@ internal fun SideRailCaptureScaffold(
                 }
             }
 
-            // TODO(#648): Replace the bottom sheet with QuickSettingsOverlayCard once #648 lands.
-            // The card should cover the side rails (not clear them), anchored to the left edge:
-            // vertically centered on foldables and landscape tablets; on portrait tablets, level
-            // with the lower controls.
-            QuickSettingsBottomSheetScaffold(
-                modifier = Modifier.fillMaxSize(),
-                state = state,
-                onDismissQuickSettings = onDismissQuickSettings,
-                sheetContent = {
-                    CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
-                        OverlapAwareCaptureSlot(
-                            orientation = Orientation.Vertical,
-                            controlSize = ControlSize.Standard,
-                            content = slots.quickSettingsOverlay
-                        )
-                    }
-                }
-            ) { isSheetVisible ->
+            val foregroundChrome: @Composable (Boolean) -> Unit = { isSheetVisible ->
                 val isModalOpen = isSheetVisible || isErrorModalActive
                 // Overlaid foreground chrome padded by live visible systemBars and
                 // displayCutout.
@@ -470,7 +460,27 @@ internal fun SideRailCaptureScaffold(
                     )
                 }
 
-                if (isSheetVisible && !isErrorModalActive) {
+                if (config.useSideSheet) {
+                    val sideSheetAlignment = BiasAlignment(
+                        horizontalBias = -1f,
+                        verticalBias = 2f * config.centerVerticalFraction - 1f
+                    )
+                    QuickSettingsSideSheet(
+                        isOpen = isQuickSettingsVisible,
+                        onDismissRequest = handleDismissQuickSettings,
+                        contentAlignment = sideSheetAlignment,
+                        sheetContainerDirection = railContainerDirection,
+                        windowInsets = liveSafeInsets
+                    ) {
+                        CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                            OverlapAwareCaptureSlot(
+                                orientation = Orientation.Vertical,
+                                controlSize = ControlSize.Standard,
+                                content = slots.quickSettingsOverlay
+                            )
+                        }
+                    }
+                } else if (isSheetVisible && !isErrorModalActive) {
                     QuickSettingsSheetScrim(onDismiss = handleDismissQuickSettings)
                 }
 
@@ -487,6 +497,28 @@ internal fun SideRailCaptureScaffold(
                 // Drawn last and outside all inset-padded containers so screen flash covers the
                 // entire window, including system bar and display cutout areas.
                 screenFlashOverlay(Modifier)
+            }
+
+            if (config.useSideSheet) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    foregroundChrome(isQuickSettingsVisible)
+                }
+            } else {
+                QuickSettingsBottomSheetScaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    state = state,
+                    onDismissQuickSettings = onDismissQuickSettings,
+                    sheetContent = {
+                        CompositionLocalProvider(LocalLayoutDirection provides localeDirection) {
+                            OverlapAwareCaptureSlot(
+                                orientation = Orientation.Vertical,
+                                controlSize = ControlSize.Standard,
+                                content = slots.quickSettingsOverlay
+                            )
+                        }
+                    },
+                    content = foregroundChrome
+                )
             }
         }
     }

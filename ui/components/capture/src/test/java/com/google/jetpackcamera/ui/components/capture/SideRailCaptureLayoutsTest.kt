@@ -46,6 +46,7 @@ import androidx.compose.ui.test.isPopup
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.DpRect
 import androidx.compose.ui.unit.LayoutDirection
@@ -230,7 +231,7 @@ class SideRailCaptureLayoutsTest {
     }
 
     @Test
-    fun foldableLayout_quickSettings_opensSingleBottomSheetAndScrimTapDismisses() {
+    fun foldableLayout_quickSettings_opensSingleSideSheetCenteredAndScrimTapDismisses() {
         val state = CaptureScaffoldState(isInitiallyExpanded = false)
         var dismissCount = 0
 
@@ -262,7 +263,12 @@ class SideRailCaptureLayoutsTest {
         composeTestRule.runOnIdle { state.showQuickSettings() }
         composeTestRule.waitForIdle()
 
-        assertSingleInHierarchyBottomSheet()
+        assertSingleInHierarchySideSheet()
+        val sheetBounds = boundsOf(QUICK_SETTINGS_SIDE_SHEET_TAG)
+        val sheetCenterY = (sheetBounds.top.value + sheetBounds.bottom.value) / 2f
+        val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
+        val rootCenterY = (rootBounds.top.value + rootBounds.bottom.value) / 2f
+        assertThat(sheetCenterY).isWithin(2f).of(rootCenterY)
         // Background camera chrome is pruned from accessibility while Quick Settings is open.
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(hiddenFromA11yAncestor)
 
@@ -277,7 +283,7 @@ class SideRailCaptureLayoutsTest {
 
     @Config(qualifiers = "w800dp-h1280dp")
     @Test
-    fun tabletPortraitLayout_quickSettings_opensSingleBottomSheetAndBackPressDismisses() {
+    fun tabletPortraitLayout_quickSettings_opensSingleSideSheetLowerBiasedAndBackPressDismisses() {
         val state = CaptureScaffoldState(isInitiallyExpanded = true)
         var dismissCount = 0
         lateinit var backDispatcher: OnBackPressedDispatcher
@@ -306,7 +312,12 @@ class SideRailCaptureLayoutsTest {
         }
         composeTestRule.waitForIdle()
 
-        assertSingleInHierarchyBottomSheet()
+        assertSingleInHierarchySideSheet()
+        val sheetBounds = boundsOf(QUICK_SETTINGS_SIDE_SHEET_TAG)
+        val sheetCenterY = (sheetBounds.top.value + sheetBounds.bottom.value) / 2f
+        val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
+        val rootCenterY = (rootBounds.top.value + rootBounds.bottom.value) / 2f
+        assertThat(sheetCenterY).isGreaterThan(rootCenterY)
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(hiddenFromA11yAncestor)
 
         composeTestRule.runOnUiThread { backDispatcher.onBackPressed() }
@@ -317,7 +328,7 @@ class SideRailCaptureLayoutsTest {
 
     @Config(qualifiers = "w1280dp-h800dp")
     @Test
-    fun tabletLandscapeLayout_quickSettings_opensSingleBottomSheetAndScrimTapDismisses() {
+    fun tabletLandscapeLayout_quickSettings_opensSingleSideSheetCenteredAndScrimTapDismisses() {
         val state = CaptureScaffoldState(isInitiallyExpanded = true)
         var dismissCount = 0
 
@@ -344,7 +355,12 @@ class SideRailCaptureLayoutsTest {
         }
         composeTestRule.waitForIdle()
 
-        assertSingleInHierarchyBottomSheet()
+        assertSingleInHierarchySideSheet()
+        val sheetBounds = boundsOf(QUICK_SETTINGS_SIDE_SHEET_TAG)
+        val sheetCenterY = (sheetBounds.top.value + sheetBounds.bottom.value) / 2f
+        val rootBounds = composeTestRule.onRoot().getUnclippedBoundsInRoot()
+        val rootCenterY = (rootBounds.top.value + rootBounds.bottom.value) / 2f
+        assertThat(sheetCenterY).isWithin(2f).of(rootCenterY)
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(hiddenFromA11yAncestor)
 
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).performTouchInput {
@@ -478,7 +494,7 @@ class SideRailCaptureLayoutsTest {
         val unmirroredEndRail = boundsOf(END_SIDE_RAIL_TAG)
         assertThat(unmirroredStartRail.left.value).isWithin(TOLERANCE).of(0f)
         assertThat(unmirroredEndRail.right.value).isWithin(TOLERANCE).of(1280f)
-        assertSingleInHierarchyBottomSheet()
+        assertSingleInHierarchySideSheet()
         assertThat(observedDirections).containsKey("quickSettingsOverlay")
 
         observedDirections.forEach { (slotName, dir) ->
@@ -503,7 +519,7 @@ class SideRailCaptureLayoutsTest {
         val mirroredEndRail = boundsOf(END_SIDE_RAIL_TAG)
         assertThat(mirroredStartRail.right.value).isWithin(TOLERANCE).of(1280f)
         assertThat(mirroredEndRail.left.value).isWithin(TOLERANCE).of(0f)
-        assertSingleInHierarchyBottomSheet()
+        assertSingleInHierarchySideSheet()
 
         observedDirections.forEach { (slotName, dir) ->
             assertWithMessage("Slot $slotName must receive LayoutDirection.Rtl when mirrored")
@@ -837,15 +853,15 @@ class SideRailCaptureLayoutsTest {
      * Asserts that exactly one Quick Settings sheet is displayed in the composition hierarchy, not
      * in a popup or dialog window, with its drag handle.
      */
-    private fun assertSingleInHierarchyBottomSheet() {
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+    private fun assertSingleInHierarchySideSheet() {
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG)
             .assertIsDisplayed()
             .assert(!isPopup())
             .assert(!isDialog())
             .assert(!hasAnyAncestor(isPopup()))
             .assert(!hasAnyAncestor(isDialog()))
         assertThat(
-            composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_BOTTOM_SHEET).fetchSemanticsNodes()
+            composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG).fetchSemanticsNodes()
         ).hasSize(1)
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).assertIsDisplayed()
     }
