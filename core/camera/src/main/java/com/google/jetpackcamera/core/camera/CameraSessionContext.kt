@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.StateFlow
  * Context that can be shared by all functions in a camera session.
  *
  * Can be used to confer context (such as reactive state or session-wide parameters)
- * on context receivers using [with] in a camera session.
+ * to extension functions using [with] in a camera session.
  */
 @InternalCameraApi
 data class CameraSessionContext(

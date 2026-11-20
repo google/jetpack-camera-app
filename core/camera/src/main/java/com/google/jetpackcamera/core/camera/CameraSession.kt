@@ -139,9 +139,8 @@ private val QUALITY_RANGE_MAP = mapOf(
     SD to Range.create(241, 719)
 )
 
-context(CameraSessionContext)
 @ExperimentalCamera2Interop
-internal suspend fun runSingleCameraSession(
+internal suspend fun CameraSessionContext.runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
     onImageCaptureCreated: (ImageCapture, LensFacing) -> Unit = { _, _ -> }
@@ -523,10 +522,9 @@ private fun CameraSessionContext.reportCaptureSubModeBindFailure(
     }
 }
 
-context(CameraSessionContext)
 @InternalCameraApi
 @OptIn(ExperimentalCamera2Interop::class)
-suspend fun processTransientSettingEvents(
+suspend fun CameraSessionContext.processTransientSettingEvents(
     camera: Camera,
     cameraConstraints: CameraConstraints?,
     useCaseGroup: UseCaseGroup,
@@ -639,7 +637,6 @@ suspend fun processTransientSettingEvents(
     }
 }
 
-context(CameraSessionContext)
 @ExperimentalCamera2Interop
 private suspend fun updateCamera2RequestOptions(
     camera: Camera,
@@ -768,9 +765,8 @@ fun CameraSessionContext.applyDeviceRotation(
     }
 }
 
-context(CameraSessionContext)
 @InternalCameraApi
-fun createUseCaseGroup(
+fun CameraSessionContext.createUseCaseGroup(
     cameraInfo: CameraInfo,
     initialTransientSettings: TransientSessionSettings,
     stabilizationMode: StabilizationMode,
@@ -1003,8 +999,7 @@ private fun getAspectRatioForUseCase(sensorLandscapeRatio: Float, aspectRatio: A
         }
     }
 
-context(CameraSessionContext)
-private fun createPreviewUseCase(
+private fun CameraSessionContext.createPreviewUseCase(
     cameraInfo: CameraInfo,
     aspectRatio: AspectRatio,
     stabilizationMode: StabilizationMode,
@@ -1013,6 +1008,8 @@ private fun createPreviewUseCase(
 ): Preview = Preview.Builder().apply {
     updateCameraStateWithCaptureResults(
         targetCameraInfo = cameraInfo,
+        currentCameraState = currentCameraState,
+        transientSettings = transientSettings,
         captureResults = captureResults
     )
 
@@ -1108,8 +1105,7 @@ private fun getResolutionSelector(
     return ResolutionSelector.Builder().setAspectRatioStrategy(aspectRatioStrategy).build()
 }
 
-context(CameraSessionContext)
-private fun setFlashModeInternal(
+private fun CameraSessionContext.setFlashModeInternal(
     imageCapture: ImageCapture,
     flashMode: FlashMode,
     isFrontFacing: Boolean
@@ -1305,9 +1301,8 @@ private fun getPendingRecording(
     }
 }
 
-context(CameraSessionContext)
 @OptIn(ExperimentalPersistentRecording::class)
-private suspend fun startVideoRecordingInternal(
+private suspend fun CameraSessionContext.startVideoRecordingInternal(
     context: Context,
     pendingRecord: PendingRecording,
     maxDurationMillis: Long,
@@ -1473,8 +1468,7 @@ private suspend fun startVideoRecordingInternal(
     }
 }
 
-context(CameraSessionContext)
-private suspend fun runVideoRecording(
+private suspend fun CameraSessionContext.runVideoRecording(
     videoCapture: VideoCapture<Recorder>,
     captureTypeSuffix: String,
     context: Context,
@@ -1543,9 +1537,8 @@ private suspend fun runVideoRecording(
     }
 }
 
-context(CameraSessionContext)
 @InternalCameraApi
-suspend fun processVideoControlEvents(
+suspend fun CameraSessionContext.processVideoControlEvents(
     videoCapture: VideoCapture<Recorder>?,
     captureTypeSuffix: String
 ): Unit = coroutineScope {
@@ -1579,10 +1572,11 @@ suspend fun processVideoControlEvents(
 /**
  * Applies a CaptureCallback to the provided image capture builder
  */
-context(CameraSessionContext)
 @OptIn(ExperimentalCamera2Interop::class)
 private fun Preview.Builder.updateCameraStateWithCaptureResults(
     targetCameraInfo: CameraInfo,
+    currentCameraState: MutableStateFlow<CameraState>,
+    transientSettings: StateFlow<TransientSessionSettings?>,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null
 ): Preview.Builder {
     val isFirstFrameTimestampUpdated = atomic(false)
@@ -1693,7 +1687,7 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
                         isFirstFrameTimestampUpdated.value = true
                     }
                     // Publish stabilization state
-                    publishStabilizationMode(result)
+                    currentCameraState.publishStabilizationMode(result)
                 } catch (_: Exception) {
                 }
             }
@@ -1702,8 +1696,7 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
     return this
 }
 
-context(CameraSessionContext)
-private fun publishStabilizationMode(result: TotalCaptureResult) {
+private fun MutableStateFlow<CameraState>.publishStabilizationMode(result: TotalCaptureResult) {
     val nativeVideoStabilizationMode = result.get(CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE)
     val stabilizationMode = when (nativeVideoStabilizationMode) {
         CaptureResult.CONTROL_VIDEO_STABILIZATION_MODE_PREVIEW_STABILIZATION ->
@@ -1721,7 +1714,7 @@ private fun publishStabilizationMode(result: TotalCaptureResult) {
         }
     }
 
-    currentCameraState.update { old ->
+    update { old ->
         if (old.stabilizationMode != stabilizationMode) {
             old.copy(stabilizationMode = stabilizationMode)
         } else {
