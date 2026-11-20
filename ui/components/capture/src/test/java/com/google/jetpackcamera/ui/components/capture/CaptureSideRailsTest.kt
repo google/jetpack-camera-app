@@ -429,9 +429,11 @@ class CaptureSideRailsTest {
         val captureBounds = boundsOf(CAPTURE_BUTTON)
         assertThat((captureBounds.top - flipBounds.bottom).value).isWithin(1f).of(48f)
 
-        val clusterCenterY = (flipBounds.top.value + captureBounds.bottom.value) / 2f
+        val captureCenterY = (captureBounds.top.value + captureBounds.bottom.value) / 2f
         val railCenterY = (railBounds.top.value + railBounds.bottom.value) / 2f
-        assertThat(clusterCenterY).isWithin(1f).of(railCenterY)
+        assertThat(captureCenterY).isWithin(1f).of(railCenterY)
+        assertThat(captureBounds.top.value).isWithin(1f).of(captureBoundsWithWell.top.value)
+        assertThat(flipBounds.top.value).isWithin(1f).of(flipBoundsWithWell.top.value)
     }
 
     @Test
@@ -819,5 +821,42 @@ class CaptureSideRailsTest {
         val tightTopBar = boundsOf(VIDEO_QUALITY_TAG)
         val tightZoom = boundsOf(ZOOM_BUTTON_ROW_TAG)
         assertThat(tightTopBar.bottom).isAtMost(tightZoom.top)
+    }
+
+    @Test
+    fun endSideRail_imageWellAppearing_keepsCaptureAndFlipButtonsStatic() {
+        var showImageWell by mutableStateOf(false)
+        val baseSlots = realSideRailSlots()
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                EndSideRail(
+                    slots = baseSlots.copy(
+                        imageWell = { mod ->
+                            if (showImageWell) {
+                                Box(modifier = mod.size(48.dp).testTag(IMAGE_WELL_TAG))
+                            }
+                        }
+                    ),
+                    modifier = Modifier.height(800.dp)
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val initialCapture = boundsOf(CAPTURE_BUTTON)
+        val initialFlip = boundsOf(FLIP_CAMERA_BUTTON)
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertDoesNotExist()
+
+        showImageWell = true
+        composeTestRule.waitForIdle()
+
+        val updatedCapture = boundsOf(CAPTURE_BUTTON)
+        val updatedFlip = boundsOf(FLIP_CAMERA_BUTTON)
+        composeTestRule.onNodeWithTag(IMAGE_WELL_TAG).assertIsDisplayed()
+        assertThat(updatedCapture.top.value).isWithin(TOLERANCE).of(initialCapture.top.value)
+        assertThat(updatedCapture.bottom.value).isWithin(TOLERANCE).of(initialCapture.bottom.value)
+        assertThat(updatedFlip.top.value).isWithin(TOLERANCE).of(initialFlip.top.value)
+        assertThat(updatedFlip.bottom.value).isWithin(TOLERANCE).of(initialFlip.bottom.value)
     }
 }
