@@ -22,28 +22,44 @@ import android.net.Uri
 import android.util.Range
 import android.view.Surface
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.focusGroup
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertTextEquals
-import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -64,6 +80,7 @@ import com.google.jetpackcamera.ui.controller.testing.FakeCaptureController
 import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
 import com.google.jetpackcamera.ui.controller.testing.FakeSnackBarController
 import com.google.jetpackcamera.ui.controller.testing.FakeZoomController
+import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
@@ -224,45 +241,6 @@ class CaptureScaffoldTest {
         composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON).assertIsDisplayed()
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
         composeTestRule.onNodeWithTag(SETTINGS_BUTTON).assertDoesNotExist()
-    }
-
-    @Test
-    fun quickSettingsDefaults_compactLayoutsGetScrollableSheetContent_othersGetBareContent() {
-        var activeLayout by mutableStateOf("CompactShortLayout")
-        val quickSettingsController = FakeQuickSettingsController()
-
-        composeTestRule.setContent {
-            CompositionLocalProvider(LocalActiveCaptureLayout provides activeLayout) {
-                // Shorter than the content, so sheet content must scroll to stay reachable.
-                Box(modifier = Modifier.height(SHORT_QUICK_SETTINGS_HEIGHT)) {
-                    CaptureScaffoldDefaults.QuickSettings(
-                        uiState = availableQuickSettingsUiState,
-                        controller = quickSettingsController,
-                        onNavigateToSettings = {}
-                    )
-                }
-            }
-        }
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
-
-        activeLayout = "CompactPortraitLayout"
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
-
-        // TODO(#648): Foldable and tablet layouts temporarily use the scrollable bottom sheet
-        // content until #648 introduces the Quick Settings side sheet.
-        activeLayout = "FoldableLayout"
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
-
-        activeLayout = "TabletLandscapeLayout"
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(hasScrollAction())
-
-        activeLayout = "UnknownNonSheetLayout"
-        composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assert(!hasScrollAction())
     }
 
     @Test
@@ -767,6 +745,276 @@ class CaptureScaffoldTest {
         composeTestRule.waitForIdle()
 
         composeTestRule.onNodeWithTag(TOP_BAR_LEADING_TAG).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffoldLayout_quickSettingsOpen_blocksBackgroundFocus() {
+        lateinit var scaffoldState: CaptureScaffoldState
+        lateinit var focusManager: FocusManager
+        val nestedRequester = FocusRequester()
+        val directRequester = FocusRequester()
+        val nestedTag = "nested_background_focusable"
+        val directTag = "direct_background_focusable"
+        val sheetFocusableTag = "sheet_focusable"
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                focusManager = LocalFocusManager.current
+                scaffoldState = rememberCaptureScaffoldState(isInitiallyExpanded = false)
+                CaptureScaffoldLayout(
+                    state = scaffoldState,
+                    viewfinder = { Box(Modifier.fillMaxSize()) },
+                    captureButton = { modifier ->
+                        // A focusable nested inside its own focus group, which
+                        // `focusProperties { canFocus = false }` alone would not block.
+                        Box(modifier = modifier.focusGroup()) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .testTag(nestedTag)
+                                    .focusRequester(nestedRequester)
+                                    .focusable()
+                            )
+                        }
+                    },
+                    flipCameraButton = { modifier ->
+                        Box(
+                            modifier = modifier
+                                .size(48.dp)
+                                .testTag(directTag)
+                                .focusRequester(directRequester)
+                                .focusable()
+                        )
+                    },
+                    quickSettingsOverlay = { modifier ->
+                        Box(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .testTag(sheetFocusableTag)
+                                    .focusable()
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        // Background controls are reachable while Quick Settings is closed.
+        composeTestRule.runOnIdle { nestedRequester.requestFocus() }
+        composeTestRule.onNodeWithTag(nestedTag).assertIsFocused()
+
+        // Opening Quick Settings while a background control holds focus (as after a keyboard
+        // press on the Quick Settings button) moves focus into the sheet.
+        composeTestRule.runOnIdle { scaffoldState.showQuickSettings() }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(sheetFocusableTag).assertIsFocused()
+        composeTestRule.onNodeWithTag(nestedTag).assertIsNotFocused()
+
+        composeTestRule.runOnIdle {
+            assertThat(nestedRequester.requestFocus()).isFalse()
+            assertThat(directRequester.requestFocus()).isFalse()
+        }
+        composeTestRule.onNodeWithTag(nestedTag).assertIsNotFocused()
+        composeTestRule.onNodeWithTag(directTag).assertIsNotFocused()
+
+        repeat(4) {
+            composeTestRule.runOnIdle { focusManager.moveFocus(FocusDirection.Next) }
+            composeTestRule.onNodeWithTag(nestedTag).assertIsNotFocused()
+            composeTestRule.onNodeWithTag(directTag).assertIsNotFocused()
+        }
+    }
+
+    @Test
+    fun captureScaffoldLayout_initialHiddenAndOpen_doesNotSpuriouslyInvokeDismissCallback() {
+        var dismissCount = 0
+        lateinit var scaffoldState: CaptureScaffoldState
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                scaffoldState = rememberCaptureScaffoldState(isInitiallyExpanded = false)
+                CaptureScaffoldLayout(
+                    state = scaffoldState,
+                    onDismissQuickSettings = { dismissCount++ },
+                    viewfinder = { Box(Modifier.fillMaxSize()) },
+                    quickSettingsOverlay = { modifier ->
+                        Box(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                        )
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+        assertThat(dismissCount).isEqualTo(0)
+
+        composeTestRule.runOnIdle {
+            scaffoldState.showQuickSettings()
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isTrue()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        assertThat(dismissCount).isEqualTo(0)
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE).performClick()
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
+        assertThat(dismissCount).isEqualTo(1)
+
+        composeTestRule.runOnIdle {
+            scaffoldState.showQuickSettings()
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
+            .performSemanticsAction(SemanticsActions.Dismiss)
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
+        assertThat(dismissCount).isEqualTo(2)
+    }
+
+    @Test
+    fun captureScaffoldLayout_partialDownwardDrag_settlesBackToExpandedWithoutOrphanedScrim() {
+        var dismissCount = 0
+        lateinit var scaffoldState: CaptureScaffoldState
+        val populatedQuickSettings = sampleQuickSettingsUiState()
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                scaffoldState = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+                CaptureScaffoldLayout(
+                    state = scaffoldState,
+                    onDismissQuickSettings = { dismissCount++ },
+                    viewfinder = { Box(Modifier.fillMaxSize()) },
+                    quickSettingsOverlay = { modifier ->
+                        CaptureScaffoldDefaults.QuickSettings(
+                            uiState = populatedQuickSettings,
+                            controller = FakeQuickSettingsController(),
+                            onNavigateToSettings = {},
+                            modifier = modifier
+                        )
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val initialSheetTop = composeTestRule
+            .onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+            .getUnclippedBoundsInRoot()
+            .top
+        val rootBottom = composeTestRule.onRoot().getUnclippedBoundsInRoot().bottom
+        assertThat(initialSheetTop).isLessThan(rootBottom - 100.dp)
+
+        // Drag downward slightly (well below positional/velocity threshold) and release.
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
+            .performTouchInput {
+                down(center)
+                moveBy(Offset(0f, 16f))
+                up()
+            }
+        composeTestRule.waitForIdle()
+
+        val settledSheetTop = composeTestRule
+            .onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET)
+            .getUnclippedBoundsInRoot()
+            .top
+        assertThat(settledSheetTop).isEqualTo(initialSheetTop)
+        assertThat(scaffoldState.isQuickSettingsOpen).isTrue()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertIsDisplayed()
+        assertThat(dismissCount).isEqualTo(0)
+    }
+
+    @Test
+    fun captureScaffoldLayout_swipeDownToHidden_dismissesQuickSettingsAndInvokesCallbackOnce() {
+        var dismissCount = 0
+        lateinit var scaffoldState: CaptureScaffoldState
+
+        composeTestRule.setContent {
+            MaterialTheme {
+                scaffoldState = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+                CaptureScaffoldLayout(
+                    state = scaffoldState,
+                    onDismissQuickSettings = { dismissCount++ },
+                    viewfinder = { Box(Modifier.fillMaxSize()) },
+                    quickSettingsOverlay = { modifier ->
+                        Box(
+                            modifier = modifier
+                                .fillMaxWidth()
+                                .height(280.dp)
+                                .testTag(QUICK_SETTINGS_BOTTOM_SHEET)
+                        )
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isTrue()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_BOTTOM_SHEET).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertIsDisplayed()
+
+        val rootHeightPx = with(composeTestRule.density) {
+            composeTestRule.onRoot().getUnclippedBoundsInRoot().bottom.toPx()
+        }
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DRAG_HANDLE)
+            .performTouchInput {
+                swipeDown(
+                    startY = centerY,
+                    endY = centerY + rootHeightPx,
+                    durationMillis = 150L
+                )
+            }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertDoesNotExist()
+        assertThat(dismissCount).isEqualTo(1)
+    }
+
+    @Test
+    fun rememberCaptureScaffoldState_restoresQuickSettingsStateAcrossSavedInstanceState() {
+        val restorationTester = StateRestorationTester(composeTestRule)
+        var scaffoldState: CaptureScaffoldState? = null
+
+        restorationTester.setContent {
+            scaffoldState = rememberCaptureScaffoldState()
+        }
+
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isFalse()
+
+        composeTestRule.runOnIdle {
+            scaffoldState!!.showQuickSettings()
+        }
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isTrue()
+
+        scaffoldState = null
+        restorationTester.emulateSavedInstanceStateRestore()
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isTrue()
+
+        composeTestRule.runOnIdle {
+            scaffoldState!!.dismissQuickSettings()
+        }
+        scaffoldState = null
+        restorationTester.emulateSavedInstanceStateRestore()
+        assertThat(scaffoldState!!.isQuickSettingsOpen).isFalse()
     }
 
     private companion object {

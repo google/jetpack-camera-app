@@ -25,11 +25,9 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.darkColorScheme
@@ -53,11 +51,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.semantics.toggleableState
-import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.core.camera.AudioStreamState
@@ -70,9 +63,7 @@ import com.google.jetpackcamera.model.DeviceRotation
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.LensToZoom
-import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScaffoldContent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
@@ -82,15 +73,12 @@ import com.google.jetpackcamera.ui.controller.ScreenFlashController
 import com.google.jetpackcamera.ui.controller.SnackBarController
 import com.google.jetpackcamera.ui.controller.ZoomController
 import com.google.jetpackcamera.ui.controller.quicksettings.QuickSettingsController
-import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.findSelectableStateFor
-import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState.Unavailable.isCaptureModeSelectable
 import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -105,7 +93,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Mode-agnostic state holder for [CaptureScaffold] and [CaptureScaffoldLayout], managing Quick
- * Settings visibility (compatible with both bottom-sheet and side-rail / floating-card layouts)
+ * Settings visibility (compatible with both bottom-sheet and side-rail / side-sheet layouts)
  * and the scaffold [SnackbarHostState].
  *
  * @param isInitiallyExpanded whether the Quick Settings surface starts in the open state.
@@ -118,7 +106,7 @@ class CaptureScaffoldState(
     val snackbarHostState: SnackbarHostState = SnackbarHostState()
 ) {
     /**
-     * Whether the Quick Settings surface (bottom sheet or floating overlay card) is currently open.
+     * Whether the Quick Settings surface (bottom sheet or side sheet) is currently open.
      */
     var isQuickSettingsOpen: Boolean by mutableStateOf(isInitiallyExpanded)
         private set
@@ -440,22 +428,6 @@ fun defaultCameraErrorStrings(error: CameraError): CameraErrorStrings? {
  */
 object CaptureScaffoldDefaults {
     /**
-     * Layouts that present Quick Settings in a bottom sheet.
-     *
-     * TODO(#648): Remove FoldableLayout, TabletLandscapeLayout, and TabletPortraitLayout once
-     *   #648 replaces their bottom sheet with the Quick Settings overlay/side sheet.
-     */
-    private val BottomSheetQuickSettingsLayouts =
-        setOf(
-            "CompactPortraitLayout",
-            "CompactShortLayout",
-            "FoldableLayout",
-            "TabletLandscapeLayout",
-            "TabletPortraitLayout"
-        )
-    private val QuickSettingsVerticalPadding = 20.dp
-
-    /**
      * Default shutter / capture button wired to [CaptureController], sized for [controlSize] via
      * [CaptureButtonDefaults.diameterFor].
      */
@@ -466,7 +438,7 @@ object CaptureScaffoldDefaults {
         modifier: Modifier = Modifier,
         onDismissQuickSettings: () -> Unit = {},
         onIncrementZoom: (Float) -> Unit = {},
-        controlSize: ControlSize = ControlSize.Standard
+        controlSize: ControlSize = LocalControlSize.current
     ) {
         com.google.jetpackcamera.ui.components.capture.CaptureButton(
             modifier = modifier,
@@ -559,90 +531,18 @@ object CaptureScaffoldDefaults {
         controlSize: ControlSize = ControlSize.Standard
     ) {
         if (!isRecording && uiState is CaptureModeToggleUiState.Available) {
-            // TODO(#635): Replace vertical placeholder with vertical CaptureModeToggleButton.
-            if (orientation == Orientation.Vertical) {
-                val isVideoSelected = uiState.selectedCaptureMode == CaptureMode.VIDEO_ONLY
-                val enabled = uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
-                    uiState.isCaptureModeSelectable(CaptureMode.IMAGE_ONLY) &&
-                    uiState.selectedCaptureMode != CaptureMode.STANDARD
-                val placeholderLabel = stringResource(
-                    if (isVideoSelected) {
-                        R.string.quick_settings_text_capture_mode_video_only
-                    } else {
-                        R.string.quick_settings_text_capture_mode_image_only
-                    }
-                )
-                val resolvedStateDescription = stringResource(
-                    when {
-                        isVideoSelected && enabled ->
-                            R.string.capture_mode_video_recording_content_description
-                        isVideoSelected && !enabled ->
-                            R.string.capture_mode_video_recording_content_description_disabled
-                        !isVideoSelected && enabled ->
-                            R.string.capture_mode_image_capture_content_description
-                        else ->
-                            R.string.capture_mode_image_capture_content_description_disabled
-                    }
-                )
-                PlaceholderControlBox(
-                    label = placeholderLabel,
-                    width = if (controlSize != ControlSize.Standard) {
-                        CaptureSlotTokens.ModeToggleMiniHeight
-                    } else {
-                        CaptureSlotTokens.ModeToggleStandardHeight
-                    },
-                    height = if (controlSize != ControlSize.Standard) {
-                        CaptureSlotTokens.ModeToggleMiniWidth
-                    } else {
-                        CaptureSlotTokens.ModeToggleStandardWidth
-                    },
-                    modifier = modifier
-                        .semantics {
-                            stateDescription = resolvedStateDescription
-                            toggleableState = ToggleableState(isVideoSelected)
-                        }
-                        .clickable(
-                            role = Role.Switch,
-                            onClick = {
-                                if (enabled) {
-                                    val nextMode = if (isVideoSelected) {
-                                        CaptureMode.IMAGE_ONLY
-                                    } else {
-                                        CaptureMode.VIDEO_ONLY
-                                    }
-                                    quickSettingsController?.setCaptureMode(nextMode)
-                                } else {
-                                    val disabledReason: DisableRationale? =
-                                        (
-                                            uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY)
-                                                as? SingleSelectableUiState.Disabled<CaptureMode>
-                                            )?.disabledReason
-                                            ?: (
-                                                uiState.findSelectableStateFor(
-                                                    CaptureMode.IMAGE_ONLY
-                                                ) as? SingleSelectableUiState.Disabled<CaptureMode>
-                                                )?.disabledReason
-                                    disabledReason?.let {
-                                        snackBarController?.enqueueDisabledHdrToggleSnackBar(it)
-                                    }
-                                }
-                            }
-                        ),
-                    color = CaptureSlotTokens.ModeToggleColor,
-                    testTag = CAPTURE_MODE_TOGGLE_BUTTON
-                )
-            } else {
-                CaptureModeToggleButton(
-                    uiState = uiState,
-                    onChangeCaptureMode = { newCaptureMode ->
-                        quickSettingsController?.setCaptureMode(newCaptureMode)
-                    },
-                    onToggleWhenDisabled = { disableRationale ->
-                        snackBarController?.enqueueDisabledHdrToggleSnackBar(disableRationale)
-                    },
-                    modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
-                )
-            }
+            CaptureModeToggleButton(
+                uiState = uiState,
+                onChangeCaptureMode = { newCaptureMode ->
+                    quickSettingsController?.setCaptureMode(newCaptureMode)
+                },
+                onToggleWhenDisabled = { disableRationale ->
+                    snackBarController?.enqueueDisabledHdrToggleSnackBar(disableRationale)
+                },
+                modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
+                orientation = orientation,
+                controlSize = controlSize
+            )
         }
     }
 
@@ -725,42 +625,32 @@ object CaptureScaffoldDefaults {
     }
 
     /**
-     * Default top status indicator pill reading slices from a deferred [uiState] provider.
+     * Default status indicator pill reading slices from a deferred [uiState] provider.
+     *
+     * Stacks indicators along [orientation]: a full-width horizontal pill in the compact top bar,
+     * or a vertical pill that wraps its icons in side rails.
      */
     @Composable
     fun TopBar(
         uiState: () -> CaptureUiState.Ready,
         modifier: Modifier = Modifier,
-        orientation: Orientation = Orientation.Horizontal,
-        controlSize: ControlSize = ControlSize.Standard
+        orientation: Orientation = Orientation.Horizontal
     ) {
         val currentUiState by rememberUpdatedState(uiState)
-        // TODO(#649): Replace vertical placeholder with VerticalIndicatorPill once #649 merges.
-        if (orientation == Orientation.Vertical) {
-            val hasVideoQuality by remember {
-                derivedStateOf { currentUiState().videoQuality != VideoQuality.UNSPECIFIED }
-            }
-            PlaceholderControlBox(
-                label = "",
-                width = CaptureSlotTokens.IndicatorCrossAxisSize,
-                height = if (controlSize != ControlSize.Standard) {
-                    CaptureSlotTokens.IndicatorMiniMainAxisSize
-                } else {
-                    CaptureSlotTokens.IndicatorStandardMainAxisSize
-                },
-                modifier = modifier,
-                color = CaptureSlotTokens.IndicatorColor,
-                testTag = if (hasVideoQuality) VIDEO_QUALITY_TAG else null
-            )
-            return
-        }
         val flashModeState = remember { derivedStateOf { currentUiState().flashModeUiState } }
         val hdrState = remember { derivedStateOf { currentUiState().hdrUiState } }
         val videoQualityState = remember { derivedStateOf { currentUiState().videoQuality } }
         val stabilizationState =
             remember { derivedStateOf { currentUiState().stabilizationUiState } }
 
-        IndicatorPill(modifier = modifier.fillMaxWidth()) {
+        IndicatorPill(
+            modifier = if (orientation == Orientation.Vertical) {
+                modifier
+            } else {
+                modifier.fillMaxWidth()
+            },
+            orientation = orientation
+        ) {
             FlashModeIndicator(flashModeUiState = flashModeState.value)
             HdrIndicator(hdrUiState = hdrState.value)
             VideoQualityIcon(
@@ -772,11 +662,10 @@ object CaptureScaffoldDefaults {
     }
 
     /**
-     * Default Quick Settings content.
+     * Default Quick Settings content without container-specific insets or padding.
      *
-     * Compact layouts present it in their Quick Settings bottom sheet as
-     * [QuickSettingsScaffoldContent], which scrolls and pads for system bars. Other layouts receive
-     * the bare [QuickSettingsContent].
+     * The hosting sheet ([CaptureScaffoldLayout]'s bottom sheet or the large-screen panel) owns
+     * the navigation bar inset and bottom padding, so this content can be hosted in either.
      */
     @Composable
     fun QuickSettings(
@@ -786,28 +675,14 @@ object CaptureScaffoldDefaults {
         modifier: Modifier = Modifier,
         showMoreSettingsButton: Boolean = true
     ) {
-        if (controller != null) {
-            // TODO(#648): Foldable and tablet layouts temporarily host the bare content in a bottom
-            // sheet; give them the Quick Settings side sheet once #648 lands.
-            if (LocalActiveCaptureLayout.current in BottomSheetQuickSettingsLayouts) {
-                QuickSettingsScaffoldContent(
-                    quickSettingsUiState = uiState,
-                    onNavigateToSettings = onNavigateToSettings,
-                    quickSettingsController = controller,
-                    modifier = modifier,
-                    showMoreSettingsButton = showMoreSettingsButton
-                )
-            } else if (uiState is QuickSettingsUiState.Available) {
-                QuickSettingsContent(
-                    quickSettingsUiState = uiState,
-                    quickSettingsController = controller,
-                    onNavigateToSettings = onNavigateToSettings,
-                    modifier = modifier
-                        .padding(vertical = QuickSettingsVerticalPadding)
-                        .testTag(QUICK_SETTINGS_BOTTOM_SHEET),
-                    showMoreSettingsButton = showMoreSettingsButton
-                )
-            }
+        if (controller != null && uiState is QuickSettingsUiState.Available) {
+            QuickSettingsContent(
+                quickSettingsUiState = uiState,
+                onNavigateToSettings = onNavigateToSettings,
+                quickSettingsController = controller,
+                modifier = modifier,
+                showMoreSettingsButton = showMoreSettingsButton
+            )
         }
     }
 
@@ -977,8 +852,7 @@ fun CaptureScaffold(
         CaptureScaffoldDefaults.TopBar(
             uiState = captureUiState,
             modifier = slotModifier,
-            orientation = orientation,
-            controlSize = controlSize
+            orientation = orientation
         )
     },
     captureButton: @Composable CaptureSlotScope.(Modifier) -> Unit = { slotModifier ->

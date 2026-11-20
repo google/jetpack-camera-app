@@ -18,11 +18,16 @@ package com.google.jetpackcamera.ui.components.capture
 import android.content.Context
 import android.os.Build
 import androidx.annotation.StringRes
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -32,7 +37,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
@@ -43,6 +48,9 @@ import androidx.test.filters.SdkSuppress
 import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
 import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsSideSheet
+import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsController
+import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -74,8 +82,12 @@ class CaptureLayoutTest {
         state: CaptureScaffoldState = rememberCaptureScaffoldState(),
         onDismissQuickSettings: () -> Unit = {},
         captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+        flipCameraButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+        indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+        overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
         quickSettingsOverlay: @Composable (Modifier) -> Unit = {},
-        viewfinder: @Composable (Modifier) -> Unit = {}
+        viewfinder: @Composable (Modifier) -> Unit = {},
+        errorDialog: @Composable (Modifier) -> Unit = {}
     ) {
         CaptureScaffoldLayout(
             modifier = modifier,
@@ -84,13 +96,15 @@ class CaptureLayoutTest {
             viewfinder = viewfinder,
             captureButton = captureButton,
             imageWell = {},
-            flipCameraButton = {},
+            flipCameraButton = flipCameraButton,
             zoomLevelDisplay = {},
             elapsedTimeDisplay = {},
             quickSettingsButton = {},
-            indicatorRow = {},
+            indicatorRow = indicatorRow,
             captureModeToggle = {},
-            quickSettingsOverlay = quickSettingsOverlay
+            quickSettingsOverlay = quickSettingsOverlay,
+            overlay = overlay,
+            errorDialog = errorDialog
         )
     }
 
@@ -114,6 +128,11 @@ class CaptureLayoutTest {
             .assert(
                 SemanticsMatcher("onClickLabel equals $targetDescription") { node ->
                     node.config.getOrNull(SemanticsActions.OnClick)?.label == targetDescription
+                }
+            )
+            .assert(
+                SemanticsMatcher("dismiss label equals $targetDescription") { node ->
+                    node.config.getOrNull(SemanticsActions.Dismiss)?.label == targetDescription
                 }
             )
 
@@ -157,6 +176,8 @@ class CaptureLayoutTest {
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
             .assertIsDisplayed()
             .assertContentDescriptionEquals(scrimDescription)
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Button))
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.TraversalIndex, 1f))
             .assert(
                 SemanticsMatcher("onClickLabel equals $dismissLabel") { node ->
                     node.config.getOrNull(SemanticsActions.OnClick)?.label == dismissLabel
@@ -204,6 +225,54 @@ class CaptureLayoutTest {
 
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM)
             .assertDoesNotExist()
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun quickSettingsSideSheet_lightTheme_passesAccessibilityChecks() {
+        composeTestRule.setContent {
+            MaterialTheme(colorScheme = lightColorScheme()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black)
+                ) {
+                    QuickSettingsSideSheet(
+                        isOpen = true,
+                        onDismissRequest = {},
+                        quickSettingsUiState = sampleQuickSettingsUiState(),
+                        quickSettingsController = FakeQuickSettingsController()
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertIsDisplayed()
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun quickSettingsSideSheet_darkTheme_passesAccessibilityChecks() {
+        composeTestRule.setContent {
+            MaterialTheme(colorScheme = darkColorScheme()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black)
+                ) {
+                    QuickSettingsSideSheet(
+                        isOpen = true,
+                        onDismissRequest = {},
+                        quickSettingsUiState = sampleQuickSettingsUiState(),
+                        quickSettingsController = FakeQuickSettingsController()
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SIDE_SHEET_TAG).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_SCRIM).assertIsDisplayed()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 }

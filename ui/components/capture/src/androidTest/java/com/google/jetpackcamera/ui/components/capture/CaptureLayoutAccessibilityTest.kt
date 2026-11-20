@@ -54,7 +54,7 @@ import com.google.jetpackcamera.model.MediaDescriptor
 import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.ui.components.capture.quicksettings.NoOpQuickSettingsController
-import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsScaffoldContent
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsContent
 import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQuickSettingsButton
 import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
@@ -294,7 +294,7 @@ class CaptureLayoutAccessibilityTest {
                     )
                 },
                 quickSettingsOverlay = { modifier ->
-                    QuickSettingsScaffoldContent(
+                    QuickSettingsContent(
                         modifier = modifier,
                         quickSettingsUiState = QuickSettingsUiState.Available(
                             aspectRatioUiState = AspectRatioUiState.Available(
