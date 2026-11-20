@@ -463,8 +463,8 @@ class CameraXCameraSystemTest {
         cameraFeaturePolicy: CameraFeaturePolicy = CameraFeaturePolicy()
     ) = CameraXCameraSystem(
         application = application,
-        defaultDispatcher = Dispatchers.Default,
-        iODispatcher = Dispatchers.IO,
+        defaultCoroutineContext = Dispatchers.Default,
+        ioCoroutineContext = Dispatchers.IO,
         availabilityCheckers = emptyMap(),
         effectProviders = emptyMap(),
         imagePostProcessors = getFakePostProcessorMap(fakeImagePostProcessor),
