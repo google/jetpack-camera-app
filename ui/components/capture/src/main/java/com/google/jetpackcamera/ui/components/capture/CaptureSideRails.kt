@@ -503,7 +503,9 @@ private fun VerticalRailShutterCluster(
         val minSecondaryHeightPx = Tokens.MinSecondaryControlHeight.roundToPx()
         val nominalCaptureDiameterPx = CaptureButtonDefaults.diameterFor(controlSize).roundToPx()
 
+        val flipPlaceable: Placeable?
         val capturePlaceable: Placeable?
+        val imageWellPlaceable: Placeable?
         val activePlaceables = if (constraints.hasBoundedHeight) {
             var remainingHeight = constraints.maxHeight
             var placedCount = 0
@@ -534,8 +536,8 @@ private fun VerticalRailShutterCluster(
             // Measure primary shutter first so it retains priority in extreme micro-heights, then
             // assemble in strict Flip -> Capture -> ImageWell visual order.
             capturePlaceable = measureSlot(ShutterClusterSlotId.Capture, isPrimary = true)
-            val flipPlaceable = measureSlot(ShutterClusterSlotId.FlipCamera, isPrimary = false)
-            val imageWellPlaceable = measureSlot(ShutterClusterSlotId.ImageWell, isPrimary = false)
+            flipPlaceable = measureSlot(ShutterClusterSlotId.FlipCamera, isPrimary = false)
+            imageWellPlaceable = measureSlot(ShutterClusterSlotId.ImageWell, isPrimary = false)
             listOfNotNull(
                 flipPlaceable,
                 capturePlaceable,
@@ -548,13 +550,13 @@ private fun VerticalRailShutterCluster(
                 minHeight = 0,
                 maxHeight = Constraints.Infinity
             )
-            val flipPlaceable = measurables.firstOrNull {
+            flipPlaceable = measurables.firstOrNull {
                 it.layoutId == ShutterClusterSlotId.FlipCamera
             }?.measure(looseConstraints)?.takeIf { it.height > 0 }
             capturePlaceable = measurables.firstOrNull {
                 it.layoutId == ShutterClusterSlotId.Capture
             }?.measure(looseConstraints)?.takeIf { it.height > 0 }
-            val imageWellPlaceable = measurables.firstOrNull {
+            imageWellPlaceable = measurables.firstOrNull {
                 it.layoutId == ShutterClusterSlotId.ImageWell
             }?.measure(looseConstraints)?.takeIf { it.height > 0 }
             listOfNotNull(
@@ -589,20 +591,56 @@ private fun VerticalRailShutterCluster(
                 }
             } ?: 0
             ).coerceIn(constraints.minWidth, constraints.maxWidth)
-        val clusterHeight = (totalChildrenHeight + actualTotalGapPx)
-            .coerceIn(constraints.minHeight, constraints.maxHeight)
+
+        // Anchor captureButton at the vertical center of the cluster by using symmetric wing
+        // heights above and below it when space permits, so appearing/disappearing secondary slots
+        // (such as an empty ImageWell) never shift captureButton or flipCameraButton.
+        val topWingPx = flipPlaceable?.let { it.height + targetGapPx } ?: 0
+        val bottomWingPx = imageWellPlaceable?.let { it.height + targetGapPx } ?: 0
+        val symmetricWingPx = maxOf(topWingPx, bottomWingPx)
+        val symmetricClusterHeight = capturePlaceable?.let { it.height + symmetricWingPx * 2 }
+        val useAnchoredCaptureLayout = symmetricClusterHeight != null &&
+            (!constraints.hasBoundedHeight || symmetricClusterHeight <= constraints.maxHeight)
+
+        val clusterHeight = if (useAnchoredCaptureLayout) {
+            symmetricClusterHeight!!.coerceIn(constraints.minHeight, constraints.maxHeight)
+        } else {
+            (totalChildrenHeight + actualTotalGapPx)
+                .coerceIn(constraints.minHeight, constraints.maxHeight)
+        }
 
         layout(clusterWidth, clusterHeight) {
-            var currentY = (clusterHeight - (totalChildrenHeight + actualTotalGapPx))
-                .coerceAtLeast(0) / 2
-            activePlaceables.forEachIndexed { index, placeable ->
-                placeable.place(
-                    x = (clusterWidth - placeable.width) / 2,
-                    y = currentY
+            if (useAnchoredCaptureLayout) {
+                val anchoredCapture = checkNotNull(capturePlaceable)
+                val captureY = (clusterHeight - anchoredCapture.height) / 2
+                anchoredCapture.place(
+                    x = (clusterWidth - anchoredCapture.width) / 2,
+                    y = captureY
                 )
-                currentY += placeable.height
-                if (index < gapCount) {
-                    currentY += baseGapPx + if (index < extraGapPixels) 1 else 0
+                flipPlaceable?.let { placeable ->
+                    placeable.place(
+                        x = (clusterWidth - placeable.width) / 2,
+                        y = captureY - targetGapPx - placeable.height
+                    )
+                }
+                imageWellPlaceable?.let { placeable ->
+                    placeable.place(
+                        x = (clusterWidth - placeable.width) / 2,
+                        y = captureY + anchoredCapture.height + targetGapPx
+                    )
+                }
+            } else {
+                var currentY = (clusterHeight - (totalChildrenHeight + actualTotalGapPx))
+                    .coerceAtLeast(0) / 2
+                activePlaceables.forEachIndexed { index, placeable ->
+                    placeable.place(
+                        x = (clusterWidth - placeable.width) / 2,
+                        y = currentY
+                    )
+                    currentY += placeable.height
+                    if (index < gapCount) {
+                        currentY += baseGapPx + if (index < extraGapPixels) 1 else 0
+                    }
                 }
             }
         }
