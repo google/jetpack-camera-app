@@ -501,8 +501,8 @@ internal fun SideRailCaptureScaffold(
 private fun FoldableUnfoldedPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         FoldableLayout(
-            slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+            slots = previewSideRailSlots(includeElapsedTime = true),
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) }
         )
     }
 }
@@ -516,11 +516,8 @@ private fun FoldableUnfoldedPreview() {
 private fun FoldableQuickSettingsOpenPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         FoldableLayout(
-            slots = PlaceholderCaptureSlots.sideRail(
-                includeElapsedTime = true,
-                tagQuickSettingsOverlay = true
-            ),
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+            slots = previewSideRailSlots(includeElapsedTime = true),
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
             state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
         )
     }
@@ -535,8 +532,8 @@ private fun FoldableQuickSettingsOpenPreview() {
 private fun TabletLandscapePreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         TabletLandscapeLayout(
-            slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+            slots = previewSideRailSlots(includeElapsedTime = true),
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) }
         )
     }
 }
@@ -550,8 +547,8 @@ private fun TabletLandscapePreview() {
 private fun TabletPortraitPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         TabletPortraitLayout(
-            slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+            slots = previewSideRailSlots(includeElapsedTime = true),
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) }
         )
     }
 }
@@ -569,11 +566,8 @@ private fun TabletLandscapeRtlDefaultPolicyPreview() {
             LocalCaptureRtlPolicy provides CaptureRtlPolicy(mirrorSideRails = false)
         ) {
             TabletLandscapeLayout(
-                slots = PlaceholderCaptureSlots.sideRail(
-                    includeElapsedTime = true,
-                    tagQuickSettingsOverlay = true
-                ),
-                viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+                slots = previewSideRailSlots(includeElapsedTime = true),
+                viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
                 state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
             )
         }
@@ -593,11 +587,8 @@ private fun TabletLandscapeRtlMirroredPolicyPreview() {
             LocalCaptureRtlPolicy provides CaptureRtlPolicy(mirrorSideRails = true)
         ) {
             TabletLandscapeLayout(
-                slots = PlaceholderCaptureSlots.sideRail(
-                    includeElapsedTime = true,
-                    tagQuickSettingsOverlay = true
-                ),
-                viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+                slots = previewSideRailSlots(includeElapsedTime = true),
+                viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
                 state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
             )
         }

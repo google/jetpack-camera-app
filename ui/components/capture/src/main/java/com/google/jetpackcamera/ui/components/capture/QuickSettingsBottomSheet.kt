@@ -18,12 +18,23 @@ package com.google.jetpackcamera.ui.components.capture
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsIgnoringVisibility
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.tappableElement
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.rememberBottomSheetScaffoldState
@@ -38,10 +49,12 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSettingsSheetDefaults
 
 /**
  * Dimension constants for the in-hierarchy Quick Settings bottom sheet.
@@ -68,7 +81,7 @@ private object QuickSettingsBottomSheetTokens {
  * @param content Layout drawn behind the sheet; receives whether the sheet is visible or animating
  *   toward expanded so callers can suppress background chrome and draw a dismiss scrim.
  */
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 internal fun QuickSettingsBottomSheetScaffold(
     state: CaptureScaffoldState,
@@ -112,18 +125,18 @@ internal fun QuickSettingsBottomSheetScaffold(
         scaffoldState = scaffoldState,
         sheetPeekHeight = QuickSettingsBottomSheetTokens.SheetPeekHeight,
         sheetDragHandle = null,
-        sheetShape = RoundedCornerShape(
-            topStart = QuickSettingsBottomSheetTokens.SheetTopCornerRadius,
-            topEnd = QuickSettingsBottomSheetTokens.SheetTopCornerRadius
-        ),
+        sheetShape = QuickSettingsSheetDefaults.BottomSheetShape,
         containerColor = Color.Transparent,
-        sheetContainerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        sheetContainerColor = QuickSettingsSheetDefaults.ContainerColor,
+        sheetContentColor = QuickSettingsSheetDefaults.ContentColor,
+        sheetShadowElevation = QuickSettingsSheetDefaults.ShadowElevation,
         sheetContent = {
             // Rendered inside sheetContent rather than sheetDragHandle because
             // StandardBottomSheet wraps non-null sheetDragHandle in its own clickable
             // DragHandleWithTooltip, creating duplicate clickable bounds and overriding
             // onDismissQuickSettings.
             BottomSheetDefaults.DragHandle(
+                color = QuickSettingsSheetDefaults.DragHandleColor,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
                     .testTag(QUICK_SETTINGS_DRAG_HANDLE)
@@ -135,9 +148,28 @@ internal fun QuickSettingsBottomSheetScaffold(
                             onDismissQuickSettings()
                         }
                     )
+                    .semantics {
+                        dismiss(dismissQuickSettingsLabel) {
+                            state.dismissQuickSettings()
+                            onDismissQuickSettings()
+                            true
+                        }
+                    }
                     .minimumInteractiveComponentSize()
             )
-            sheetContent()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .windowInsetsPadding(
+                        WindowInsets.navigationBarsIgnoringVisibility
+                            .union(WindowInsets.tappableElement)
+                            .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal)
+                    )
+                    .padding(bottom = QuickSettingsSheetDefaults.BottomSheetContentBottomPadding)
+            ) {
+                sheetContent()
+            }
         },
         snackbarHost = {}
     ) {

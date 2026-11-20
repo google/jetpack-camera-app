@@ -1055,8 +1055,8 @@ internal fun VerticalMaterialControls(
 private fun CompactPortraitStandardPhonePreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CompactPortraitLayout(
-            slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+            slots = previewSideRailSlots(includeElapsedTime = true),
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) }
         )
     }
 }
@@ -1070,8 +1070,8 @@ private fun CompactPortraitStandardPhonePreview() {
 private fun CompactPortraitShortPhonePreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CompactPortraitLayout(
-            slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+            slots = previewSideRailSlots(includeElapsedTime = true),
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) }
         )
     }
 }
@@ -1089,8 +1089,8 @@ private fun CompactPortraitRtlDefaultPolicyPreview() {
             LocalCaptureRtlPolicy provides CaptureRtlPolicy(mirrorCompactBottomBar = false)
         ) {
             CompactPortraitLayout(
-                slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
-                viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+                slots = previewSideRailSlots(includeElapsedTime = true),
+                viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) }
             )
         }
     }
@@ -1109,8 +1109,8 @@ private fun CompactPortraitRtlMirroredPolicyPreview() {
             LocalCaptureRtlPolicy provides CaptureRtlPolicy(mirrorCompactBottomBar = true)
         ) {
             CompactPortraitLayout(
-                slots = PlaceholderCaptureSlots.sideRail(includeElapsedTime = true),
-                viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+                slots = previewSideRailSlots(includeElapsedTime = true),
+                viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) }
             )
         }
     }

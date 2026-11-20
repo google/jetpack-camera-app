@@ -15,6 +15,7 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -45,6 +46,13 @@ private object CompactShortTokens {
     val RailHorizontalPaddingTotal = 16.dp
     val MinRailSlotWidthFloor = 36.dp
     val MinCenterHudWidthFloor = 48.dp
+
+    val ModeToggleMiniWidth = 92.dp
+    val ModeToggleMiniHeight = 48.dp
+    val IndicatorMiniMainAxisSize = 64.dp
+    val IconTouchTargetSize = 48.dp
+    val SecondaryActionMiniSize = 48.dp
+    val HorizontalTopBarHeight = 36.dp
 
     // Proportional height fractions of the usable inner rail height so controls scale down
     // harmoniously without clipping or overlap in condensed short windows (< 480dp on both axes,
@@ -113,7 +121,7 @@ internal fun CompactShortLayout(
             (maxHeight - verticalInsets).coerceAtLeast(CompactShortTokens.ZeroSize)
 
         val railSlotMaxWidth = min(
-            CaptureSlotTokens.ModeToggleMiniWidth,
+            CompactShortTokens.ModeToggleMiniWidth,
             (availableWidth * CompactShortTokens.RAIL_WIDTH_FRACTION)
                 .coerceAtLeast(CompactShortTokens.MinRailSlotWidthFloor)
         )
@@ -168,39 +176,39 @@ private fun CaptureSlots.withCondensedSizeCaps(
         .coerceAtLeast(CompactShortTokens.ZeroSize)
 
     val indicatorMaxHeight = min(
-        CaptureSlotTokens.IndicatorMiniMainAxisSize,
+        CompactShortTokens.IndicatorMiniMainAxisSize,
         innerRailHeight * CompactShortTokens.INDICATOR_MAX_HEIGHT_FRACTION
     )
     val quickSettingsButtonMaxSize = min(
         min(
-            CaptureSlotTokens.IconTouchTargetSize,
+            CompactShortTokens.IconTouchTargetSize,
             innerRailHeight * CompactShortTokens.QUICK_SETTINGS_BUTTON_FRACTION
         ),
         railSlotMaxWidth
     )
     val shutterMaxDiameter = min(
         min(
-            CaptureSlotTokens.ShutterMiniDiameter,
+            CaptureButtonDefaults.MiniDiameter,
             innerRailHeight * CompactShortTokens.SHUTTER_DIAMETER_FRACTION
         ),
         railSlotMaxWidth
     )
     val secondaryActionMaxSize = min(
         min(
-            CaptureSlotTokens.SecondaryActionMiniSize,
+            CompactShortTokens.SecondaryActionMiniSize,
             innerRailHeight * CompactShortTokens.SECONDARY_ACTION_FRACTION
         ),
         railSlotMaxWidth
     )
     val modeToggleMaxHeight = min(
-        CaptureSlotTokens.ModeToggleMiniHeight,
+        CompactShortTokens.ModeToggleMiniHeight,
         innerRailHeight * CompactShortTokens.MODE_TOGGLE_HEIGHT_FRACTION
     )
 
     val centerHudMaxWidth = (availableWidth - estimatedRailFootprint * 2)
         .coerceAtLeast(CompactShortTokens.MinCenterHudWidthFloor)
     val centerHudMaxHeight = min(
-        CaptureSlotTokens.HorizontalTopBarHeight,
+        CompactShortTokens.HorizontalTopBarHeight,
         innerRailHeight * CompactShortTokens.CENTER_HUD_HEIGHT_FRACTION
     )
 
@@ -348,11 +356,8 @@ private fun PreviewOverlaySlotScope.ConstrainedSlot(
 private fun CompactShortSquarePreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CompactShortLayout(
-            slots = PlaceholderCaptureSlots.sideRail(
-                isCompactHeight = true,
-                includeElapsedTime = true
-            ),
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+            slots = previewSideRailSlots(includeElapsedTime = true),
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) }
         )
     }
 }
@@ -366,11 +371,8 @@ private fun CompactShortSquarePreview() {
 private fun CompactShortSlimPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CompactShortLayout(
-            slots = PlaceholderCaptureSlots.sideRail(
-                isCompactHeight = true,
-                includeElapsedTime = true
-            ),
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) }
+            slots = previewSideRailSlots(includeElapsedTime = true),
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) }
         )
     }
 }
@@ -384,12 +386,8 @@ private fun CompactShortSlimPreview() {
 private fun CompactShortQuickSettingsOpenPreview() {
     MaterialTheme(colorScheme = darkColorScheme()) {
         CompactShortLayout(
-            slots = PlaceholderCaptureSlots.sideRail(
-                isCompactHeight = true,
-                includeElapsedTime = true,
-                tagQuickSettingsOverlay = true
-            ),
-            viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+            slots = previewSideRailSlots(includeElapsedTime = true),
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
             state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
         )
     }
@@ -408,12 +406,8 @@ private fun CompactShortRtlDefaultPolicyPreview() {
             LocalCaptureRtlPolicy provides CaptureRtlPolicy(mirrorSideRails = false)
         ) {
             CompactShortLayout(
-                slots = PlaceholderCaptureSlots.sideRail(
-                    isCompactHeight = true,
-                    includeElapsedTime = true,
-                    tagQuickSettingsOverlay = true
-                ),
-                viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+                slots = previewSideRailSlots(includeElapsedTime = true),
+                viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
                 state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
             )
         }
@@ -433,12 +427,8 @@ private fun CompactShortRtlMirroredPolicyPreview() {
             LocalCaptureRtlPolicy provides CaptureRtlPolicy(mirrorSideRails = true)
         ) {
             CompactShortLayout(
-                slots = PlaceholderCaptureSlots.sideRail(
-                    isCompactHeight = true,
-                    includeElapsedTime = true,
-                    tagQuickSettingsOverlay = true
-                ),
-                viewfinder = { mod -> PlaceholderViewfinder(modifier = mod) },
+                slots = previewSideRailSlots(includeElapsedTime = true),
+                viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
                 state = rememberCaptureScaffoldState(isInitiallyExpanded = true)
             )
         }
