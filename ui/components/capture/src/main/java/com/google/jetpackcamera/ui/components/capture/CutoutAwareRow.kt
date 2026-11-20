@@ -149,8 +149,10 @@ fun CutoutAwareLinearLayout(
             val hasAnyVisibleChild = placeables.any {
                 (if (isHorizontal) it.width else it.height) > 0
             }
-            val minCrossConstraint = if (isHorizontal) constraints.minHeight else constraints.minWidth
-            val maxCrossConstraint = if (isHorizontal) constraints.maxHeight else constraints.maxWidth
+            val minCrossConstraint =
+                if (isHorizontal) constraints.minHeight else constraints.minWidth
+            val maxCrossConstraint =
+                if (isHorizontal) constraints.maxHeight else constraints.maxWidth
             val effectiveMinCross = if (hasAnyVisibleChild) {
                 max(minCrossConstraint, pillMinCrossPx)
             } else {
