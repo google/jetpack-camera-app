@@ -39,6 +39,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
@@ -67,13 +68,16 @@ private const val VIDEO_MIME_TYPE = "video/mp4"
 /**
  * A [MediaRepository] backed by the device's MediaStore and app cache.
  *
- * @param ioCoroutineContext The [CoroutineContext] used for blocking I/O work.
+ * @param ioCoroutineContext The [CoroutineContext] used for blocking I/O work. Any [Job] in this
+ * context is ignored.
  */
 class LocalMediaRepository(
     private val context: Context,
-    private val ioCoroutineContext: CoroutineContext,
+    ioCoroutineContext: CoroutineContext,
     private val filePathGenerator: FilePathGenerator
 ) : MediaRepository {
+    // Strip any Job so that withContext() keeps the work a child of the calling coroutine.
+    private val ioCoroutineContext = ioCoroutineContext.minusKey(Job)
     private val repositoryScope = CoroutineScope(ioCoroutineContext + SupervisorJob())
     private val _currentMedia = MutableStateFlow<MediaDescriptor>(MediaDescriptor.None)
 

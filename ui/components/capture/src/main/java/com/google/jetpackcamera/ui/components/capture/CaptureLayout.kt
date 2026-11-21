@@ -64,12 +64,18 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  * @param imageWell the image well composable.
  * @param flipCameraButton the flip camera button composable.
  * @param zoomLevelDisplay the zoom level display composable.
- * @param elapsedTimeDisplay the elapsed time display composable.
+ * @param elapsedTimeDisplay the recording elapsed-time display composable. Shares the fixed-height
+ *   slot reserved between the shutter row and the lower controls row with [captureModeCarousel];
+ *   callers are expected to keep them mutually exclusive so they do not overlap.
  * @param quickSettingsButton the quick settings button composable.
  * @param indicatorRow the top indicator row composable.
  * @param captureModeToggle the capture mode toggle composable.
  * @param captureModeCarousel content for the fixed-height slot reserved between the shutter row
- *   and the lower controls row.
+ *   and the lower controls row (shared with [elapsedTimeDisplay]). The slot is always reserved, so
+ *   supplying or omitting content here never moves the surrounding controls. The content is
+ *   centered on the slot and may be taller than it, for example to provide a larger touch target,
+ *   extending equally into the gaps above and below the slot without overlapping the neighboring
+ *   rows.
  * @param quickSettingsOverlay the quick settings overlay composable.
  * @param overlay optional overlay composable drawn above the viewfinder and controls.
  * @param controlsVisible whether the camera controls should be composed and visible.
