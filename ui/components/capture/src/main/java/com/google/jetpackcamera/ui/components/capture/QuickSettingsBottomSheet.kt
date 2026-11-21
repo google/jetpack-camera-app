@@ -70,7 +70,6 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.QuickSetting
  */
 private object QuickSettingsBottomSheetTokens {
     val SheetPeekHeight: Dp = 0.dp
-    val SheetTopCornerRadius: Dp = 28.dp
 }
 
 /**
