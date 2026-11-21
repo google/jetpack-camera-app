@@ -522,12 +522,14 @@ object CaptureScaffoldDefaults {
     fun ZoomControls(
         uiState: ZoomControlUiState,
         onChangeZoom: (Float) -> Unit,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        orientation: Orientation = Orientation.Horizontal
     ) {
         Column(modifier = modifier, horizontalAlignment = Alignment.CenterHorizontally) {
             ZoomBar(
                 zoomControlUiState = uiState,
-                onChangeZoom = onChangeZoom
+                onChangeZoom = onChangeZoom,
+                orientation = orientation
             )
         }
     }
@@ -542,7 +544,9 @@ object CaptureScaffoldDefaults {
         isRecording: Boolean,
         quickSettingsController: QuickSettingsController?,
         snackBarController: SnackBarController?,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        orientation: Orientation = Orientation.Horizontal,
+        controlSize: ControlSize = ControlSize.Standard
     ) {
         if (!isRecording && uiState is CaptureModeToggleUiState.Available) {
             CaptureModeToggleButton(
@@ -553,7 +557,9 @@ object CaptureScaffoldDefaults {
                 onToggleWhenDisabled = { disableRationale ->
                     snackBarController?.enqueueDisabledHdrToggleSnackBar(disableRationale)
                 },
-                modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+                modifier = modifier.testTag(CAPTURE_MODE_TOGGLE_BUTTON),
+                orientation = orientation,
+                controlSize = controlSize
             )
         }
     }
@@ -666,10 +672,17 @@ object CaptureScaffoldDefaults {
     }
 
     /**
-     * Default top status indicator pill reading slices from a deferred [uiState] provider.
+     * Default status indicator pill reading slices from a deferred [uiState] provider.
+     *
+     * Stacks indicators along [orientation]: a full-width horizontal pill in the compact top bar,
+     * or a vertical pill that wraps its icons in side rails.
      */
     @Composable
-    fun TopBar(uiState: () -> CaptureUiState.Ready, modifier: Modifier = Modifier) {
+    fun TopBar(
+        uiState: () -> CaptureUiState.Ready,
+        modifier: Modifier = Modifier,
+        orientation: Orientation = Orientation.Horizontal
+    ) {
         val currentUiState by rememberUpdatedState(uiState)
         val flashModeState = remember { derivedStateOf { currentUiState().flashModeUiState } }
         val hdrState = remember { derivedStateOf { currentUiState().hdrUiState } }
@@ -677,7 +690,14 @@ object CaptureScaffoldDefaults {
         val stabilizationState =
             remember { derivedStateOf { currentUiState().stabilizationUiState } }
 
-        IndicatorPill(modifier = modifier.fillMaxWidth()) {
+        IndicatorPill(
+            modifier = if (orientation == Orientation.Vertical) {
+                modifier
+            } else {
+                modifier.fillMaxWidth()
+            },
+            orientation = orientation
+        ) {
             FlashModeIndicator(flashModeUiState = flashModeState.value)
             HdrIndicator(hdrUiState = hdrState.value)
             VideoQualityIcon(
@@ -807,8 +827,10 @@ private fun rememberZoomStateManager(
  *   the default [quickSettings] surface.
  * @param onRequestWindowColorMode callback invoked when the viewfinder requests a window color mode
  *   change (such as wide color gamut or HDR).
- * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
- *   tallest viewfinder to clear a persistent navigation bar, and `false` otherwise or on dispose.
+ * @param onRequiresImmersiveChange invoked with `true` while the active layout needs the host to
+ *   hide the navigation bar (always for side-rail layouts; for the compact portrait layout, when
+ *   the window is too short for the tallest viewfinder to clear it), and `false` otherwise or on
+ *   dispose.
  * @param controlsVisible whether the camera control slots should be composed and visible when no
  *   blocking camera error is active.
  * @param snackBarUiState state of the snackbar queue to display via [snackBarController].
@@ -874,7 +896,11 @@ fun CaptureScaffold(
     snackBarController: SnackBarController? = null,
     screenFlashController: ScreenFlashController? = null,
     topBar: @Composable CaptureSlotScope.(Modifier) -> Unit = { slotModifier ->
-        CaptureScaffoldDefaults.TopBar(uiState = captureUiState, modifier = slotModifier)
+        CaptureScaffoldDefaults.TopBar(
+            uiState = captureUiState,
+            modifier = slotModifier,
+            orientation = orientation
+        )
     },
     captureButton: @Composable CaptureSlotScope.(Modifier) -> Unit = { slotModifier ->
         val currentUiState by rememberUpdatedState(captureUiState)
@@ -907,7 +933,8 @@ fun CaptureScaffold(
         CaptureScaffoldDefaults.ZoomControls(
             uiState = zoomControlState.value,
             onChangeZoom = ::animateZoomTo,
-            modifier = slotModifier
+            modifier = slotModifier,
+            orientation = orientation
         )
     },
     captureModeToggle: @Composable CaptureSlotScope.(Modifier) -> Unit = { slotModifier ->
@@ -920,7 +947,9 @@ fun CaptureScaffold(
             isRecording = isRecording,
             quickSettingsController = quickSettingsController,
             snackBarController = snackBarController,
-            modifier = slotModifier
+            modifier = slotModifier,
+            orientation = orientation,
+            controlSize = controlSize
         )
     },
     captureModeCarousel: @Composable CaptureSlotScope.(Modifier) -> Unit = { slotModifier ->
@@ -1241,9 +1270,16 @@ fun CaptureScaffold(
         )
     }
 
+    val isErrorDialogShowing by remember {
+        derivedStateOf {
+            cameraErrorState.value is CameraErrorUiState.Showing && errorDialog != null
+        }
+    }
+
     CaptureScaffoldLayout(
         modifier = modifier,
         state = state,
+        isErrorDialogShowing = isErrorDialogShowing,
         onDismissQuickSettings = onDismissQuickSettings,
         viewfinder = viewfinderLambda,
         captureButton = { slotModifier ->

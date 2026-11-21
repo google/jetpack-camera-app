@@ -17,7 +17,9 @@ package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -27,12 +29,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.HorizontalAlignmentLine
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.jetpackcamera.ui.components.TooltipIconButton
+import com.google.jetpackcamera.ui.components.capture.layout.CameraLayoutMode
+import com.google.jetpackcamera.ui.components.capture.layout.LocalCameraLayoutMode
+import com.google.jetpackcamera.ui.components.capture.layout.rememberCameraLayoutMode
+import com.google.jetpackcamera.ui.components.capture.layout.rememberIsFullScreenCompactPhone
 
 /**
  * The top edge of the visible viewfinder, reported by a viewfinder that fills its slot and offsets
@@ -45,14 +55,18 @@ import com.google.jetpackcamera.ui.components.TooltipIconButton
 internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
 
 /**
- * The base adaptive layout for the camera capture screen.
+ * Adaptive 7-mode orchestrator layout for the camera capture screen.
  *
- * Positions the [viewfinder], individual control slots ([captureButton], [imageWell],
- * [flipCameraButton], [zoomLevelDisplay], [elapsedTimeDisplay], [quickSettingsButton],
- * [indicatorRow], [captureModeToggle], [captureModeCarousel]), [quickSettingsOverlay],
- * [topStartContent], [viewfinderTopEndContent], [topBarLeadingContent], [overlay],
- * [screenFlashOverlay], [snackBar], and [errorDialog] without depending on
- * [CaptureUiState].
+ * Evaluates the available container geometry via [rememberCameraLayoutMode] with `14.dp` (`±7.dp`)
+ * hysteresis deadbands, provides the resolved [CameraLayoutMode] via [LocalCameraLayoutMode], wraps
+ * [viewfinder] in [movableContentOf] so the live camera surface is reparented across posture
+ * transitions without disposal, and dispatches across the 5 dedicated posture layouts:
+ * - [CameraLayoutMode.COMPACT] and [CameraLayoutMode.COMPACT_SLIM] -> [CompactPortraitLayout]
+ * - [CameraLayoutMode.COMPACT_SHORT] and [CameraLayoutMode.COMPACT_SHORT_SLIM] ->
+ *   [CompactShortLayout]
+ * - [CameraLayoutMode.FOLDABLE] -> [FoldableLayout]
+ * - [CameraLayoutMode.TABLET_PORTRAIT] -> [TabletPortraitLayout]
+ * - [CameraLayoutMode.TABLET_LANDSCAPE] -> [TabletLandscapeLayout]
  *
  * @param modifier the [Modifier] for this component.
  * @param state the mode-agnostic [CaptureScaffoldState] controlling Quick Settings visibility and
@@ -68,13 +82,13 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  *   slot reserved between the shutter row and the lower controls row with [captureModeCarousel];
  *   callers are expected to keep them mutually exclusive so they do not overlap.
  * @param quickSettingsButton the quick settings button composable.
- * @param indicatorRow the top indicator row composable.
+ * @param indicatorRow the status indicator row/column composable.
  * @param captureModeToggle the capture mode toggle composable.
  * @param captureModeCarousel content for the fixed-height slot reserved between the shutter row
- *   and the lower controls row (shared with [elapsedTimeDisplay]). The slot is always reserved, so
- *   supplying or omitting content here never moves the surrounding controls. The content is
- *   centered on the slot and may be taller than it, for example to provide a larger touch target,
- *   extending equally into the gaps above and below the slot without overlapping the neighboring
+ *   and the lower controls row on compact layouts (shared with [elapsedTimeDisplay]), or the
+ *   bottom-center HUD on side-rail layouts. On compact layouts the slot is always reserved, so
+ *   supplying or omitting content here never moves the surrounding controls, and content taller
+ *   than the slot extends equally into the gaps above and below without overlapping neighboring
  *   rows.
  * @param quickSettingsOverlay the quick settings overlay composable.
  * @param overlay optional overlay composable drawn above the viewfinder and controls.
@@ -87,9 +101,13 @@ internal val ViewfinderTopLine = HorizontalAlignmentLine { a, b -> minOf(a, b) }
  *   viewfinder.
  * @param topBarLeadingContent optional composable content placed at the start of the top
  *   status/indicator bar directly adjacent to [indicatorRow].
- * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
- *   tallest viewfinder to clear a persistent navigation bar, and `false` otherwise or on dispose.
+ * @param onRequiresImmersiveChange invoked with `true` while the active layout needs the host to
+ *   hide the navigation bar (always for side-rail layouts; for the compact portrait layout, when
+ *   the window is too short for the tallest viewfinder to clear it), and `false` otherwise or on
+ *   dispose.
  * @param errorDialog the camera error alert dialog composable.
+ * @param isErrorDialogShowing whether a modal camera error dialog is currently visible above the
+ *   capture chrome.
  */
 @Composable
 fun CaptureScaffoldLayout(
@@ -115,37 +133,182 @@ fun CaptureScaffoldLayout(
     viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
     topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)? = null,
     onRequiresImmersiveChange: (Boolean) -> Unit = {},
-    errorDialog: @Composable (Modifier) -> Unit = {}
+    errorDialog: @Composable (Modifier) -> Unit = {},
+    isErrorDialogShowing: Boolean = false
 ) {
-    val slots = CaptureSlots(
-        topBar = indicatorRow,
-        topBarLeadingContent = topBarLeadingContent,
-        zoomControls = zoomLevelDisplay,
-        quickSettingsButton = quickSettingsButton,
-        captureButton = captureButton,
-        flipCameraButton = flipCameraButton,
-        imageWell = imageWell,
-        captureModeToggle = captureModeToggle,
-        captureModeCarousel = captureModeCarousel,
-        elapsedTimeDisplay = elapsedTimeDisplay,
-        topStartContent = topStartContent,
-        viewfinderTopEndContent = viewfinderTopEndContent,
-        quickSettingsOverlay = { slotModifier -> quickSettingsOverlay(slotModifier) },
-        snackBar = snackBar,
-        errorDialog = errorDialog
-    )
-    CompactPortraitLayout(
-        slots = slots,
-        viewfinder = viewfinder,
+    CaptureScaffoldLayout(
         modifier = modifier,
         state = state,
-        controlsVisible = controlsVisible,
-        includeStatusBarsInTopBar = false,
         onDismissQuickSettings = onDismissQuickSettings,
-        onRequiresImmersiveChange = onRequiresImmersiveChange,
+        viewfinder = viewfinder,
+        captureButton = captureButton,
+        imageWell = imageWell,
+        flipCameraButton = flipCameraButton,
+        zoomLevelDisplay = zoomLevelDisplay,
+        elapsedTimeDisplay = elapsedTimeDisplay,
+        quickSettingsButton = quickSettingsButton,
+        indicatorRow = indicatorRow,
+        captureModeToggle = captureModeToggle,
+        captureModeCarousel = captureModeCarousel,
+        quickSettingsOverlay = quickSettingsOverlay,
         overlay = overlay,
-        screenFlashOverlay = screenFlashOverlay
+        controlsVisible = controlsVisible,
+        screenFlashOverlay = screenFlashOverlay,
+        snackBar = snackBar,
+        topStartContent = topStartContent,
+        viewfinderTopEndContent = viewfinderTopEndContent,
+        topBarLeadingContent = topBarLeadingContent,
+        onRequiresImmersiveChange = onRequiresImmersiveChange,
+        errorDialog = errorDialog,
+        isErrorDialogShowing = isErrorDialogShowing,
+        slots = null
     )
+}
+
+@Composable
+internal fun CaptureScaffoldLayout(
+    modifier: Modifier = Modifier,
+    state: CaptureScaffoldState = rememberCaptureScaffoldState(),
+    onDismissQuickSettings: () -> Unit = {},
+    viewfinder: @Composable (Modifier) -> Unit,
+    captureButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    imageWell: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    flipCameraButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    zoomLevelDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    elapsedTimeDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    quickSettingsButton: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    indicatorRow: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    captureModeToggle: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    captureModeCarousel: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    quickSettingsOverlay: @Composable (Modifier) -> Unit = {},
+    overlay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    controlsVisible: Boolean = true,
+    screenFlashOverlay: @Composable (Modifier) -> Unit = {},
+    snackBar: @Composable (Modifier, snackbarHostState: SnackbarHostState) -> Unit = { _, _ -> },
+    topStartContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    viewfinderTopEndContent: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+    topBarLeadingContent: (@Composable PreviewOverlaySlotScope.(Modifier) -> Unit)? = null,
+    onRequiresImmersiveChange: (Boolean) -> Unit = {},
+    errorDialog: @Composable (Modifier) -> Unit = {},
+    isErrorDialogShowing: Boolean = false,
+    slots: CaptureSlots? = null
+) {
+    val movableViewfinder = remember(viewfinder) {
+        movableContentOf<Modifier> { vfModifier ->
+            viewfinder(vfModifier)
+        }
+    }
+
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.Black)
+    ) {
+        val isFullScreenCompactPhone = rememberIsFullScreenCompactPhone(maxWidth, maxHeight)
+        val layoutMode = rememberCameraLayoutMode(
+            widthDp = maxWidth,
+            heightDp = maxHeight,
+            isFullScreenCompactPhone = isFullScreenCompactPhone
+        )
+
+        CompositionLocalProvider(LocalCameraLayoutMode provides layoutMode) {
+            val resolvedSlots = slots ?: CaptureSlots(
+                topBar = indicatorRow,
+                topBarLeadingContent = topBarLeadingContent,
+                zoomControls = zoomLevelDisplay,
+                quickSettingsButton = quickSettingsButton,
+                captureButton = captureButton,
+                flipCameraButton = flipCameraButton,
+                imageWell = imageWell,
+                captureModeToggle = captureModeToggle,
+                captureModeCarousel = captureModeCarousel,
+                elapsedTimeDisplay = elapsedTimeDisplay,
+                topStartContent = topStartContent,
+                viewfinderTopEndContent = viewfinderTopEndContent,
+                quickSettingsOverlay = { slotModifier ->
+                    quickSettingsOverlay(slotModifier)
+                },
+                snackBar = snackBar,
+                errorDialog = errorDialog
+            )
+
+            when (layoutMode) {
+                CameraLayoutMode.COMPACT,
+                CameraLayoutMode.COMPACT_SLIM -> {
+                    CompactPortraitLayout(
+                        slots = resolvedSlots,
+                        viewfinder = movableViewfinder,
+                        state = state,
+                        controlsVisible = controlsVisible,
+                        isErrorDialogShowing = isErrorDialogShowing,
+                        includeStatusBarsInTopBar = !isFullScreenCompactPhone,
+                        isSlim = layoutMode == CameraLayoutMode.COMPACT_SLIM,
+                        onDismissQuickSettings = onDismissQuickSettings,
+                        onRequiresImmersiveChange = onRequiresImmersiveChange,
+                        overlay = overlay,
+                        screenFlashOverlay = screenFlashOverlay
+                    )
+                }
+
+                CameraLayoutMode.FOLDABLE -> {
+                    FoldableLayout(
+                        slots = resolvedSlots,
+                        viewfinder = movableViewfinder,
+                        state = state,
+                        controlsVisible = controlsVisible,
+                        isErrorDialogShowing = isErrorDialogShowing,
+                        onDismissQuickSettings = onDismissQuickSettings,
+                        onRequiresImmersiveChange = onRequiresImmersiveChange,
+                        overlay = overlay,
+                        screenFlashOverlay = screenFlashOverlay
+                    )
+                }
+
+                CameraLayoutMode.TABLET_PORTRAIT -> {
+                    TabletPortraitLayout(
+                        slots = resolvedSlots,
+                        viewfinder = movableViewfinder,
+                        state = state,
+                        controlsVisible = controlsVisible,
+                        isErrorDialogShowing = isErrorDialogShowing,
+                        onDismissQuickSettings = onDismissQuickSettings,
+                        onRequiresImmersiveChange = onRequiresImmersiveChange,
+                        overlay = overlay,
+                        screenFlashOverlay = screenFlashOverlay
+                    )
+                }
+
+                CameraLayoutMode.TABLET_LANDSCAPE -> {
+                    TabletLandscapeLayout(
+                        slots = resolvedSlots,
+                        viewfinder = movableViewfinder,
+                        state = state,
+                        controlsVisible = controlsVisible,
+                        isErrorDialogShowing = isErrorDialogShowing,
+                        onDismissQuickSettings = onDismissQuickSettings,
+                        onRequiresImmersiveChange = onRequiresImmersiveChange,
+                        overlay = overlay,
+                        screenFlashOverlay = screenFlashOverlay
+                    )
+                }
+
+                CameraLayoutMode.COMPACT_SHORT,
+                CameraLayoutMode.COMPACT_SHORT_SLIM -> {
+                    CompactShortLayout(
+                        slots = resolvedSlots,
+                        viewfinder = movableViewfinder,
+                        state = state,
+                        controlsVisible = controlsVisible,
+                        isErrorDialogShowing = isErrorDialogShowing,
+                        onDismissQuickSettings = onDismissQuickSettings,
+                        onRequiresImmersiveChange = onRequiresImmersiveChange,
+                        overlay = overlay,
+                        screenFlashOverlay = screenFlashOverlay
+                    )
+                }
+            }
+        }
+    }
 }
 
 @PreviewPortraitDevices
@@ -222,6 +385,145 @@ private fun CaptureLayoutPreview() {
                         .background(Color.Blue)
                 )
             }
+        )
+    }
+}
+
+@Preview(
+    name = "1. COMPACT - Portrait (412x915dp)",
+    device = "spec:width=412dp,height=915dp",
+    showBackground = true
+)
+@Composable
+private fun OrchestratorCompactPortraitPreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        CaptureScaffoldLayout(
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
+        )
+    }
+}
+
+@Preview(
+    name = "2. COMPACT - Horizontal (800x400dp)",
+    device = "spec:width=800dp,height=400dp",
+    showBackground = true
+)
+@Composable
+private fun OrchestratorCompactHorizontalPreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        CaptureScaffoldLayout(
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
+        )
+    }
+}
+
+@Preview(
+    name = "3. COMPACT_SLIM - Portrait (320x740dp)",
+    device = "spec:width=320dp,height=740dp",
+    showBackground = true
+)
+@Composable
+private fun OrchestratorCompactSlimPortraitPreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        CaptureScaffoldLayout(
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
+        )
+    }
+}
+
+@Preview(
+    name = "4. COMPACT_SLIM - Horizontal (740x320dp)",
+    device = "spec:width=740dp,height=320dp",
+    showBackground = true
+)
+@Composable
+private fun OrchestratorCompactSlimHorizontalPreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        CaptureScaffoldLayout(
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
+        )
+    }
+}
+
+@Preview(
+    name = "5. COMPACT_SHORT - Square Split/Cover (360x360dp)",
+    device = "spec:width=360dp,height=360dp",
+    showBackground = true
+)
+@Composable
+private fun OrchestratorCompactShortPreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        CaptureScaffoldLayout(
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(
+                includeElapsedTime = true
+            )
+        )
+    }
+}
+
+@Preview(
+    name = "6. COMPACT_SHORT_SLIM - Tiny Pane (320x340dp)",
+    device = "spec:width=320dp,height=340dp",
+    showBackground = true
+)
+@Composable
+private fun OrchestratorCompactShortSlimPreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        CaptureScaffoldLayout(
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(
+                includeElapsedTime = true
+            )
+        )
+    }
+}
+
+@Preview(
+    name = "7. FOLDABLE - Unfolded Inner Display (852x883dp)",
+    device = "spec:width=852dp,height=883dp",
+    showBackground = true
+)
+@Composable
+private fun OrchestratorFoldablePreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        CaptureScaffoldLayout(
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
+        )
+    }
+}
+
+@Preview(
+    name = "8. TABLET_PORTRAIT - Lower Thumb Zone (800x1280dp)",
+    device = "spec:width=800dp,height=1280dp",
+    showBackground = true
+)
+@Composable
+private fun OrchestratorTabletPortraitPreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        CaptureScaffoldLayout(
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
+        )
+    }
+}
+
+@Preview(
+    name = "9. TABLET_LANDSCAPE - Generous Rails (1280x800dp)",
+    device = "spec:width=1280dp,height=800dp",
+    showBackground = true
+)
+@Composable
+private fun OrchestratorTabletLandscapePreview() {
+    MaterialTheme(colorScheme = darkColorScheme()) {
+        CaptureScaffoldLayout(
+            viewfinder = { mod -> Box(modifier = mod.fillMaxSize()) },
+            slots = previewSideRailSlots(includeElapsedTime = true)
         )
     }
 }

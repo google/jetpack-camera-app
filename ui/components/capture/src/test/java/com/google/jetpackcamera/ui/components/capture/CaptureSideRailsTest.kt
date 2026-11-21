@@ -21,11 +21,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
@@ -764,7 +766,6 @@ class CaptureSideRailsTest {
         var showLeading by mutableStateOf(true)
         var railHeight by mutableStateOf(800.dp)
         var topBarInstanceCount = 0
-        val rememberedTopBarIds = mutableListOf<Int>()
 
         val baseSlots = realSideRailSlots()
 
@@ -780,8 +781,7 @@ class CaptureSideRailsTest {
                         null
                     },
                     topBar = { mod ->
-                        val instanceId = remember { ++topBarInstanceCount }
-                        rememberedTopBarIds.add(instanceId)
+                        remember { ++topBarInstanceCount }
                         baseSlots.topBar(this, mod)
                     }
                 )
@@ -859,5 +859,71 @@ class CaptureSideRailsTest {
         assertThat(updatedCapture.bottom.value).isWithin(TOLERANCE).of(initialCapture.bottom.value)
         assertThat(updatedFlip.top.value).isWithin(TOLERANCE).of(initialFlip.top.value)
         assertThat(updatedFlip.bottom.value).isWithin(TOLERANCE).of(initialFlip.bottom.value)
+    }
+
+    @Test
+    fun sideRails_unboundedHeight_wrapsIntrinsicSectionsAndShutterCluster() {
+        val slots = realSideRailSlots(
+            includeImageWell = true,
+            includeElapsedTime = true
+        )
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                Box(
+                    modifier = Modifier.wrapContentHeight(
+                        align = Alignment.Top,
+                        unbounded = true
+                    )
+                ) {
+                    Row {
+                        StartSideRail(slots = slots)
+                        EndSideRail(
+                            slots = slots,
+                            showElapsedTimeInRail = true
+                        )
+                    }
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        val startRail = boundsOf(START_SIDE_RAIL_TAG)
+        val indicator = boundsOf(VIDEO_QUALITY_TAG)
+        val zoom = boundsOf(ZOOM_BUTTON_ROW_TAG)
+        val quickSettings = boundsOf(QUICK_SETTINGS_DROP_DOWN)
+
+        assertThat(startRail.height).isGreaterThan(0.dp)
+        assertThat(startRail.height).isLessThan(1280.dp)
+        assertThat(indicator.top).isAtLeast(startRail.top + 16.dp - TOLERANCE.dp)
+        assertThat((zoom.top - indicator.bottom).value).isAtLeast(12f - TOLERANCE)
+        assertThat((quickSettings.top - zoom.bottom).value).isAtLeast(12f - TOLERANCE)
+        assertThat((startRail.bottom - quickSettings.bottom).value).isWithin(TOLERANCE).of(16f)
+
+        val endRail = boundsOf(END_SIDE_RAIL_TAG)
+        val elapsed = boundsOf(ELAPSED_TIME_TAG)
+        val flip = boundsOf(FLIP_CAMERA_BUTTON)
+        val capture = boundsOf(CAPTURE_BUTTON)
+        val imageWell = boundsOf(IMAGE_WELL_TAG)
+        val modeToggle = boundsOf(CAPTURE_MODE_TOGGLE_BUTTON)
+
+        assertThat(endRail.height).isGreaterThan(0.dp)
+        assertThat(endRail.height).isLessThan(1280.dp)
+        assertThat((elapsed.top - endRail.top).value).isWithin(TOLERANCE).of(16f)
+        assertThat((flip.top - elapsed.bottom).value).isAtLeast(12f - TOLERANCE)
+        assertThat((capture.top - flip.bottom).value).isWithin(TOLERANCE).of(48f)
+        assertThat((imageWell.top - capture.bottom).value).isWithin(TOLERANCE).of(48f)
+        assertThat((modeToggle.top - imageWell.bottom).value).isAtLeast(12f - TOLERANCE)
+        assertThat((endRail.bottom - modeToggle.bottom).value).isWithin(TOLERANCE).of(16f)
+
+        // Exact intrinsic sum for EndSideRail:
+        // topPad(16) + elapsed + gap(12) + shutterCluster(flip + 48 + capture + 48 + imageWell)
+        // + gap(12) + modeToggle + bottomPad(16).
+        val wing = maxOf(flip.height.value, imageWell.height.value) + 48f
+        val expectedClusterHeight = capture.height.value + wing * 2f
+        val expectedEndRailHeight =
+            16f + elapsed.height.value + 12f + expectedClusterHeight + 12f +
+                modeToggle.height.value + 16f
+        assertThat(endRail.height.value).isWithin(TOLERANCE).of(expectedEndRailHeight)
     }
 }

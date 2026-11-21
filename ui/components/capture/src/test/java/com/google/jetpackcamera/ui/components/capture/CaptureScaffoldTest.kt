@@ -1416,6 +1416,7 @@ class CaptureScaffoldTest {
         const val TOP_START_BUTTON_TAG = "test_top_start_button"
         const val TOP_BAR_LEADING_TAG = "test_top_bar_leading"
         const val ICON_BUTTON_TAG = "test_icon_button"
+        val SHORT_QUICK_SETTINGS_HEIGHT = 120.dp
         val DUAL_SUB_MODE_ID = CaptureSubModeId("concurrent_dual")
         val NIGHT_SUB_MODE_ID = CaptureSubModeId("night_mode")
         const val FIVE_SECONDS_NANOS = 5_000_000_000L
