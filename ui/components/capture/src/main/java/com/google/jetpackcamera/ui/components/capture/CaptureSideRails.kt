@@ -105,7 +105,8 @@ private enum class ShutterClusterSlotId {
  * in strict top-to-bottom order across both LTR and RTL locales while preserving the caller's
  * `LocalLayoutDirection` inside each child slot.
  *
- * @param slots [CaptureSlots] supplying the indicator, zoom, and Quick Settings controls.
+ * @param slots [CaptureSlots] supplying optional leading content, status indicators, zoom, and
+ *   Quick Settings controls.
  * @param modifier [Modifier] applied to the rail container. When given a bounded `maxHeight`
  *   (such as `.fillMaxHeight()` or `.height(...)`), the rail fills that height; when height is
  *   unbounded, the rail wraps the intrinsic heights and minimum gaps of its active sections.

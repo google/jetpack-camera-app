@@ -158,7 +158,7 @@ private enum class CaptureSlotId {
     TopStartContent,
     ViewfinderTopEndContent,
     TopBar,
-    ElapsedTime,
+    SnackbarHost,
     ZoomBar,
     CaptureRow,
     ModeSwitcher,
@@ -759,14 +759,11 @@ internal fun AdaptivePortraitCaptureLayout(
                 )
 
                 if (controlsVisible) {
-                    Column(
-                        modifier = Modifier.layoutId(CaptureSlotId.ElapsedTime),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Box(
+                        modifier = Modifier.layoutId(CaptureSlotId.SnackbarHost),
+                        contentAlignment = Alignment.BottomCenter
                     ) {
                         snackbarHost(Modifier)
-                        OverlapAwareStyleProvider(orientation = Orientation.Horizontal) {
-                            elapsedTimeDisplay(Modifier)
-                        }
                     }
 
                     Box(
@@ -796,6 +793,9 @@ internal fun AdaptivePortraitCaptureLayout(
                     ) {
                         OverlapAwareStyleProvider(orientation = Orientation.Horizontal) {
                             captureModeCarousel(Modifier)
+                        }
+                        OverlapAwareStyleProvider(orientation = Orientation.Horizontal) {
+                            elapsedTimeDisplay(Modifier)
                         }
                     }
 
@@ -830,8 +830,8 @@ internal fun AdaptivePortraitCaptureLayout(
             val topStartPlaceable = measurables
                 .firstOrNull { it.layoutId == CaptureSlotId.TopStartContent }
                 ?.measure(looseConstraints)
-            val elapsedTimePlaceable = measurables
-                .firstOrNull { it.layoutId == CaptureSlotId.ElapsedTime }
+            val snackbarHostPlaceable = measurables
+                .firstOrNull { it.layoutId == CaptureSlotId.SnackbarHost }
                 ?.measure(looseConstraints)
 
             val zoomBar = measureInBand(CaptureSlotId.ZoomBar, CameraRowIds.ZOOM_BAR)
@@ -913,10 +913,12 @@ internal fun AdaptivePortraitCaptureLayout(
 
                 topBarPlaceable?.placeRelative(0, 0)
 
+                // The snackbar host is not a solver row: it hangs above the zoom bar, so it is
+                // placed relative to that band rather than reserving a band of its own.
                 zoomBar?.let { (_, zoomTop) ->
-                    elapsedTimePlaceable?.let { elapsed ->
-                        val elapsedX = (constraints.maxWidth - elapsed.width) / 2
-                        elapsed.placeRelative(elapsedX, zoomTop - elapsed.height)
+                    snackbarHostPlaceable?.let { snackbar ->
+                        val snackbarX = (constraints.maxWidth - snackbar.width) / 2
+                        snackbar.placeRelative(snackbarX, zoomTop - snackbar.height)
                     }
                 }
 
@@ -998,13 +1000,6 @@ internal fun VerticalMaterialControls(
                     orientation = Orientation.Horizontal,
                     controlSize = controlSize
                 ) {
-                    elapsedTimeDisplay(Modifier)
-                }
-
-                OverlapAwareStyleProvider(
-                    orientation = Orientation.Horizontal,
-                    controlSize = controlSize
-                ) {
                     zoomControls(Modifier)
                 }
 
@@ -1033,6 +1028,12 @@ internal fun VerticalMaterialControls(
                         controlSize = controlSize
                     ) {
                         captureModeCarousel(Modifier)
+                    }
+                    OverlapAwareStyleProvider(
+                        orientation = Orientation.Horizontal,
+                        controlSize = controlSize
+                    ) {
+                        elapsedTimeDisplay(Modifier)
                     }
                 }
 
