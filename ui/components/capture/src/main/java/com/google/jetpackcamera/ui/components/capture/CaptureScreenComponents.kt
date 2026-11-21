@@ -1051,6 +1051,8 @@ fun PreviewDisplay(
  * @param onStartVideoRecording callback to start video recording.
  * @param onStopVideoRecording callback to stop video recording.
  * @param onLockVideoRecording callback to lock the video recording for hands-free operation.
+ * @param diameter the diameter of the capture button ring; see [CaptureButtonDefaults] for the
+ *   standard, medium, and mini sizes.
  */
 @Composable
 fun CaptureButton(
@@ -1060,7 +1062,8 @@ fun CaptureButton(
     onCaptureImage: (ContentResolver) -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onLockVideoRecording: (Boolean) -> Unit = {}
+    onLockVideoRecording: (Boolean) -> Unit = {},
+    diameter: Dp = CaptureButtonDefaults.diameterFor(LocalControlSize.current)
 ) {
     val context = LocalContext.current
 
@@ -1085,8 +1088,39 @@ fun CaptureButton(
             onStopVideoRecording()
         },
         captureButtonUiState = captureButtonUiState,
+        captureButtonSize = diameter.value,
         onLockVideoRecording = onLockVideoRecording
     )
+}
+
+/**
+ * Default dimensions for [CaptureButton].
+ */
+object CaptureButtonDefaults {
+    /** Diameter of the standard capture button ring. */
+    val StandardDiameter: Dp = 86.dp
+
+    /**
+     * Diameter of the medium capture button ring, used for intermediate containers such as
+     * foldable side rails.
+     */
+    val MediumDiameter: Dp = 74.dp
+
+    // Uses the 56dp mini shutter diameter token for tight containers.
+
+    /** Diameter of the mini capture button ring, used for tight containers. */
+    val MiniDiameter: Dp = 56.dp
+
+    /**
+     * Returns the capture button ring diameter for [controlSize]: [MiniDiameter] for
+     * [ControlSize.Mini], [MediumDiameter] for [ControlSize.Medium], and [StandardDiameter]
+     * otherwise.
+     */
+    fun diameterFor(controlSize: ControlSize): Dp = when (controlSize) {
+        ControlSize.Mini -> MiniDiameter
+        ControlSize.Medium -> MediumDiameter
+        else -> StandardDiameter
+    }
 }
 
 /**

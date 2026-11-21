@@ -15,11 +15,14 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.ProvidableCompositionLocal
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,7 +39,9 @@ import androidx.compose.ui.layout.onGloballyPositioned
  * viewfinder or over the background around it.
  *
  * Content can use [isOverViewfinder] to choose its own colors, or use
- * [cameraControlContainerColor] to match the built-in camera controls.
+ * [cameraControlContainerColor] to match the built-in camera controls. Adaptive containers such as
+ * side rails and condensed panes also expose [orientation] and [controlSize] so controls can adapt
+ * their axis and dimensions to the hosting slot.
  */
 @Stable
 interface PreviewOverlaySlotScope {
@@ -53,10 +58,50 @@ interface PreviewOverlaySlotScope {
      * it. Using this color is optional.
      */
     val cameraControlContainerColor: Color
+
+    /**
+     * Primary axis along which the hosting container arranges its controls (for example,
+     * [Orientation.Vertical] in a side rail or [Orientation.Horizontal] in a top or bottom bar).
+     */
+    val orientation: Orientation
+        get() = Orientation.Horizontal
+
+    /**
+     * Control size variant requested by the hosting container: [ControlSize.Standard] by default,
+     * or a smaller size such as [ControlSize.Mini] when the container is height- or
+     * space-constrained.
+     */
+    val controlSize: ControlSize
+        get() = ControlSize.Standard
+}
+
+/**
+ * Creates a standalone [PreviewOverlaySlotScope] backed by fixed values for non-overlapping
+ * surfaces, Compose previews, and unit tests.
+ */
+internal fun PreviewOverlaySlotScope(
+    isOverViewfinder: Boolean = true,
+    orientation: Orientation = Orientation.Horizontal,
+    controlSize: ControlSize = ControlSize.Standard
+): PreviewOverlaySlotScope = StaticPreviewOverlaySlotScope(
+    isOverViewfinder = isOverViewfinder,
+    orientation = orientation,
+    controlSize = controlSize
+)
+
+private class StaticPreviewOverlaySlotScope(
+    override val isOverViewfinder: Boolean,
+    override val orientation: Orientation,
+    override val controlSize: ControlSize
+) : PreviewOverlaySlotScope {
+    override val cameraControlContainerColor: Color
+        get() = backgroundStyleFor(isOverViewfinder).containerColor
 }
 
 private class PreviewOverlaySlotScopeImpl(
-    private val isOverViewfinderState: State<Boolean>
+    private val isOverViewfinderState: State<Boolean>,
+    override val orientation: Orientation = Orientation.Horizontal,
+    override val controlSize: ControlSize = ControlSize.Standard
 ) : PreviewOverlaySlotScope {
     override val isOverViewfinder: Boolean
         get() = isOverViewfinderState.value
@@ -73,20 +118,34 @@ internal fun backgroundStyleFor(isOverlapping: Boolean): CameraControlBackground
     }
 
 /**
+ * CompositionLocal providing the active [ControlSize] of the enclosing [OverlapAwareStyleProvider]
+ * slot so controls that do not receive [PreviewOverlaySlotScope.controlSize] explicitly still adapt
+ * their dimensions to the hosting container.
+ */
+internal val LocalControlSize: ProvidableCompositionLocal<ControlSize> =
+    compositionLocalOf { ControlSize.Standard }
+
+/**
  * Applies [LocalCameraControlBackgroundStyle] based on whether this
  * component's spatial bounds overlap with the [LocalOverlapTargetBounds].
  *
- * The [content] also receives the overlap result through [PreviewOverlaySlotScope], so that
- * content supplied by callers outside this module can adapt its own styling.
+ * The [content] also receives the overlap result and container layout hints through
+ * [PreviewOverlaySlotScope], so that content supplied by callers outside this module can adapt its
+ * own styling and axis orientation.
  *
  * @param modifier The [Modifier] to be applied to the outer layout.
  * @param overlapThreshold The ratio of overlap (between 0.0 and 1.0) required to switch the style.
- * @param content The composable content that will receive the computed [LocalCameraControlBackgroundStyle].
+ * @param orientation Primary axis along which the hosting container arranges its controls.
+ * @param controlSize Control size variant requested by the hosting container.
+ * @param content The composable content that will receive the computed
+ *   [LocalCameraControlBackgroundStyle].
  */
 @Composable
 internal fun OverlapAwareStyleProvider(
     modifier: Modifier = Modifier,
     overlapThreshold: Float = 0.5f,
+    orientation: Orientation = Orientation.Horizontal,
+    controlSize: ControlSize = ControlSize.Standard,
     content: @Composable PreviewOverlaySlotScope.() -> Unit
 ) {
     val targetBoundsState = LocalOverlapTargetBounds.current
@@ -100,7 +159,13 @@ internal fun OverlapAwareStyleProvider(
             myArea > 0f && (intersectArea / myArea) >= overlapThreshold
         }
     }
-    val scope = remember(isOverlappingState) { PreviewOverlaySlotScopeImpl(isOverlappingState) }
+    val scope = remember(isOverlappingState, orientation, controlSize) {
+        PreviewOverlaySlotScopeImpl(
+            isOverViewfinderState = isOverlappingState,
+            orientation = orientation,
+            controlSize = controlSize
+        )
+    }
     val style = backgroundStyleFor(isOverlappingState.value)
 
     Box(
@@ -111,7 +176,10 @@ internal fun OverlapAwareStyleProvider(
             }
         }
     ) {
-        CompositionLocalProvider(LocalCameraControlBackgroundStyle provides style) {
+        CompositionLocalProvider(
+            LocalCameraControlBackgroundStyle provides style,
+            LocalControlSize provides controlSize
+        ) {
             scope.content()
         }
     }
