@@ -778,8 +778,10 @@ private fun rememberZoomStateManager(
  *   the default [quickSettings] surface.
  * @param onRequestWindowColorMode callback invoked when the viewfinder requests a window color mode
  *   change (such as wide color gamut or HDR).
- * @param onRequiresImmersiveChange invoked with `true` when the window is too short for the
- *   tallest viewfinder to clear a persistent navigation bar, and `false` otherwise or on dispose.
+ * @param onRequiresImmersiveChange invoked with `true` while the active layout needs the host to
+ *   hide the navigation bar (always for side-rail layouts; for the compact portrait layout, when
+ *   the window is too short for the tallest viewfinder to clear it), and `false` otherwise or on
+ *   dispose.
  * @param controlsVisible whether the camera control slots should be composed and visible when no
  *   blocking camera error is active.
  * @param snackBarUiState state of the snackbar queue to display via [snackBarController].
