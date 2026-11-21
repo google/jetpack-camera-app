@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.isSpecified
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.MediaDescriptor
 import com.google.jetpackcamera.model.VideoQuality
@@ -44,6 +45,8 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.ToggleQui
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeOption
+import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
@@ -648,7 +651,7 @@ private fun VerticalRailShutterCluster(
     }
 }
 
-private fun previewSideRailSlots(
+internal fun previewSideRailSlots(
     includeImageWell: Boolean = true,
     includeElapsedTime: Boolean = false
 ): CaptureSlots = CaptureSlots(
@@ -690,7 +693,7 @@ private fun previewSideRailSlots(
                 )
             ),
             onClick = {},
-            modifier = mod
+            modifier = mod.testTag(FLIP_CAMERA_BUTTON)
         )
     },
     captureButton = { mod ->
@@ -726,6 +729,29 @@ private fun previewSideRailSlots(
             orientation = orientation,
             controlSize = controlSize,
             modifier = mod.testTag(CAPTURE_MODE_TOGGLE_BUTTON)
+        )
+    },
+    captureModeCarousel = { mod ->
+        CaptureModeCarousel(
+            uiState = CaptureSubModeUiState.Available(
+                selectedSubMode = CaptureSubModeId.DEFAULT,
+                availableSubModes = listOf(
+                    SingleSelectableUiState.SelectableUi(
+                        CaptureSubModeOption(
+                            id = CaptureSubModeId.DEFAULT,
+                            labelResId = R.string.quick_settings_text_capture_mode_image_only
+                        )
+                    ),
+                    SingleSelectableUiState.SelectableUi(
+                        CaptureSubModeOption(
+                            id = CaptureSubModeId("submode_two"),
+                            labelResId = R.string.quick_settings_text_capture_mode_video_only
+                        )
+                    )
+                )
+            ),
+            onSelectSubMode = {},
+            modifier = mod
         )
     },
     elapsedTimeDisplay = if (includeElapsedTime) {
