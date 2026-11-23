@@ -17,8 +17,12 @@ package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
@@ -48,6 +52,7 @@ class StabilizationIconTest {
 
         composeTestRule.onNodeWithTag(STABILIZATION_TAG)
             .assertContentDescriptionEquals("Auto stabilization: Preview and video are stabilized")
+            .assertIsDisplayed()
     }
 
     @Test
@@ -56,6 +61,7 @@ class StabilizationIconTest {
 
         composeTestRule.onNodeWithTag(STABILIZATION_TAG)
             .assertContentDescriptionEquals("Auto stabilization: Optical stabilization is Enabled")
+            .assertIsDisplayed()
     }
 
     @Test
@@ -64,6 +70,7 @@ class StabilizationIconTest {
 
         composeTestRule.onNodeWithTag(STABILIZATION_TAG)
             .assertContentDescriptionEquals("Preview and video are stabilized")
+            .assertIsDisplayed()
     }
 
     @Test
@@ -72,6 +79,7 @@ class StabilizationIconTest {
 
         composeTestRule.onNodeWithTag(STABILIZATION_TAG)
             .assertContentDescriptionEquals("Only Video is Stabilized")
+            .assertIsDisplayed()
     }
 
     @Test
@@ -80,6 +88,7 @@ class StabilizationIconTest {
 
         composeTestRule.onNodeWithTag(STABILIZATION_TAG)
             .assertContentDescriptionEquals("Optical stabilization is Enabled")
+            .assertIsDisplayed()
     }
 
     @Test
@@ -88,6 +97,7 @@ class StabilizationIconTest {
 
         composeTestRule.onNodeWithTag(STABILIZATION_TAG)
             .assertContentDescriptionEquals("Stabilization is off")
+            .assertIsDisplayed()
     }
 
     @Test
@@ -102,6 +112,24 @@ class StabilizationIconTest {
     @Test
     fun disabled_isNotShown() {
         setIndicatorPillContent(StabilizationUiState.Disabled)
+
+        composeTestRule.onNodeWithTag(STABILIZATION_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun offThenDisabled_hidesIndicator() {
+        var stabilizationUiState: StabilizationUiState by mutableStateOf(StabilizationUiState.Off)
+        composeTestRule.setContent {
+            IndicatorPill(
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                cutoutRectsOverride = emptyList()
+            ) {
+                StabilizationIcon(stabilizationUiState = stabilizationUiState)
+            }
+        }
+        composeTestRule.onNodeWithTag(STABILIZATION_TAG).assertIsDisplayed()
+
+        stabilizationUiState = StabilizationUiState.Disabled
 
         composeTestRule.onNodeWithTag(STABILIZATION_TAG).assertDoesNotExist()
     }

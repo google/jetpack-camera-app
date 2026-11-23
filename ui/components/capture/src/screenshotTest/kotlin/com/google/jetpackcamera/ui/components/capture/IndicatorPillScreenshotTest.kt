@@ -63,7 +63,13 @@ private object IndicatorPillPreviewTokens {
 }
 
 @Composable
-private fun VerticalIndicatorPillPreviewContent(cutoutRectDp: DpRect? = null) {
+private fun VerticalIndicatorPillPreviewContent(
+    cutoutRectDp: DpRect? = null,
+    stabilizationUiState: StabilizationUiState = StabilizationUiState.Specific(
+        stabilizationMode = StabilizationMode.ON,
+        active = true
+    )
+) {
     val density = LocalDensity.current
     val cutoutRectPx = cutoutRectDp?.let { rect ->
         with(density) {
@@ -114,12 +120,7 @@ private fun VerticalIndicatorPillPreviewContent(cutoutRectDp: DpRect? = null) {
                     )
                 )
                 VideoQualityIcon(videoQuality = VideoQuality.FHD)
-                StabilizationIcon(
-                    stabilizationUiState = StabilizationUiState.Specific(
-                        stabilizationMode = StabilizationMode.ON,
-                        active = true
-                    )
-                )
+                StabilizationIcon(stabilizationUiState = stabilizationUiState)
             }
         }
     }
@@ -135,6 +136,18 @@ private fun VerticalIndicatorPillPreviewContent(cutoutRectDp: DpRect? = null) {
 @Composable
 internal fun VerticalIndicatorPillSingleScreenshotPreview() {
     VerticalIndicatorPillPreviewContent()
+}
+
+/** Single vertical indicator pill with the stabilization Off indicator. */
+@PreviewTest
+@Preview(
+    name = "Single Vertical Pill - Stabilization Off",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    showBackground = true
+)
+@Composable
+internal fun VerticalIndicatorPillStabilizationOffScreenshotPreview() {
+    VerticalIndicatorPillPreviewContent(stabilizationUiState = StabilizationUiState.Off)
 }
 
 /** Vertical indicator pill split around a display cutout. */

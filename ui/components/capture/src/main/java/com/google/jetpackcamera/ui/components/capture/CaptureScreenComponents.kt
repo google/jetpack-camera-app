@@ -20,6 +20,8 @@ import android.content.pm.ActivityInfo
 import android.icu.text.MessageFormat
 import android.os.Build
 import android.util.Log
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.DynamicRange as CXDynamicRange
@@ -1135,112 +1137,75 @@ object CaptureButtonDefaults {
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun StabilizationIcon(stabilizationUiState: StabilizationUiState, modifier: Modifier = Modifier) {
-    val visibleState = when (stabilizationUiState) {
-        is StabilizationUiState.Enabled -> stabilizationUiState.takeIf {
-            it.active && it.stabilizationMode != StabilizationMode.OFF
-        }
-
-        StabilizationUiState.Off -> stabilizationUiState
-
-        StabilizationUiState.Disabled -> null
-    }
-    val displayedState = rememberLastNonNull(visibleState)
+    val visibleResources = stabilizationUiState
+        .takeUnless { it is StabilizationUiState.Enabled && !it.active }
+        ?.indicatorResources()
+    val displayedResources = rememberLastNonNull(visibleResources)
     IndicatorPillIcon(
-        visible = visibleState != null,
+        visible = visibleResources != null,
         modifier = modifier
     ) {
-        if (displayedState != null) {
+        if (displayedResources != null) {
             Icon(
                 modifier = Modifier
                     .size(IconButtonDefaults.smallIconSize)
                     .testTag(STABILIZATION_TAG),
-                painter = when (displayedState) {
-                    is StabilizationUiState.Specific ->
-                        when (displayedState.stabilizationMode) {
-                            StabilizationMode.AUTO ->
-                                throw IllegalStateException(
-                                    "AUTO is not a specific StabilizationUiState."
-                                )
-
-                            StabilizationMode.HIGH_QUALITY ->
-                                painterResource(R.drawable.video_stable_hq_filled_icon)
-
-                            StabilizationMode.OPTICAL ->
-                                painterResource(R.drawable.video_stable_ois_filled_icon)
-
-                            StabilizationMode.ON ->
-                                painterResource(R.drawable.ic_video_stable)
-
-                            else ->
-                                TODO(
-                                    "Cannot retrieve icon for unimplemented " +
-                                        "stabilization mode:" +
-                                        "${displayedState.stabilizationMode}"
-                                )
-                        }
-
-                    is StabilizationUiState.Auto -> {
-                        when (displayedState.stabilizationMode) {
-                            StabilizationMode.ON ->
-                                painterResource(R.drawable.video_stable_auto_filled_icon)
-
-                            StabilizationMode.OPTICAL ->
-                                painterResource(R.drawable.video_stable_ois_auto_filled_icon)
-
-                            else ->
-                                TODO(
-                                    "Auto stabilization not yet implemented for " +
-                                        "${displayedState.stabilizationMode}, " +
-                                        "unable to retrieve icon."
-                                )
-                        }
-                    }
-
-                    StabilizationUiState.Off ->
-                        painterResource(R.drawable.ic_video_stable_off)
-
-                    StabilizationUiState.Disabled ->
-                        throw IllegalStateException("Disabled stabilization has no icon.")
-                },
-                contentDescription = when (displayedState) {
-                    is StabilizationUiState.Specific ->
-                        when (displayedState.stabilizationMode) {
-                            StabilizationMode.ON ->
-                                stringResource(
-                                    R.string.stabilization_icon_description_preview_and_video
-                                )
-
-                            StabilizationMode.HIGH_QUALITY ->
-                                stringResource(R.string.stabilization_icon_description_video_only)
-
-                            StabilizationMode.OPTICAL ->
-                                stringResource(R.string.stabilization_icon_description_optical)
-
-                            else -> null
-                        }
-
-                    is StabilizationUiState.Auto ->
-                        when (displayedState.stabilizationMode) {
-                            StabilizationMode.ON ->
-                                stringResource(
-                                    R.string.stabilization_icon_description_auto_preview_and_video
-                                )
-
-                            StabilizationMode.OPTICAL ->
-                                stringResource(R.string.stabilization_icon_description_auto_optical)
-
-                            else -> null
-                        }
-
-                    StabilizationUiState.Off ->
-                        stringResource(R.string.stabilization_icon_description_off)
-
-                    StabilizationUiState.Disabled -> null
-                }
+                painter = painterResource(displayedResources.iconRes),
+                contentDescription = stringResource(displayedResources.descriptionRes)
             )
         }
     }
 }
+
+/** The icon and content description of the stabilization indicator. */
+private data class StabilizationIndicatorResources(
+    @DrawableRes val iconRes: Int,
+    @StringRes val descriptionRes: Int
+)
+
+/** Returns the indicator resources for this state, or null if no indicator is shown. */
+private fun StabilizationUiState.indicatorResources(): StabilizationIndicatorResources? =
+    when (this) {
+        StabilizationUiState.Disabled -> null
+
+        StabilizationUiState.Off -> StabilizationIndicatorResources(
+            R.drawable.ic_video_stable_off,
+            R.string.stabilization_icon_description_off
+        )
+
+        is StabilizationUiState.Auto -> when (stabilizationMode) {
+            StabilizationMode.ON -> StabilizationIndicatorResources(
+                R.drawable.video_stable_auto_filled_icon,
+                R.string.stabilization_icon_description_auto_preview_and_video
+            )
+
+            StabilizationMode.OPTICAL -> StabilizationIndicatorResources(
+                R.drawable.video_stable_ois_auto_filled_icon,
+                R.string.stabilization_icon_description_auto_optical
+            )
+
+            else -> null
+        }
+
+        is StabilizationUiState.Specific -> when (stabilizationMode) {
+            StabilizationMode.ON -> StabilizationIndicatorResources(
+                R.drawable.ic_video_stable,
+                R.string.stabilization_icon_description_preview_and_video
+            )
+
+            StabilizationMode.HIGH_QUALITY -> StabilizationIndicatorResources(
+                R.drawable.video_stable_hq_filled_icon,
+                R.string.stabilization_icon_description_video_only
+            )
+
+            StabilizationMode.OPTICAL -> StabilizationIndicatorResources(
+                R.drawable.video_stable_ois_filled_icon,
+                R.string.stabilization_icon_description_optical
+            )
+
+            else -> null
+        }
+    }
 
 /**
  * A composable that displays an icon indicating the current video quality setting.

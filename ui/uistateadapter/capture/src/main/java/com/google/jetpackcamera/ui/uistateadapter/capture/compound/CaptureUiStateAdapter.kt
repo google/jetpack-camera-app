@@ -24,6 +24,7 @@ import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraAppSettings
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import com.google.jetpackcamera.settings.model.forCurrentLens
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
@@ -182,7 +183,8 @@ fun captureUiState(
             stabilizationUiState = StabilizationUiState.from(
                 cameraAppSettings = cameraAppSettings,
                 cameraState = roundedCameraState,
-                optionVisibility = effectiveFeaturePolicy?.stabilizationMode?.visibility
+                optionVisibility = effectiveFeaturePolicy?.stabilizationMode?.visibility,
+                cameraConstraints = systemConstraints.forCurrentLens(cameraAppSettings)
             ),
             flashModeUiState = flashModeUiState,
             videoQuality = if (cameraAppSettings.captureMode != CaptureMode.IMAGE_ONLY) {

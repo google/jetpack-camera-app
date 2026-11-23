@@ -66,10 +66,21 @@ sealed interface StabilizationUiState {
     /**
      * The stabilization mode is set to automatic.
      *
-     * @param stabilizationMode The stabilization mode, which is expected to be [StabilizationMode.AUTO].
+     * @param stabilizationMode The mode that the camera applies for automatic stabilization, such
+     *   as [StabilizationMode.ON] or [StabilizationMode.OPTICAL]. Must not be
+     *   [StabilizationMode.AUTO] or [StabilizationMode.OFF].
      */
     data class Auto(override val stabilizationMode: StabilizationMode) : Enabled {
         override val active = true
+
+        init {
+            require(
+                stabilizationMode != StabilizationMode.AUTO &&
+                    stabilizationMode != StabilizationMode.OFF
+            ) {
+                "Auto StabilizationUiState must hold the mode in use, not $stabilizationMode."
+            }
+        }
     }
 
     companion object

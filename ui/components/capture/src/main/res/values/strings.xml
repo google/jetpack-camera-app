@@ -59,7 +59,7 @@
     <string name="stabilization_icon_description_auto_preview_and_video">Auto stabilization: Preview and video are stabilized</string>
     <!-- Accessibility content description for the status icon in the top bar of the capture screen when video stabilization is set to Auto and the app has enabled optical image stabilization (OIS). The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_icon_description_auto_optical">Auto stabilization: Optical stabilization is Enabled</string>
-    <!-- Accessibility content description for the status icon indicating both camera preview and video recording are stabilized. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
+    <!-- Accessibility content description for the status icon indicating both camera preview and video recording are stabilized. The English text is matched verbatim by automated UI tests, which must be updated in the same change if the text is edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_icon_description_preview_and_video">Preview and video are stabilized</string>
     <!-- Accessibility content description for the status icon indicating only video recording is stabilized. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_icon_description_video_only">Only Video is Stabilized</string>
