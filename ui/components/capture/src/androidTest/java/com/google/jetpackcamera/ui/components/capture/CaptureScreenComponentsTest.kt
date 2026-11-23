@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -50,6 +51,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -57,17 +59,28 @@ import com.google.android.apps.common.testing.accessibility.framework.Accessibil
 import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
+import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
+import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
+import com.google.jetpackcamera.model.FlashMode
+import com.google.jetpackcamera.model.StabilizationMode
+import com.google.jetpackcamera.model.VideoQuality
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.FlashModeIndicator
+import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndicator
 import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
+import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
+import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
+import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+private const val PILL_VERTICAL_INDICATOR_TAG = "pill_vertical_indicator"
 private val TEST_COORDINATES = Offset(100f, 100f)
 private val TEST_CHROME_PADDING = 16.dp
 private const val SWITCH_TEST_TAG = "switch_test_toggle"
@@ -361,6 +374,62 @@ class CaptureScreenComponentsTest {
     }
 
     @Test
+    fun verticalIndicatorPill_activeIndicatorsOverDarkBackground_passesAccessibilityChecks() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val flashOnDescription = context.getString(R.string.quick_settings_flash_on_description)
+        val hdrDescription =
+            context.getString(R.string.quick_settings_dynamic_range_hdr_description)
+        val fhdDescription = context.getString(R.string.video_quality_description_fhd)
+        val stabilizationDescription =
+            context.getString(R.string.stabilization_icon_description_preview_and_video)
+
+        composeTestRule.setContent {
+            VerticalIndicatorTestChrome(darkTheme = true, backgroundColor = Color.Black) {
+                IndicatorPill(
+                    modifier = Modifier.testTag(PILL_VERTICAL_INDICATOR_TAG),
+                    orientation = Orientation.Vertical,
+                    cutoutRectsOverride = listOf(
+                        IntRect(left = 0, top = 60, right = 48, bottom = 100)
+                    )
+                ) {
+                    FlashModeIndicator(
+                        flashModeUiState = FlashModeUiState.Available(
+                            selectedFlashMode = FlashMode.ON,
+                            availableFlashModes = listOf(
+                                SingleSelectableUiState.SelectableUi(FlashMode.ON)
+                            ),
+                            isLowLightBoostActive = false
+                        )
+                    )
+                    HdrIndicator(
+                        hdrUiState = HdrUiState.Available(
+                            selectedDynamicRange = DEFAULT_HDR_DYNAMIC_RANGE,
+                            selectedImageFormat = DEFAULT_HDR_IMAGE_OUTPUT,
+                            isSupported = true
+                        )
+                    )
+                    VideoQualityIcon(videoQuality = VideoQuality.FHD)
+                    StabilizationIcon(
+                        stabilizationUiState = StabilizationUiState.Specific(
+                            stabilizationMode = StabilizationMode.ON,
+                            active = true
+                        )
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithTag(PILL_VERTICAL_INDICATOR_TAG).assert(
+            SemanticsMatcher.expectValue(SemanticsProperties.IsTraversalGroup, true)
+        )
+        composeTestRule.onNodeWithContentDescription(flashOnDescription).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(hdrDescription).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(fhdDescription).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(stabilizationDescription).assertIsDisplayed()
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
     fun toggleSwitch_horizontalAndVertical_standardAndMini_passesAccessibilityChecks() {
         var orientation by mutableStateOf(Orientation.Horizontal)
         var controlSize by mutableStateOf(ControlSize.Standard)
@@ -413,6 +482,44 @@ class CaptureScreenComponentsTest {
         controlSize = ControlSize.Mini
         checked = true
         composeTestRule.waitForIdle()
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun verticalIndicatorPill_activeIndicatorsOverWhiteBackground_passesAccessibilityChecks() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val flashOnDescription = context.getString(R.string.quick_settings_flash_on_description)
+        val hdrDescription =
+            context.getString(R.string.quick_settings_dynamic_range_hdr_description)
+
+        composeTestRule.setContent {
+            VerticalIndicatorTestChrome(darkTheme = false, backgroundColor = Color.White) {
+                IndicatorPill(
+                    cutoutRectsOverride = emptyList(),
+                    orientation = Orientation.Vertical
+                ) {
+                    FlashModeIndicator(
+                        flashModeUiState = FlashModeUiState.Available(
+                            selectedFlashMode = FlashMode.ON,
+                            availableFlashModes = listOf(
+                                SingleSelectableUiState.SelectableUi(FlashMode.ON)
+                            ),
+                            isLowLightBoostActive = false
+                        )
+                    )
+                    HdrIndicator(
+                        hdrUiState = HdrUiState.Available(
+                            selectedDynamicRange = DEFAULT_HDR_DYNAMIC_RANGE,
+                            selectedImageFormat = DEFAULT_HDR_IMAGE_OUTPUT,
+                            isSupported = true
+                        )
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription(flashOnDescription).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(hdrDescription).assertIsDisplayed()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 
@@ -472,6 +579,42 @@ class CaptureScreenComponentsTest {
         darkTheme = true
         provideRationale = true
         composeTestRule.waitForIdle()
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun verticalIndicatorPill_inactiveState_passesAccessibilityChecks() {
+        composeTestRule.setContent {
+            VerticalIndicatorTestChrome(darkTheme = false, backgroundColor = Color.White) {
+                IndicatorPill(
+                    cutoutRectsOverride = emptyList(),
+                    orientation = Orientation.Vertical
+                ) {
+                    FlashModeIndicator(
+                        flashModeUiState = FlashModeUiState.Available(
+                            selectedFlashMode = FlashMode.OFF,
+                            availableFlashModes = listOf(
+                                SingleSelectableUiState.SelectableUi(FlashMode.OFF)
+                            ),
+                            isLowLightBoostActive = false
+                        )
+                    )
+                    HdrIndicator(hdrUiState = HdrUiState.Unavailable)
+                    VideoQualityIcon(videoQuality = VideoQuality.UNSPECIFIED)
+                    StabilizationIcon(
+                        stabilizationUiState = StabilizationUiState.Specific(
+                            stabilizationMode = StabilizationMode.ON,
+                            active = false
+                        )
+                    )
+                }
+            }
+        }
+
+        composeTestRule.onAllNodes(
+            SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
+            useUnmergedTree = true
+        ).assertCountEquals(0)
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
     }
 
@@ -563,6 +706,27 @@ class CaptureScreenComponentsTest {
         provideRationaleHandler = true
         composeTestRule.waitForIdle()
         composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+}
+
+@Composable
+private fun VerticalIndicatorTestChrome(
+    darkTheme: Boolean,
+    backgroundColor: Color,
+    content: @Composable () -> Unit
+) {
+    CompositionLocalProvider(LocalDisableAnimations provides true) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) darkColorScheme() else lightColorScheme()
+        ) {
+            Box(
+                modifier = Modifier
+                    .background(backgroundColor)
+                    .padding(16.dp)
+            ) {
+                content()
+            }
+        }
     }
 }
 
