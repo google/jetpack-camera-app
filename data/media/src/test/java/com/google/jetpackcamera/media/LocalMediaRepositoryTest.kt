@@ -33,7 +33,11 @@ import com.google.jetpackcamera.model.Media
 import com.google.jetpackcamera.model.MediaDescriptor
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.fail
@@ -121,6 +125,40 @@ class LocalMediaRepositoryTest {
         // Then
         assertThat(result).isInstanceOf(MediaDescriptor.Content.Video::class.java)
         assertThat((result as MediaDescriptor.Content.Video).uri).isEqualTo(videoUrl)
+    }
+
+    @Test
+    fun ioCoroutineContext_propagatesElementsAndIgnoresJob() = runTest {
+        // Given a repository whose context has a custom element and an already-cancelled Job
+        val element = TestContextElement()
+        val cancelledJob = Job().apply { cancel() }
+        var loaderElement: TestContextElement? = null
+        val newRepo = LocalMediaRepository(
+            context,
+            testDispatcher + element + cancelledJob,
+            filePathGenerator
+        ).apply {
+            setThumbnailLoader { _, _ ->
+                loaderElement = currentCoroutineContext()[TestContextElement]
+                Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+            }
+        }
+
+        // When a new image is added
+        val imageUrl = fakeContentProvider.insert(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            createContentValues()
+        )!!
+        contentResolver.notifyChange(imageUrl, null)
+        val result = newRepo.lastCapturedMedia.value
+
+        // Then the media still loads, and the element reaches the I/O work
+        assertThat((result as MediaDescriptor.Content).uri).isEqualTo(imageUrl)
+        assertThat(loaderElement).isSameInstanceAs(element)
+    }
+
+    private class TestContextElement : AbstractCoroutineContextElement(Key) {
+        companion object Key : CoroutineContext.Key<TestContextElement>
     }
 
     @Test

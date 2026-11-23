@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -68,9 +69,12 @@ class CaptureLayoutPositionTest {
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     private fun TestCaptureLayout(
-        captureModeCarousel: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {}
+        state: CaptureScaffoldState = rememberCaptureScaffoldState(),
+        captureModeCarousel: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {},
+        elapsedTimeDisplay: @Composable PreviewOverlaySlotScope.(Modifier) -> Unit = {}
     ) {
         CaptureScaffoldLayout(
+            state = state,
             viewfinder = {},
             captureButton = {
                 Box(
@@ -89,7 +93,7 @@ class CaptureLayoutPositionTest {
                         .height(ZOOM_BAR_HEIGHT)
                 )
             },
-            elapsedTimeDisplay = {},
+            elapsedTimeDisplay = elapsedTimeDisplay,
             quickSettingsButton = {},
             indicatorRow = {},
             captureModeToggle = {},
@@ -668,7 +672,8 @@ class CaptureLayoutPositionTest {
     /**
      * Verifies that when the adaptive solver compacts the bottom toolbar (e.g. on a 460x920dp
      * window with 3-button navigation where `toolbarHeight = 46.dp`), [ToggleSwitch] and
-     * [ToggleQuickSettingsButton] scale down uniformly in both width and height.
+     * [ToggleQuickSettingsButton] scale down uniformly in both width and height, with the switch
+     * stopping at its 48dp touch-target floor.
      */
     @Test
     fun bottomToolbarControls_scaleProportionally_whenToolbarIsCompacted() {
@@ -703,10 +708,12 @@ class CaptureLayoutPositionTest {
         composeTestRule.waitForIdle()
 
         val expectedScale = 46f / 64f
+        // The toggle stops shrinking at the 48dp touch-target floor (48 / 64).
+        val expectedSwitchScale = 48f / 64f
         val switchBounds =
             composeTestRule.onNodeWithTag(TOGGLE_SWITCH_TAG).getUnclippedBoundsInRoot()
-        assertThat(switchBounds.width.value).isWithin(TOLERANCE).of(116f * expectedScale)
-        assertThat(switchBounds.height.value).isWithin(TOLERANCE).of(64f * expectedScale)
+        assertThat(switchBounds.width.value).isWithin(TOLERANCE).of(116f * expectedSwitchScale)
+        assertThat(switchBounds.height.value).isWithin(TOLERANCE).of(64f * expectedSwitchScale)
 
         val quickSettingsBounds =
             composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).getUnclippedBoundsInRoot()
@@ -795,6 +802,140 @@ class CaptureLayoutPositionTest {
         assertThat(topOf(TOP_START_TAG)).isWithin(TOLERANCE).of(48f)
     }
 
+    /**
+     * On a slim 280dp-wide portrait pane (such as a 1/3 split-screen window), the bottom toolbar
+     * gives the capture mode toggle all width not reserved by the side slots instead of an equal
+     * third (`(280 - 32) / 3 ≈ 83dp`), so a standard 116dp toggle keeps its full width and stays
+     * horizontally centered.
+     */
+    @Config(qualifiers = "w280dp-h800dp")
+    @Test
+    fun bottomToolbar_onSlimPane_doesNotSqueezeCaptureModeToggle_andKeepsItCentered() {
+        composeTestRule.setContent {
+            CaptureScaffoldLayout(
+                viewfinder = {},
+                captureButton = {},
+                imageWell = {},
+                flipCameraButton = {},
+                zoomLevelDisplay = {},
+                elapsedTimeDisplay = {},
+                quickSettingsButton = {
+                    Box(
+                        Modifier
+                            .testTag(QUICK_SETTINGS_TAG)
+                            .size(SIDE_BUTTON_SIZE)
+                    )
+                },
+                indicatorRow = {},
+                captureModeToggle = {
+                    Box(
+                        Modifier
+                            .testTag(TOGGLE_SWITCH_TAG)
+                            .size(width = STANDARD_TOGGLE_WIDTH, height = STANDARD_TOGGLE_HEIGHT)
+                    )
+                }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        val rootWidth = composeTestRule.onRoot().getUnclippedBoundsInRoot().width.value
+        assertThat(rootWidth).isWithin(TOLERANCE).of(SLIM_SCREEN_WIDTH.value)
+
+        val toggleBounds =
+            composeTestRule.onNodeWithTag(TOGGLE_SWITCH_TAG).getUnclippedBoundsInRoot()
+        assertThat(toggleBounds.width.value).isWithin(TOLERANCE).of(STANDARD_TOGGLE_WIDTH.value)
+        val toggleCenterX = (toggleBounds.left.value + toggleBounds.right.value) / 2f
+        assertThat(toggleCenterX).isWithin(TOLERANCE).of(rootWidth / 2f)
+
+        val quickSettingsBounds =
+            composeTestRule.onNodeWithTag(QUICK_SETTINGS_TAG).getUnclippedBoundsInRoot()
+        assertThat(quickSettingsBounds.right.value).isAtMost(toggleBounds.left.value)
+    }
+
+    /**
+     * In the adaptive portrait layout, `elapsedTimeDisplay` shares the fixed `MODE_SWITCHER` band
+     * between the shutter row and the bottom toolbar, staying centered on that band without moving
+     * the capture button or zoom bar.
+     */
+    @Config(qualifiers = "w360dp-h800dp")
+    @Test
+    fun elapsedTimeDisplay_isCenteredInModeSwitcherBand_andDoesNotMoveCaptureButton() {
+        var showElapsedTime by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            TestCaptureLayout(
+                elapsedTimeDisplay = { elapsedModifier ->
+                    if (showElapsedTime) {
+                        Box(
+                            elapsedModifier
+                                .testTag(ELAPSED_TIME_TEST_TAG)
+                                .size(width = 72.dp, height = CAROUSEL_HEIGHT)
+                        )
+                    }
+                }
+            )
+        }
+        composeTestRule.waitForIdle()
+        val emptySlotButtonTop = topOf(CAPTURE_BUTTON_TAG)
+
+        showElapsedTime = true
+        composeTestRule.waitForIdle()
+
+        val elapsed = boundsOf(ELAPSED_TIME_TEST_TAG)
+        assertThat((elapsed.top.value + elapsed.bottom.value) / 2f)
+            .isWithin(TOLERANCE).of(MODE_SWITCHER_BAND_CENTER)
+        assertThat(elapsed.top.value).isAtLeast(CAPTURE_ROW_BOTTOM - TOLERANCE)
+        assertThat(elapsed.bottom.value).isAtMost(BOTTOM_TOOLBAR_TOP + TOLERANCE)
+        assertThat(topOf(CAPTURE_BUTTON_TAG)).isEqualTo(emptySlotButtonTop)
+    }
+
+    /**
+     * In the compressed fallback layout (`VerticalMaterialControls`), `elapsedTimeDisplay` also
+     * occupies the reserved middle slot below the shutter row without shifting the capture button.
+     */
+    @Config(qualifiers = "w360dp-h500dp")
+    @Test
+    fun elapsedTimeDisplay_inCompressedFallbackLayout_isCenteredInMiddleSlot() {
+        composeTestRule.setContent {
+            TestCaptureLayout(
+                elapsedTimeDisplay = { elapsedModifier ->
+                    Box(
+                        elapsedModifier
+                            .testTag(ELAPSED_TIME_TEST_TAG)
+                            .size(width = 72.dp, height = CAROUSEL_HEIGHT)
+                    )
+                }
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(topOf(CAPTURE_BUTTON_TAG)).isWithin(TOLERANCE).of(EXPECTED_SHORT_BUTTON_TOP)
+        val captureBounds = boundsOf(CAPTURE_BUTTON_TAG)
+        val elapsedBounds = boundsOf(ELAPSED_TIME_TEST_TAG)
+        assertThat(elapsedBounds.top.value).isAtLeast(captureBounds.bottom.value - TOLERANCE)
+    }
+
+    /**
+     * Moving `elapsedTimeDisplay` into `MODE_SWITCHER` leaves the snackbar host anchored directly
+     * above `ZoomBar` in the adaptive portrait layout.
+     */
+    @Config(qualifiers = "w360dp-h800dp")
+    @Test
+    fun snackbarHost_remainsAboveZoomBar_inAdaptivePortraitLayout() {
+        composeTestRule.setContent {
+            val scaffoldState = rememberCaptureScaffoldState()
+            LaunchedEffect(Unit) {
+                scaffoldState.snackbarHostState.showSnackbar("Video saved")
+            }
+            TestCaptureLayout(state = scaffoldState)
+        }
+        composeTestRule.waitForIdle()
+
+        val zoomBounds = boundsOf(ZOOM_BAR_TAG)
+        val snackbarBounds = boundsOf(SNACKBAR_NODE_TAG)
+        assertThat(snackbarBounds.bottom.value).isWithin(TOLERANCE).of(zoomBounds.top.value)
+    }
+
     private companion object {
         const val CAPTURE_BUTTON_TAG = "test_capture_button"
         const val ZOOM_BAR_TAG = "test_zoom_bar"
@@ -802,10 +943,16 @@ class CaptureLayoutPositionTest {
         const val TOP_START_TAG = "test_top_start"
         const val VIEWFINDER_TOP_END_TAG = "test_viewfinder_top_end"
         const val TOGGLE_SWITCH_TAG = "test_toggle_switch"
+        const val QUICK_SETTINGS_TAG = "test_quick_settings"
         const val CAROUSEL_TAG = "test_carousel"
+        const val ELAPSED_TIME_TEST_TAG = "test_elapsed_time"
         val CAPTURE_BUTTON_SIZE = 80.dp
         val ZOOM_BAR_HEIGHT = 48.dp
         val CAROUSEL_HEIGHT = 32.dp
+        val SIDE_BUTTON_SIZE = 48.dp
+        val STANDARD_TOGGLE_WIDTH = 116.dp
+        val STANDARD_TOGGLE_HEIGHT = 64.dp
+        val SLIM_SCREEN_WIDTH = 280.dp
 
         /** A carousel whose touch target is taller than the 32dp mode switcher band. */
         val TALL_CAROUSEL_HEIGHT = 50.dp

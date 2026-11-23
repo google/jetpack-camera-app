@@ -24,8 +24,9 @@ import com.google.jetpackcamera.ui.components.capture.CameraSystemBarsPolicy
 /**
  * Describes how the system bars should be configured for a given destination.
  *
- * The navigation bar is kept visible except on the preview screen when the capture layout reports
- * that the window is too short for the tallest viewfinder to clear a persistent navigation bar.
+ * The navigation bar is kept visible except on the preview screen while the active capture layout
+ * requests immersive mode (always for side-rail layouts; for the compact portrait layout, when
+ * the window is too short for the tallest viewfinder to clear a persistent navigation bar).
  */
 internal enum class SystemBarsPolicy {
     /** Hide the status bar, keep the navigation bar. Used by standard capture surfaces. */
