@@ -535,7 +535,7 @@ suspend fun CameraSessionContext.processTransientSettingEvents(
     // Immediately Apply camera zoom from current settings when opening a new camera
     camera.cameraControl.setZoomRatio(
         initialTransientSettings.zoomRatios[camera.cameraInfo.appLensFacing] ?: 1f
-    )
+    ).ignoreResult()
 
     val camera2OptionsBuilder = CaptureRequestOptions.Builder()
     updateCamera2RequestOptions(
@@ -552,7 +552,7 @@ suspend fun CameraSessionContext.processTransientSettingEvents(
     var torchOn = false
     fun setTorch(newTorchOn: Boolean) {
         if (newTorchOn != torchOn) {
-            camera.cameraControl.enableTorch(newTorchOn)
+            camera.cameraControl.enableTorch(newTorchOn).ignoreResult()
             torchOn = newTorchOn
         }
     }
@@ -621,6 +621,7 @@ suspend fun CameraSessionContext.processTransientSettingEvents(
         ) {
             newTransientSettings.primaryLensFacing.let {
                 camera.cameraControl.setZoomRatio(newTransientSettings.zoomRatios[it] ?: 1f)
+                    .ignoreResult()
             }
         }
 
@@ -708,6 +709,7 @@ private suspend fun updateCamera2RequestOptions(
     if (needsUpdate) {
         Camera2CameraControl.from(camera.cameraControl)
             .setCaptureRequestOptions(optionsBuilder.build())
+            .ignoreResult()
     }
 }
 
@@ -1578,7 +1580,7 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
     currentCameraState: MutableStateFlow<CameraState>,
     transientSettings: StateFlow<TransientSessionSettings?>,
     captureResults: MutableStateFlow<TotalCaptureResult?>? = null
-): Preview.Builder {
+) {
     val isFirstFrameTimestampUpdated = atomic(false)
     val targetCameraLogicalId = Camera2CameraInfo.from(targetCameraInfo).cameraId
     // Read once per bound camera, since reading zoomState can be expensive for camera extensions.
@@ -1693,7 +1695,6 @@ private fun Preview.Builder.updateCameraStateWithCaptureResults(
             }
         }
     )
-    return this
 }
 
 private fun MutableStateFlow<CameraState>.publishStabilizationMode(result: TotalCaptureResult) {
