@@ -32,6 +32,24 @@ class CameraErrorUiStateAdapterTest {
     @Test
     fun from_whenCameraErrorPresent_returnsShowing() {
         val state = CameraErrorUiState.from(CameraState(cameraError = CameraError.CameraInUse))
-        assertThat(state).isEqualTo(CameraErrorUiState.Showing(CameraError.CameraInUse))
+        assertThat(state).isEqualTo(
+            CameraErrorUiState.Showing(
+                error = CameraError.CameraInUse,
+                blocksPreview = true
+            )
+        )
+    }
+
+    @Test
+    fun from_whenSensorPrivacyDisabled_returnsShowingWithBlocksPreviewFalse() {
+        val state = CameraErrorUiState.from(
+            CameraState(cameraError = CameraError.CameraSensorPrivacyDisabled)
+        )
+        assertThat(state).isEqualTo(
+            CameraErrorUiState.Showing(
+                error = CameraError.CameraSensorPrivacyDisabled,
+                blocksPreview = false
+            )
+        )
     }
 }

@@ -24,8 +24,10 @@ import com.google.jetpackcamera.core.camera.submode.CameraSessionScope
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeFeatureKey
 import com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider
 import com.google.jetpackcamera.core.common.FilePathGenerator
+import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.settings.model.CameraConstraints
 import javax.inject.Provider
-import kotlinx.coroutines.CoroutineDispatcher
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,10 +39,11 @@ import kotlinx.coroutines.flow.StateFlow
  * Can be used to confer context (such as reactive state or session-wide parameters)
  * on context receivers using [with] in a camera session.
  */
-internal data class CameraSessionContext(
+@InternalCameraApi
+data class CameraSessionContext(
     val context: Context,
     val cameraProvider: ProcessCameraProvider,
-    val backgroundDispatcher: CoroutineDispatcher,
+    val backgroundContext: CoroutineContext,
     val screenFlashEvents: SendChannel<CameraSystem.ScreenFlashEvent>,
     val filePathGenerator: FilePathGenerator,
     val focusMeteringEvents: Channel<CameraEvent.FocusMeteringEvent>,
@@ -52,5 +55,7 @@ internal data class CameraSessionContext(
     val cameraEffectProviders: Map<CameraEffectFeatureKey, Provider<CameraEffectProvider>> =
         emptyMap(),
     val captureSubModeProviders: Map<CaptureSubModeFeatureKey, CaptureSubModeProvider> =
-        emptyMap()
+        emptyMap(),
+    val sessionSettings: PerpetualSessionSettings? = null,
+    val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap()
 ) : CameraSessionScope

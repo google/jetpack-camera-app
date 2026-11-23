@@ -50,6 +50,19 @@ enum class DeviceRotation {
     }
 
     companion object {
+        /**
+         * Returns the [DeviceRotation] corresponding to a UI [Surface] rotation constant.
+         */
+        fun fromUiSurfaceRotation(surfaceRotation: Int): DeviceRotation {
+            return when (surfaceRotation) {
+                Surface.ROTATION_0 -> Natural
+                Surface.ROTATION_90 -> Rotated270
+                Surface.ROTATION_180 -> Rotated180
+                Surface.ROTATION_270 -> Rotated90
+                else -> Natural
+            }
+        }
+
         fun snapFrom(degrees: Int): DeviceRotation {
             check(degrees in 0..359) {
                 "Degrees must be in the range [0, 360)"

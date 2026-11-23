@@ -20,7 +20,6 @@ import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DynamicRange
 import com.google.jetpackcamera.model.ExternalCaptureMode
 import com.google.jetpackcamera.model.UNLIMITED_VIDEO_DURATION
@@ -361,28 +360,6 @@ class CaptureModeUiStateAdapterTest {
         assertThat(imageMode).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
         assertThat((imageMode as SingleSelectableUiState.Disabled).disabledReason)
             .isEqualTo(DisabledReason.IMAGE_CAPTURE_EXTERNAL_UNSUPPORTED)
-    }
-
-    @Test
-    fun from_whenConcurrentCameraDual_disablesStandardAndImageOnly() {
-        val uiState = CaptureModeUiState.from(
-            systemConstraints = TYPICAL_SYSTEM_CONSTRAINTS,
-            cameraAppSettings = DEFAULT_CAMERA_APP_SETTINGS.copy(
-                concurrentCameraMode = ConcurrentCameraMode.DUAL,
-                captureMode = CaptureMode.VIDEO_ONLY
-            ),
-            externalCaptureMode = ExternalCaptureMode.Standard
-        )
-        val available = uiState as CaptureModeUiState.Available
-        val standard = available.availableCaptureModes.first { it.value == CaptureMode.STANDARD }
-        val imageOnly = available.availableCaptureModes.first { it.value == CaptureMode.IMAGE_ONLY }
-
-        assertThat(standard).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
-        assertThat((standard as SingleSelectableUiState.Disabled).disabledReason)
-            .isEqualTo(DisabledReason.IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA)
-        assertThat(imageOnly).isInstanceOf(SingleSelectableUiState.Disabled::class.java)
-        assertThat((imageOnly as SingleSelectableUiState.Disabled).disabledReason)
-            .isEqualTo(DisabledReason.IMAGE_CAPTURE_UNSUPPORTED_CONCURRENT_CAMERA)
     }
 
     @Test

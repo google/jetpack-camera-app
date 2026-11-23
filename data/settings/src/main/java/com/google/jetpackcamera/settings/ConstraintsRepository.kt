@@ -15,11 +15,14 @@
  */
 package com.google.jetpackcamera.settings
 
+import com.google.jetpackcamera.model.CaptureSubModeId
 import com.google.jetpackcamera.settings.model.CameraSystemConstraints
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flowOf
 
 /**
- * Data layer for camera system constraints.
+ * Data layer for camera system constraints and the active capture sub-mode.
  */
 interface ConstraintsRepository {
 
@@ -28,4 +31,14 @@ interface ConstraintsRepository {
      * they are available.
      */
     val systemConstraints: StateFlow<CameraSystemConstraints?>
+
+    /**
+     * A [Flow] emitting the [CaptureSubModeId] of the active capture sub-mode, or
+     * [CaptureSubModeId.DEFAULT] if none is active, starting with the current value.
+     *
+     * Implementations that do not override this always emit [CaptureSubModeId.DEFAULT], so
+     * settings are not restricted by a capture sub-mode policy.
+     */
+    val activeCaptureSubModeId: Flow<CaptureSubModeId>
+        get() = flowOf(CaptureSubModeId.DEFAULT)
 }

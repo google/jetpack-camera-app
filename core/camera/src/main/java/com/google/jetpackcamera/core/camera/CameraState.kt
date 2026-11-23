@@ -41,6 +41,8 @@ import com.google.jetpackcamera.model.VideoQuality
  * @param videoQualityInfo Information about the current video quality.
  * @param focusState The current focus state of the camera.
  * @param cameraError The current camera error, if any.
+ * @param isPreviewLandscape Whether the camera preview output is landscape after applying target
+ * rotation, or `null` before a camera is bound.
  */
 data class CameraState(
     val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
@@ -55,7 +57,8 @@ data class CameraState(
     val debugInfo: DebugInfo = DebugInfo(null, null),
     val videoQualityInfo: VideoQualityInfo = VideoQualityInfo(VideoQuality.UNSPECIFIED, 0, 0),
     val focusState: FocusState = FocusState.Unspecified,
-    val cameraError: CameraError? = null
+    val cameraError: CameraError? = null,
+    val isPreviewLandscape: Boolean? = null
 )
 
 /**

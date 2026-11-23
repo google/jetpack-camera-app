@@ -68,6 +68,11 @@ class CameraErrorMappingTest {
             CXCameraState.StateError.create(CXCameraState.ERROR_CAMERA_REMOVED)
                 .toCameraError(context)
         ).isEqualTo(CameraError.CameraRemoved)
+
+        assertThat(
+            CXCameraState.StateError.create(999)
+                .toCameraError(context)
+        ).isEqualTo(CameraError.FatalCameraError)
     }
 
     @Test

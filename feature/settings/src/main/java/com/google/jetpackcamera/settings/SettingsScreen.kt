@@ -59,7 +59,6 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.jetpackcamera.model.AspectRatio
-import com.google.jetpackcamera.model.ConcurrentCameraMode
 import com.google.jetpackcamera.model.DarkMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
@@ -70,7 +69,6 @@ import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.ui.AspectRatioSetting
 import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CANCEL_TAG
 import com.google.jetpackcamera.settings.ui.BTN_LOCATION_PERMISSION_DIALOG_CONFIRM_TAG
-import com.google.jetpackcamera.settings.ui.ConcurrentCameraSetting
 import com.google.jetpackcamera.settings.ui.DIALOG_LOCATION_PERMISSION_RATIONALE_TAG
 import com.google.jetpackcamera.settings.ui.DarkModeSetting
 import com.google.jetpackcamera.settings.ui.DefaultCameraFacing
@@ -101,7 +99,7 @@ private val LOADING_INDICATOR_SIZE = 50.dp
  * @param recordingSettingsSlot Slot for the recording settings section.
  * @param appSettingsSlot Slot for the general application settings section.
  */
-@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SettingsScreen(
     versionInfo: VersionInfoHolder,
@@ -120,17 +118,46 @@ fun SettingsScreen(
         )
     }
 ) {
-    val permissionStates = rememberMultiplePermissionsState(
-        permissions =
-        listOf(
-            Manifest.permission.CAMERA,
-            Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
-        )
+    SettingsScreen(
+        versionInfo = versionInfo,
+        onNavigateBack = onNavigateBack,
+        permissionStates = rememberMultiplePermissionsState(
+            permissions = listOf(
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            )
+        ),
+        viewModel = viewModel,
+        onOpenAppSettings = onOpenAppSettings,
+        cameraSettingsSlot = cameraSettingsSlot,
+        recordingSettingsSlot = recordingSettingsSlot,
+        appSettingsSlot = appSettingsSlot
     )
+}
 
+@OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterial3Api::class)
+@Composable
+internal fun SettingsScreen(
+    versionInfo: VersionInfoHolder,
+    onNavigateBack: () -> Unit,
+    permissionStates: MultiplePermissionsState,
+    viewModel: SettingsViewModel = hiltViewModel(),
+    onOpenAppSettings: (() -> Unit)? = null,
+    cameraSettingsSlot: @Composable () -> Unit = { DefaultCameraSettings(viewModel = viewModel) },
+    recordingSettingsSlot: @Composable () -> Unit = {
+        DefaultRecordingSettings(viewModel = viewModel)
+    },
+    appSettingsSlot: @Composable () -> Unit = {
+        DefaultAppSettings(
+            versionInfo = versionInfo,
+            viewModel = viewModel,
+            onOpenAppSettings = onOpenAppSettings
+        )
+    }
+) {
     viewModel.setGrantedPermissions(permissionStates)
 
     val uiState by viewModel.settingsUiState.collectAsState()
@@ -273,7 +300,6 @@ fun DefaultRecordingSettings(viewModel: SettingsViewModel = hiltViewModel()) {
         enabledState = enabledState,
         setVideoAudio = viewModel::setVideoAudio,
         setMaxVideoDuration = viewModel::setMaxVideoDuration,
-        setConcurrentCameraMode = viewModel::setConcurrentCameraMode,
         setStabilizationMode = viewModel::setStabilizationMode,
         setVideoQuality = viewModel::setVideoQuality
     )
@@ -285,7 +311,6 @@ fun DefaultRecordingSettings(viewModel: SettingsViewModel = hiltViewModel()) {
  * @param enabledState The current [SettingsUiState.Enabled] state.
  * @param setVideoAudio Callback to set video audio state.
  * @param setMaxVideoDuration Callback to set max video duration.
- * @param setConcurrentCameraMode Callback to set concurrent camera mode.
  * @param setStabilizationMode Callback to set stabilization mode.
  * @param setVideoQuality Callback to set video quality.
  */
@@ -294,7 +319,6 @@ fun DefaultRecordingSettings(
     enabledState: SettingsUiState.Enabled,
     setVideoAudio: (Boolean) -> Unit,
     setMaxVideoDuration: (Long) -> Unit,
-    setConcurrentCameraMode: (ConcurrentCameraMode) -> Unit,
     setStabilizationMode: (StabilizationMode) -> Unit,
     setVideoQuality: (VideoQuality) -> Unit
 ) {
@@ -308,11 +332,6 @@ fun DefaultRecordingSettings(
     MaxVideoDurationSetting(
         maxVideoDurationUiState = enabledState.maxVideoDurationUiState,
         setMaxDuration = setMaxVideoDuration
-    )
-
-    ConcurrentCameraSetting(
-        concurrentCameraUiState = enabledState.concurrentCameraUiState,
-        setConcurrentCameraMode = setConcurrentCameraMode
     )
 
     StabilizationSetting(
