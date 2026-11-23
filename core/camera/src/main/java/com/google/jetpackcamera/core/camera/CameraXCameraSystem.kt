@@ -683,6 +683,7 @@ class CameraXCameraSystem(
 
                     val resolvedStabilizationMode = resolveStabilizationMode(
                         requestedStabilizationMode = currentCameraSettings.stabilizationMode,
+                        captureMode = currentCameraSettings.captureMode,
                         targetFrameRate = currentCameraSettings.targetFrameRate,
                         cameraConstraints = cameraConstraints
                     )
@@ -789,29 +790,6 @@ class CameraXCameraSystem(
         currentCameraState.update { old ->
             old.copy(cameraError = null)
         }
-    }
-
-    private fun resolveStabilizationMode(
-        requestedStabilizationMode: StabilizationMode,
-        targetFrameRate: Int,
-        cameraConstraints: CameraConstraints
-    ): StabilizationMode = with(cameraConstraints) {
-        // Convert AUTO stabilization mode to the first supported stabilization mode
-        val stabilizationMode = if (requestedStabilizationMode == StabilizationMode.AUTO) {
-            // Choose between ON, OPTICAL, or OFF, depending on support, in that order
-            sequenceOf(StabilizationMode.ON, StabilizationMode.OPTICAL, StabilizationMode.OFF)
-                .first {
-                    it in supportedStabilizationModes &&
-                        targetFrameRate !in it.unsupportedFpsSet
-                }
-        } else {
-            requestedStabilizationMode
-        }
-
-        // Check that the stabilization mode can be supported, otherwise return OFF
-        stabilizationMode.takeIf {
-            it in supportedStabilizationModes && targetFrameRate !in it.unsupportedFpsSet
-        } ?: StabilizationMode.OFF
     }
 
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
