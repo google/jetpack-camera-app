@@ -15,7 +15,6 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
-import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.content.pm.ActivityInfo
 import android.icu.text.MessageFormat
@@ -45,11 +44,13 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.Orientation
@@ -61,7 +62,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
@@ -103,6 +103,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -123,6 +124,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -1049,6 +1051,8 @@ fun PreviewDisplay(
  * @param onStartVideoRecording callback to start video recording.
  * @param onStopVideoRecording callback to stop video recording.
  * @param onLockVideoRecording callback to lock the video recording for hands-free operation.
+ * @param diameter the diameter of the capture button ring; see [CaptureButtonDefaults] for the
+ *   standard, medium, and mini sizes.
  */
 @Composable
 fun CaptureButton(
@@ -1058,7 +1062,8 @@ fun CaptureButton(
     onCaptureImage: (ContentResolver) -> Unit = {},
     onStartVideoRecording: () -> Unit = {},
     onStopVideoRecording: () -> Unit = {},
-    onLockVideoRecording: (Boolean) -> Unit = {}
+    onLockVideoRecording: (Boolean) -> Unit = {},
+    diameter: Dp = CaptureButtonDefaults.diameterFor(LocalControlSize.current)
 ) {
     val context = LocalContext.current
 
@@ -1083,8 +1088,39 @@ fun CaptureButton(
             onStopVideoRecording()
         },
         captureButtonUiState = captureButtonUiState,
+        captureButtonSize = diameter.value,
         onLockVideoRecording = onLockVideoRecording
     )
+}
+
+/**
+ * Default dimensions for [CaptureButton].
+ */
+object CaptureButtonDefaults {
+    /** Diameter of the standard capture button ring. */
+    val StandardDiameter: Dp = 86.dp
+
+    /**
+     * Diameter of the medium capture button ring, used for intermediate containers such as
+     * foldable side rails.
+     */
+    val MediumDiameter: Dp = 74.dp
+
+    // Uses the 56dp mini shutter diameter token for tight containers.
+
+    /** Diameter of the mini capture button ring, used for tight containers. */
+    val MiniDiameter: Dp = 56.dp
+
+    /**
+     * Returns the capture button ring diameter for [controlSize]: [MiniDiameter] for
+     * [ControlSize.Mini], [MediumDiameter] for [ControlSize.Medium], and [StandardDiameter]
+     * otherwise.
+     */
+    fun diameterFor(controlSize: ControlSize): Dp = when (controlSize) {
+        ControlSize.Mini -> MiniDiameter
+        ControlSize.Medium -> MediumDiameter
+        else -> StandardDiameter
+    }
 }
 
 /**
@@ -1237,26 +1273,87 @@ private object IndicatorPillTokens {
     val IconVerticalPadding = 8.dp
 }
 
+private object VerticalIndicatorPillTokens {
+    val ContainerWidth = 48.dp
+    val ContainerVerticalPadding = 6.dp
+    val IconHorizontalPadding = 6.dp
+    val IconVerticalPadding = 12.dp
+}
+
 /**
- * A cutout-aware pill container that groups active top-bar status indicators into connected
- * rounded pills, splitting into separate pills on either side of any intersecting display cutout.
+ * CompositionLocal specifying the container layout and animation axis for [IndicatorPillIcon]
+ * ([Orientation.Horizontal] or [Orientation.Vertical]). Governs stack direction and
+ * expand/shrink transitions only, independent of icon glyph rotation.
  */
-@SuppressLint("AvoidNullableCollections", "NullableCollection")
+internal val LocalIndicatorPillOrientation = staticCompositionLocalOf { Orientation.Horizontal }
+
+/**
+ * A cutout-aware pill container that groups active camera status indicators into connected rounded
+ * pills along [orientation] and splits cleanly around any intersecting display cutout.
+ *
+ * Draws no pill segments and collapses when no indicators are active.
+ *
+ * @param modifier the [Modifier] to be applied to this pill container.
+ * @param orientation layout axis along which active indicators stack and animate.
+ * @param content the status indicator children.
+ */
 @Composable
 fun IndicatorPill(
     modifier: Modifier = Modifier,
-    cutoutRectsOverride: List<IntRect>? = null,
-    onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
-    content: @Composable RowScope.() -> Unit
+    orientation: Orientation = Orientation.Horizontal,
+    content: @Composable () -> Unit
 ) {
-    CompositionLocalProvider(LocalContentColor provides Color.White) {
-        CutoutAwareRow(
-            modifier = modifier,
-            horizontalSpacing = 0.dp,
-            pillHorizontalPadding = IndicatorPillTokens.ContainerHorizontalPadding,
-            pillMinHeight = IndicatorPillTokens.ContainerHeight,
+    IndicatorPill(
+        cutoutRectsOverride = null,
+        modifier = modifier,
+        orientation = orientation,
+        onPillSegmentsPlaced = null,
+        content = content
+    )
+}
+
+/**
+ * Internal overload of [IndicatorPill] exposing [cutoutRectsOverride] and [onPillSegmentsPlaced]
+ * hooks for deterministic cutout testing and previews.
+ */
+@Composable
+internal fun IndicatorPill(
+    cutoutRectsOverride: List<IntRect>?,
+    modifier: Modifier = Modifier,
+    orientation: Orientation = Orientation.Horizontal,
+    onPillSegmentsPlaced: ((List<IntRect>) -> Unit)? = null,
+    content: @Composable () -> Unit
+) {
+    val isVertical = orientation == Orientation.Vertical
+    val pillPadding = if (isVertical) {
+        VerticalIndicatorPillTokens.ContainerVerticalPadding
+    } else {
+        IndicatorPillTokens.ContainerHorizontalPadding
+    }
+    val pillMinCrossSize = if (isVertical) {
+        VerticalIndicatorPillTokens.ContainerWidth
+    } else {
+        IndicatorPillTokens.ContainerHeight
+    }
+    val resolvedModifier = if (isVertical) {
+        modifier.defaultMinSize(minWidth = VerticalIndicatorPillTokens.ContainerWidth)
+    } else {
+        modifier
+    }
+
+    CompositionLocalProvider(
+        LocalContentColor provides Color.White,
+        LocalIndicatorPillOrientation provides orientation
+    ) {
+        CutoutAwareLinearLayout(
+            orientation = orientation,
+            modifier = resolvedModifier,
+            spacing = 0.dp,
+            pillPadding = pillPadding,
+            pillMinCrossSize = pillMinCrossSize,
             pillBackgroundColor = CameraControlBackgroundStyle.BLACK_60.containerColor,
             verticalAlignment = Alignment.CenterVertically,
+            horizontalAlignment = Alignment.CenterHorizontally,
             cutoutRectsOverride = cutoutRectsOverride,
             onPillSegmentsPlaced = onPillSegmentsPlaced,
             content = content
@@ -1265,8 +1362,13 @@ fun IndicatorPill(
 }
 
 /**
- * Wraps an individual top-bar status indicator icon with horizontal expand/shrink and fade
+ * Wraps an individual status indicator icon with orientation-aware expand/shrink and fade
  * animations and standard indicator pill item padding.
+ *
+ * Reads [LocalIndicatorPillOrientation] to animate and pad along the active pill's layout axis.
+ * Snaps immediately without animation when [LocalDisableAnimations] is enabled, and clears
+ * descendant semantics immediately when [visible] becomes `false` so exiting icons do not expose
+ * stale descriptions or low-opacity contrast frames during shrink/fade-out transitions.
  */
 @Composable
 internal fun IndicatorPillIcon(
@@ -1275,28 +1377,49 @@ internal fun IndicatorPillIcon(
     content: @Composable () -> Unit
 ) {
     val disableAnimations = LocalDisableAnimations.current
+    val isVertical = LocalIndicatorPillOrientation.current == Orientation.Vertical
+    val horizontalPadding = if (isVertical) {
+        VerticalIndicatorPillTokens.IconHorizontalPadding
+    } else {
+        IndicatorPillTokens.IconHorizontalPadding
+    }
+    val verticalPadding = if (isVertical) {
+        VerticalIndicatorPillTokens.IconVerticalPadding
+    } else {
+        IndicatorPillTokens.IconVerticalPadding
+    }
+    val currentVisible by rememberUpdatedState(visible)
     AnimatedVisibility(
         visible = visible,
-        enter = if (disableAnimations) {
-            EnterTransition.None
-        } else {
-            expandHorizontally() + fadeIn()
+        enter = when {
+            disableAnimations -> EnterTransition.None
+            isVertical -> expandVertically() + fadeIn()
+            else -> expandHorizontally() + fadeIn()
         },
-        exit = if (disableAnimations) {
-            ExitTransition.None
-        } else {
-            shrinkHorizontally() + fadeOut()
+        exit = when {
+            disableAnimations -> ExitTransition.None
+            isVertical -> shrinkVertically() + fadeOut()
+            else -> shrinkHorizontally() + fadeOut()
         }
     ) {
         CompositionLocalProvider(LocalContentColor provides Color.White) {
             Box(
                 modifier = modifier.padding(
-                    horizontal = IndicatorPillTokens.IconHorizontalPadding,
-                    vertical = IndicatorPillTokens.IconVerticalPadding
+                    horizontal = horizontalPadding,
+                    vertical = verticalPadding
                 ),
                 contentAlignment = Alignment.Center
             ) {
-                content()
+                Box(
+                    modifier = if (!currentVisible) {
+                        Modifier.clearAndSetSemantics {}
+                    } else {
+                        Modifier
+                    },
+                    contentAlignment = Alignment.Center
+                ) {
+                    content()
+                }
             }
         }
     }
@@ -1513,18 +1636,8 @@ internal fun FocusMeteringIndicator(
         }
     }
 
-    // Map coordinates from surface coordinates back to screen coordinates
-    val tapCoords =
-        remember(
-            coordinateTransformer.transformMatrix,
-            activeState.surfaceCoordinates
-        ) {
-            Matrix().run {
-                setFrom(coordinateTransformer.transformMatrix)
-                invert()
-                map(activeState.surfaceCoordinates)
-            }
-        }
+    // Reused to map the focus point during placement without allocating on every layout pass.
+    val surfaceToScreenMatrix = remember { Matrix() }
 
     AnimatedVisibility(
         visible = isVisible,
@@ -1548,7 +1661,17 @@ internal fun FocusMeteringIndicator(
                 )
         },
         modifier = Modifier
-            .offset { tapCoords.round() }
+            .offset {
+                // The viewfinder updates the transform when it is placed, which happens after
+                // composition in the same frame. Map the surface coordinates back to screen
+                // coordinates during placement, so the indicator uses the transform of the frame
+                // it is placed in, e.g. right after a rotation.
+                surfaceToScreenMatrix.run {
+                    setFrom(coordinateTransformer.transformMatrix)
+                    invert()
+                    map(activeState.surfaceCoordinates)
+                }.round()
+            }
             .offset(-TAP_TO_FOCUS_INDICATOR_SIZE / 2, -TAP_TO_FOCUS_INDICATOR_SIZE / 2)
     ) {
         Box(
