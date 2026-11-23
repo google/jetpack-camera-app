@@ -380,7 +380,8 @@ This feature offers multiple stabilization modes to enhance video smoothness and
 following stabilization modes are offered as options by JCA
 
 * **Auto:** Automatically enables stabilization based on the device's capabilities and current
-  recording settings.
+  recording settings. In image-only capture mode, “Auto” uses optical stabilization if the lens
+  supports it and does not turn on preview stabilization, which crops the captured image.
 * **On:** Activates stabilization for both the preview and recorded video streams, providing a
   smooth viewing experience during capture and playback.
 * **High Quality:** Applies a high-quality stabilization algorithm to the recorded video stream,
