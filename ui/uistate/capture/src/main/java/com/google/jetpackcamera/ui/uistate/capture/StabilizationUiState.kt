@@ -25,9 +25,15 @@ import com.google.jetpackcamera.model.StabilizationMode
  */
 sealed interface StabilizationUiState {
     /**
-     * Video stabilization is disabled and not available for the current configuration.
+     * No video stabilization is applied, and the user did not turn it off. This is the case when
+     * automatic stabilization applies no stabilization, or when the setting is locked to off.
      */
     data object Disabled : StabilizationUiState
+
+    /**
+     * The user turned video stabilization off.
+     */
+    data object Off : StabilizationUiState
 
     /**
      * Video stabilization is enabled.
@@ -60,10 +66,21 @@ sealed interface StabilizationUiState {
     /**
      * The stabilization mode is set to automatic.
      *
-     * @param stabilizationMode The stabilization mode, which is expected to be [StabilizationMode.AUTO].
+     * @param stabilizationMode The mode that the camera applies for automatic stabilization, such
+     *   as [StabilizationMode.ON] or [StabilizationMode.OPTICAL]. Must not be
+     *   [StabilizationMode.AUTO] or [StabilizationMode.OFF].
      */
     data class Auto(override val stabilizationMode: StabilizationMode) : Enabled {
         override val active = true
+
+        init {
+            require(
+                stabilizationMode != StabilizationMode.AUTO &&
+                    stabilizationMode != StabilizationMode.OFF
+            ) {
+                "Auto StabilizationUiState must hold the mode in use, not $stabilizationMode."
+            }
+        }
     }
 
     companion object

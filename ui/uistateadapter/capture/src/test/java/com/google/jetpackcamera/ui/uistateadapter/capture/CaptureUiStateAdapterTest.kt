@@ -31,6 +31,7 @@ import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.Illuminant
 import com.google.jetpackcamera.model.ImageOutputFormat
 import com.google.jetpackcamera.model.LensFacing
+import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 import com.google.jetpackcamera.settings.model.CameraConstraints
 import com.google.jetpackcamera.settings.model.CameraFeaturePolicy
@@ -45,6 +46,7 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
+import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
 import com.google.jetpackcamera.ui.uistate.capture.TrackedCaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
@@ -234,6 +236,43 @@ internal class CaptureUiStateAdapterTest {
         val quickSettings = state.quickSettingsUiState as QuickSettingsUiState.Available
         assertThat(quickSettings.captureModeUiState).isEqualTo(CaptureModeUiState.Unavailable)
         assertThat(state.captureModeToggleUiState).isEqualTo(CaptureModeToggleUiState.Unavailable)
+    }
+
+    @Test
+    fun captureUiState_stabilizationOff_emitsOff() = runTest {
+        setStabilizationOffOnLensThatCanStabilize()
+
+        val state = assertIsReady(createCaptureUiStateFlow(cameraFeaturePolicy = null).first())
+
+        assertThat(state.stabilizationUiState).isEqualTo(StabilizationUiState.Off)
+    }
+
+    @Test
+    fun captureUiState_stabilizationOffAndHiddenByPolicy_emitsDisabled() = runTest {
+        setStabilizationOffOnLensThatCanStabilize()
+        val policy = defaultPolicy.copy(
+            stabilizationMode = SettingConfig(StabilizationMode.OFF, OptionVisibility.Hidden)
+        )
+
+        val state = assertIsReady(createCaptureUiStateFlow(cameraFeaturePolicy = policy).first())
+
+        assertThat(state.stabilizationUiState).isEqualTo(StabilizationUiState.Disabled)
+    }
+
+    private suspend fun setStabilizationOffOnLensThatCanStabilize() {
+        cameraSystem.setSystemConstraints(
+            TYPICAL_SYSTEM_CONSTRAINTS.copy(
+                perLensConstraints = TYPICAL_SYSTEM_CONSTRAINTS.perLensConstraints.mapValues {
+                    it.value.copy(
+                        supportedStabilizationModes = setOf(
+                            StabilizationMode.OFF,
+                            StabilizationMode.ON
+                        )
+                    )
+                }
+            )
+        )
+        cameraSystem.setStabilizationMode(StabilizationMode.OFF)
     }
 
     @Test

@@ -55,14 +55,18 @@
     <!-- Accessibility state description for the microphone mute/unmute toggle button on the capture screen during video recording, read after the button name "Microphone" when audio is being recorded. "On" is a state value (the microphone is on), not an imperative verb. [CHAR LIMIT=NONE] -->
     <string name="microphone_on">On</string>
 
-    <!-- Accessibility label (not shown visually) for the small status icon in the top bar of the capture screen when video stabilization is set to Auto and the app has turned stabilization on automatically. The implied subject of "on" is video stabilization; "on" is a state, not an action. [CHAR LIMIT=NONE] -->
-    <string name="stabilization_icon_description_auto">Stabilization is on</string>
-    <!-- Accessibility content description for the status icon indicating both camera preview and video recording are stabilized. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
-    <string name="stabilization_icon_description_preview_and_video">Preview is Stabilized</string>
+    <!-- Accessibility content description for the status icon in the top bar of the capture screen when video stabilization is set to Auto and the app has stabilized both the camera preview and video recording. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
+    <string name="stabilization_icon_description_auto_preview_and_video">Auto stabilization: Preview and video are stabilized</string>
+    <!-- Accessibility content description for the status icon in the top bar of the capture screen when video stabilization is set to Auto and the app has enabled optical image stabilization (OIS). The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
+    <string name="stabilization_icon_description_auto_optical">Auto stabilization: Optical stabilization is Enabled</string>
+    <!-- Accessibility content description for the status icon indicating both camera preview and video recording are stabilized. The English text is matched verbatim by automated UI tests, which must be updated in the same change if the text is edited; translate normally. [CHAR LIMIT=NONE] -->
+    <string name="stabilization_icon_description_preview_and_video">Preview and video are stabilized</string>
     <!-- Accessibility content description for the status icon indicating only video recording is stabilized. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_icon_description_video_only">Only Video is Stabilized</string>
     <!-- Accessibility content description for the status icon indicating optical image stabilization (OIS) is enabled. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
     <string name="stabilization_icon_description_optical">Optical stabilization is Enabled</string>
+    <!-- Accessibility content description for the status icon in the top bar of the capture screen when the user has turned video stabilization off. The English text is matched verbatim by automated UI tests and must not be edited; translate normally. [CHAR LIMIT=NONE] -->
+    <string name="stabilization_icon_description_off">Stabilization is off</string>
     <!-- Accessibility label (not shown visually) for the status icon in the top bar of the capture screen when the video resolution is Standard Definition (SD, 480p). Spelled out in full because screen readers read abbreviations letter by letter. [CHAR LIMIT=NONE] -->
     <string name="video_quality_description_sd">Video quality is standard definition</string>
     <!-- Accessibility label (not shown visually) for the status icon in the top bar of the capture screen when the video resolution is High Definition (HD, 720p). Spelled out in full because screen readers read abbreviations letter by letter. [CHAR LIMIT=NONE] -->
