@@ -1128,6 +1128,9 @@ class CaptureScaffoldTest {
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
 
         captureUiState = recordingUiState(elapsedTimeNanos = FIVE_SECONDS_NANOS)
+        // With animations disabled nothing on screen keeps requesting frames, so apply the state
+        // change before advancing the paused clock.
+        composeTestRule.waitForIdle()
         composeTestRule.mainClock.advanceTimeBy(MODE_SWITCH_SETTLE_MS)
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertIsDisplayed()
         composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertDoesNotExist()
@@ -1137,6 +1140,7 @@ class CaptureScaffoldTest {
             subModes = videoCarouselState,
             finalElapsedTimeNanos = FIVE_SECONDS_NANOS
         )
+        composeTestRule.waitForIdle()
         composeTestRule.mainClock.advanceTimeBy(MODE_SWITCH_SETTLE_MS)
         composeTestRule.onNodeWithTag(ELAPSED_TIME_TAG).assertDoesNotExist()
         composeTestRule.onNodeWithTag(CAPTURE_MODE_CAROUSEL).assertIsDisplayed()

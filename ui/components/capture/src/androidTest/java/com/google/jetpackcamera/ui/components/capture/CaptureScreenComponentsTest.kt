@@ -15,13 +15,21 @@
  */
 package com.google.jetpackcamera.ui.components.capture
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Matrix
+import android.graphics.Rect as AndroidRect
+import android.util.Size
+import android.view.Surface
+import androidx.camera.core.SurfaceRequest
+import androidx.camera.core.impl.CameraInternal
 import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.darkColorScheme
@@ -40,12 +48,15 @@ import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertRangeInfoEquals
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.accessibility.enableAccessibilityChecks
@@ -55,6 +66,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.tryPerformAccessibilityChecks
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.IntRect
@@ -64,6 +76,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.android.apps.common.testing.accessibility.framework.AccessibilityCheckResult.AccessibilityCheckResultType
 import com.google.android.apps.common.testing.accessibility.framework.integrations.espresso.AccessibilityValidator
 import com.google.common.truth.Truth.assertThat
+import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.DEFAULT_HDR_DYNAMIC_RANGE
 import com.google.jetpackcamera.model.DEFAULT_HDR_IMAGE_OUTPUT
@@ -75,12 +88,17 @@ import com.google.jetpackcamera.ui.components.capture.quicksettings.ui.HdrIndica
 import com.google.jetpackcamera.ui.uistate.CustomSnackbarVisuals
 import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlashModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FocusMeteringUiState
 import com.google.jetpackcamera.ui.uistate.capture.HdrUiState
 import com.google.jetpackcamera.ui.uistate.capture.StabilizationUiState
+import com.google.jetpackcamera.ui.uistate.capture.compound.PreviewDisplayUiState
+import java.lang.reflect.Proxy
+import kotlin.math.roundToInt
+import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -96,6 +114,8 @@ class CaptureScreenComponentsTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
+    private val createdSurfaceRequests = mutableListOf<SurfaceRequest>()
+
     @Before
     fun setUp() {
         composeTestRule.enableAccessibilityChecks(
@@ -103,6 +123,16 @@ class CaptureScreenComponentsTest {
                 it.setThrowExceptionFor(AccessibilityCheckResultType.ERROR)
             }
         )
+    }
+
+    @SuppressLint("RestrictedApi")
+    @After
+    fun tearDown() {
+        createdSurfaceRequests.forEach { request ->
+            request.willNotProvideSurface()
+            request.deferrableSurface.close()
+        }
+        createdSurfaceRequests.clear()
     }
 
     @Test
@@ -427,6 +457,161 @@ class CaptureScreenComponentsTest {
             SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
             useUnmergedTree = true
         ).assertCountEquals(0)
+    }
+
+    @Test
+    fun previewDisplay_loadingStateDarkTheme_passesAccessibilityChecks() {
+        val loadingDescription =
+            ApplicationProvider.getApplicationContext<Context>().getString(
+                R.string.camera_not_ready
+            )
+
+        composeTestRule.setContent {
+            MaterialTheme(colorScheme = darkColorScheme()) {
+                CompositionLocalProvider(LocalDisableAnimations provides true) {
+                    Box(modifier = Modifier.size(width = 300.dp, height = 400.dp)) {
+                        PreviewDisplay(
+                            previewDisplayUiState = createPreviewDisplayUiState(),
+                            onTapToFocus = { _, _ -> },
+                            onFlipCamera = {},
+                            onScaleZoom = {},
+                            onRequestWindowColorMode = {},
+                            surfaceRequest = null,
+                            focusMeteringUiState = FocusMeteringUiState.Unspecified
+                        )
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription(loadingDescription)
+            .assertIsDisplayed()
+            .assertRangeInfoEquals(ProgressBarRangeInfo.Indeterminate)
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun previewDisplay_loadingStateLightTheme_passesAccessibilityChecks() {
+        val loadingDescription =
+            ApplicationProvider.getApplicationContext<Context>().getString(
+                R.string.camera_not_ready
+            )
+
+        composeTestRule.setContent {
+            MaterialTheme(colorScheme = lightColorScheme()) {
+                CompositionLocalProvider(LocalDisableAnimations provides true) {
+                    Box(modifier = Modifier.size(width = 300.dp, height = 400.dp)) {
+                        PreviewDisplay(
+                            previewDisplayUiState = createPreviewDisplayUiState(),
+                            onTapToFocus = { _, _ -> },
+                            onFlipCamera = {},
+                            onScaleZoom = {},
+                            onRequestWindowColorMode = {},
+                            surfaceRequest = null,
+                            focusMeteringUiState = FocusMeteringUiState.Unspecified
+                        )
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithContentDescription(loadingDescription)
+            .assertIsDisplayed()
+            .assertRangeInfoEquals(ProgressBarRangeInfo.Indeterminate)
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+    }
+
+    @Test
+    fun previewDisplay_withSurfaceRequest_passesAccessibilityChecksAndFocusesCenter() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val viewfinderDescription =
+            context.getString(R.string.camera_viewfinder_content_description)
+        val density = context.resources.displayMetrics.density
+        val widthPx = (300 * density).roundToInt()
+        val heightPx = (400 * density).roundToInt()
+        val surfaceRequest = createFakeSurfaceRequest(width = widthPx, height = heightPx)
+        val recordedTaps = mutableListOf<Offset>()
+
+        composeTestRule.setContent {
+            MaterialTheme(colorScheme = darkColorScheme()) {
+                CompositionLocalProvider(LocalDisableAnimations provides true) {
+                    Box(modifier = Modifier.size(width = 300.dp, height = 400.dp)) {
+                        PreviewDisplay(
+                            previewDisplayUiState = createPreviewDisplayUiState(),
+                            onTapToFocus = { x, y -> recordedTaps.add(Offset(x, y)) },
+                            onFlipCamera = {},
+                            onScaleZoom = {},
+                            onRequestWindowColorMode = {},
+                            surfaceRequest = surfaceRequest,
+                            focusMeteringUiState = FocusMeteringUiState.Unspecified
+                        )
+                    }
+                }
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        val viewfinderNode = composeTestRule.onNodeWithContentDescription(viewfinderDescription)
+        viewfinderNode.assertIsDisplayed()
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+
+        viewfinderNode.performSemanticsAction(SemanticsActions.OnClick)
+        composeTestRule.waitForIdle()
+        assertThat(recordedTaps).hasSize(1)
+        assertThat(recordedTaps.single().x).isWithin(1f).of(widthPx / 2f)
+        assertThat(recordedTaps.single().y).isWithin(1f).of(heightPx / 2f)
+    }
+
+    private fun createPreviewDisplayUiState(
+        aspectRatio: AspectRatio = AspectRatio.THREE_FOUR
+    ): PreviewDisplayUiState = PreviewDisplayUiState(
+        aspectRatioUiState = AspectRatioUiState.Available(
+            selectedAspectRatio = aspectRatio,
+            availableAspectRatios = listOf(
+                SingleSelectableUiState.SelectableUi(AspectRatio.THREE_FOUR),
+                SingleSelectableUiState.SelectableUi(AspectRatio.NINE_SIXTEEN),
+                SingleSelectableUiState.SelectableUi(AspectRatio.ONE_ONE)
+            )
+        )
+    )
+
+    @SuppressLint("RestrictedApi")
+    private fun createFakeSurfaceRequest(width: Int, height: Int): SurfaceRequest {
+        val fakeCamera = Proxy.newProxyInstance(
+            CameraInternal::class.java.classLoader,
+            arrayOf(CameraInternal::class.java)
+        ) { proxy, method, args ->
+            when (method.name) {
+                "equals" -> proxy === args?.firstOrNull()
+                "hashCode" -> System.identityHashCode(proxy)
+                "toString" -> "FakeCameraInternal"
+                "getHasTransform" -> true
+                "isFrontFacing" -> false
+                "isRemoved" -> false
+                else -> when (method.returnType) {
+                    Boolean::class.javaPrimitiveType -> false
+                    Int::class.javaPrimitiveType -> 0
+                    Long::class.javaPrimitiveType -> 0L
+                    Float::class.javaPrimitiveType -> 0f
+                    Double::class.javaPrimitiveType -> 0.0
+                    else -> null
+                }
+            }
+        } as CameraInternal
+
+        return SurfaceRequest(Size(width, height), fakeCamera) {}.also { request ->
+            request.updateTransformationInfo(
+                SurfaceRequest.TransformationInfo.of(
+                    AndroidRect(0, 0, width, height),
+                    0,
+                    Surface.ROTATION_0,
+                    true,
+                    Matrix(),
+                    false
+                )
+            )
+            createdSurfaceRequests.add(request)
+        }
     }
 
     @Test
