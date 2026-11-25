@@ -42,6 +42,10 @@ const val DEFAULT_MAX_IN_FLIGHT_CAPTURES = 4
  * @param inFlightCapturesCount The number of still image captures currently in progress.
  * @param maxInFlightCaptures The maximum number of concurrent still image captures supported by
  * the active camera session.
+ * @param isSessionRestarting Whether the camera session is starting or restarting. This is `true`
+ * from when the restart is requested, while the previous session can still be running, until the
+ * next session is bound. A still image capture requested meanwhile is held and taken by the next
+ * session.
  * @param stillCaptureProgress The progress of the still image capture that the camera is taking,
  * or `null` if no capture has started capturing frames.
  * @param stabilizationMode The current video stabilization mode. This value is updated from the
@@ -64,6 +68,7 @@ data class CameraState(
     val isCameraRunning: Boolean = false,
     val inFlightCapturesCount: Int = 0,
     val maxInFlightCaptures: Int = DEFAULT_MAX_IN_FLIGHT_CAPTURES,
+    val isSessionRestarting: Boolean = false,
     val stillCaptureProgress: StillCaptureProgress? = null,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val lowLightBoostState: LowLightBoostState = LowLightBoostState.Inactive,
@@ -82,10 +87,11 @@ data class CameraState(
         get() = inFlightCapturesCount >= maxInFlightCaptures
 
     /**
-     * Whether the camera is running and has capacity to accept another image capture request.
+     * Whether a capture started now runs on the current camera session: the camera is running, the
+     * session is not restarting, and there is capacity for another still image capture.
      */
-    val canCaptureImage: Boolean
-        get() = isCameraRunning && !isCaptureAtCapacity
+    val canStartCapture: Boolean
+        get() = isCameraRunning && !isSessionRestarting && !isCaptureAtCapacity
 }
 
 /**

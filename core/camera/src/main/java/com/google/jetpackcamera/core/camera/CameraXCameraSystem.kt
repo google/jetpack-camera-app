@@ -43,7 +43,6 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.lifecycle.awaitInstance
 import androidx.camera.video.Recorder
 import androidx.core.net.toFile
-import androidx.tracing.trace
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.getAllCamerasPropertiesJSONArray
 import com.google.jetpackcamera.core.camera.CameraCoreUtil.writeFileExternalStorage
 import com.google.jetpackcamera.core.camera.effects.CameraEffectFeatureKey
@@ -108,13 +107,11 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val TAG = "CameraXCameraSystem"
-private const val APPLY_CAPTURE_SUB_MODE_TRACE = "JCA Apply Capture Sub-Mode"
 
 /**
  * CameraX based implementation for [CameraSystem]
@@ -175,6 +172,9 @@ class CameraXCameraSystem(
                     inFlightCapturesCount = (old.inFlightCapturesCount + delta).coerceAtLeast(0)
                 )
             }
+        },
+        onRestartingChanged = { isRestarting ->
+            currentCameraState.update { old -> old.copy(isSessionRestarting = isRestarting) }
         }
     )
 
@@ -623,6 +623,7 @@ class CameraXCameraSystem(
                     cameraError = CameraError.FatalCameraError
                 )
             }
+            rejectStillCaptures()
             kotlinx.coroutines.awaitCancellation()
         }
 
@@ -634,6 +635,7 @@ class CameraXCameraSystem(
                     cameraError = CameraError.CameraRemoved
                 )
             }
+            rejectStillCaptures()
             kotlinx.coroutines.awaitCancellation()
         }
 
@@ -712,9 +714,14 @@ class CameraXCameraSystem(
             // collectLatest cancels the running session as soon as new settings arrive, and
             // stopping the camera aborts any still capture in flight. Wait for in-flight captures
             // to finish first; captures requested meanwhile wait for the new session.
-            .onEach { imageCaptureGate.closeAndAwaitIdle() }
-            .collectLatest { sessionSettings ->
-                if (sessionSettings == null) return@collectLatest
+            .map { sessionSettings -> sessionSettings to imageCaptureGate.closeAndAwaitIdle() }
+            .collectLatest { (sessionSettings, restart) ->
+                if (sessionSettings == null) {
+                    // No session can start with these settings. Fail still captures right away
+                    // instead of leaving them to wait for one.
+                    imageCaptureGate.open(restart, null)
+                    kotlinx.coroutines.awaitCancellation()
+                }
                 coroutineScope {
                     with(
                         CameraSessionContext(
@@ -733,7 +740,6 @@ class CameraXCameraSystem(
                             captureSubModeProviders = subModeProviderMap,
                             sessionSettings = sessionSettings,
                             perLensConstraints = systemConstraints.perLensConstraints,
-                            awaitCapturesBeforeRestart = imageCaptureGate::closeAndAwaitIdle,
                             maxInFlightCaptures = maxInFlightCaptures
                         )
                     ) {
@@ -741,8 +747,11 @@ class CameraXCameraSystem(
                             when (sessionSettings) {
                                 is PerpetualSessionSettings.SingleCamera -> runSingleCameraSession(
                                     sessionSettings,
-                                    onImageCaptureBound = { imageCapture, lensFacing ->
+                                    awaitCapturesBeforeRestart =
+                                    imageCaptureGate::closeAndAwaitIdle,
+                                    onImageCaptureBound = { rebind, imageCapture, lensFacing ->
                                         imageCaptureGate.open(
+                                            rebind,
                                             imageCapture?.let {
                                                 BoundImageCapture(
                                                     useCase = it,
@@ -772,7 +781,7 @@ class CameraXCameraSystem(
                                         )
                                     }
                                     // Custom sessions don't bind an ImageCapture use case.
-                                    imageCaptureGate.open(null)
+                                    imageCaptureGate.open(restart, null)
                                     runner.runSession(this)
                                 }
                             }
@@ -785,6 +794,15 @@ class CameraXCameraSystem(
                     }
                 }
             }
+    }
+
+    /**
+     * Makes still captures fail right away, for when the camera cannot start. Otherwise they would
+     * wait for a camera session that never binds. This lasts until the calling coroutine completes
+     * or the camera session restarts.
+     */
+    private suspend fun rejectStillCaptures() {
+        imageCaptureGate.open(imageCaptureGate.closeAndAwaitIdle(), null)
     }
 
     override fun clearCameraError() {
@@ -1522,13 +1540,9 @@ class CameraXCameraSystem(
     }
 
     override suspend fun setCaptureSubMode(captureSubModeId: CaptureSubModeId) {
-        // Collectors of the settings that do not suspend before handling the change run inside
-        // this section, on the caller's thread.
-        trace(APPLY_CAPTURE_SUB_MODE_TRACE) {
-            currentSettings.update { old ->
-                old?.copy(captureSubModeId = captureSubModeId)
-                    ?.tryApplyCaptureSubModeConstraints()
-            }
+        currentSettings.update { old ->
+            old?.copy(captureSubModeId = captureSubModeId)
+                ?.tryApplyCaptureSubModeConstraints()
         }
     }
 
