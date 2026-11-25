@@ -45,7 +45,7 @@ fun CaptureButtonUiState.Companion.from(
         is VideoRecordingState.Inactive ->
             CaptureButtonUiState.Enabled.Idle(
                 captureMode = cameraAppSettings.captureMode,
-                isEnabled = cameraState.canCaptureImage,
+                isEnabled = cameraState.canStartCapture,
                 debounceVisualDisable = !cameraState.isCaptureAtCapacity
             )
 
