@@ -22,6 +22,7 @@ import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.AudioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureChromeVisibility
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.ElapsedTimeUiState
@@ -74,6 +75,11 @@ sealed interface CaptureUiState {
      * @property hdrUiState The UI state for the HDR setting.
      * @property focusMeteringUiState The UI state for focus and metering.
      * @property cameraErrorUiState The UI state for camera errors.
+     * @property isQuickSettingsButtonEnabled Whether the user can open Quick Settings. When
+     * `false`, the Quick Settings button is shown disabled and an open Quick Settings surface is
+     * closed.
+     * @property chromeVisibility Which groups of controls are shown. Hidden groups fade out and
+     * stop accepting input.
      */
     data class Ready(
         val videoRecordingState: VideoRecordingState = VideoRecordingState.Inactive(),
@@ -101,7 +107,9 @@ sealed interface CaptureUiState {
         val hdrUiState: HdrUiState = HdrUiState.Unavailable,
         val focusMeteringUiState: FocusMeteringUiState = FocusMeteringUiState.Unspecified,
         val screenFlashUiState: ScreenFlashUiState = ScreenFlashUiState(),
-        val cameraErrorUiState: CameraErrorUiState = CameraErrorUiState.Hidden
+        val cameraErrorUiState: CameraErrorUiState = CameraErrorUiState.Hidden,
+        val isQuickSettingsButtonEnabled: Boolean = true,
+        val chromeVisibility: CaptureChromeVisibility = CaptureChromeVisibility()
     ) : CaptureUiState
 
     companion object

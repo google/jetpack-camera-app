@@ -47,10 +47,12 @@ import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -80,12 +82,14 @@ import com.google.jetpackcamera.ui.controller.testing.FakeQuickSettingsControlle
 import com.google.jetpackcamera.ui.controller.testing.FakeSnackBarController
 import com.google.jetpackcamera.ui.controller.testing.FakeZoomController
 import com.google.jetpackcamera.ui.controller.testing.sampleQuickSettingsUiState
+import com.google.jetpackcamera.ui.uistate.DisableRationale
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
 import com.google.jetpackcamera.ui.uistate.SnackBarUiState
 import com.google.jetpackcamera.ui.uistate.SnackbarData
 import com.google.jetpackcamera.ui.uistate.capture.AspectRatioUiState
 import com.google.jetpackcamera.ui.uistate.capture.CameraErrorUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureChromeVisibility
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeOption
@@ -448,6 +452,191 @@ class CaptureScaffoldTest {
         composeTestRule.waitForIdle()
 
         assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+    }
+
+    @Test
+    fun captureScaffold_hiddenChrome_removesControlsUntilShownAgain() {
+        var captureUiState by mutableStateOf(
+            LOADING_CAPTURE_UI_STATE_SKELETON.copy(
+                quickSettingsUiState = availableQuickSettingsUiState
+            )
+        )
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null,
+                    topStartContent = { slotModifier ->
+                        Box(slotModifier.size(40.dp).testTag(TOP_START_BUTTON_TAG))
+                    }
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TOP_START_BUTTON_TAG).assertIsDisplayed()
+
+        composeTestRule.runOnIdle {
+            captureUiState = captureUiState.copy(
+                chromeVisibility = CaptureChromeVisibility.Hidden
+            )
+        }
+        composeTestRule.waitForIdle()
+
+        // Hidden controls leave the semantics tree at once, so they can't be focused or clicked.
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(TOP_START_BUTTON_TAG).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertIsDisplayed()
+
+        composeTestRule.runOnIdle {
+            captureUiState = captureUiState.copy(chromeVisibility = CaptureChromeVisibility())
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(TOP_START_BUTTON_TAG).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffold_chromeShownAgain_waitsBeforeRestoringControls() {
+        var captureUiState by mutableStateOf(
+            LOADING_CAPTURE_UI_STATE_SKELETON.copy(
+                quickSettingsUiState = availableQuickSettingsUiState,
+                chromeVisibility = CaptureChromeVisibility.Hidden
+            )
+        )
+        composeTestRule.setContent {
+            CaptureScaffold(captureUiState = { captureUiState }, surfaceRequest = null)
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertDoesNotExist()
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.runOnIdle {
+            captureUiState = captureUiState.copy(chromeVisibility = CaptureChromeVisibility())
+        }
+        composeTestRule.mainClock.advanceTimeBy(CHROME_FADE_IN_DELAY_MS - 100)
+
+        // Controls stay hidden, and out of the semantics tree, until the delay has passed.
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeUntil(timeoutMillis = CHROME_FADE_IN_DELAY_MS * 4) {
+            composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_DROP_DOWN)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
+    }
+
+    @Test
+    fun captureScaffold_quickSettingsButtonDisabled_closesQuickSettingsAndDisablesButton() {
+        var captureUiState by mutableStateOf(
+            LOADING_CAPTURE_UI_STATE_SKELETON.copy(
+                quickSettingsUiState = availableQuickSettingsUiState
+            )
+        )
+        lateinit var scaffoldState: CaptureScaffoldState
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                scaffoldState = rememberCaptureScaffoldState(isInitiallyExpanded = true)
+                CaptureScaffold(
+                    captureUiState = { captureUiState },
+                    surfaceRequest = null,
+                    state = scaffoldState,
+                    quickSettingsController = FakeQuickSettingsController()
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+        assertThat(scaffoldState.isQuickSettingsOpen).isTrue()
+
+        composeTestRule.runOnIdle {
+            captureUiState = captureUiState.copy(isQuickSettingsButtonEnabled = false)
+        }
+        composeTestRule.waitForIdle()
+
+        assertThat(scaffoldState.isQuickSettingsOpen).isFalse()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertIsNotEnabled()
+    }
+
+    @Test
+    fun captureScaffold_flipLensDisabled_ignoresFlipButton() {
+        val requestedLenses = mutableListOf<LensFacing>()
+        val quickSettingsController = FakeQuickSettingsController(
+            setLensFacingAction = { requestedLenses.add(it) }
+        )
+        val availableFlipLens = FlipLensUiState.Available(
+            selectedLensFacing = LensFacing.BACK,
+            availableLensFacings = listOf(
+                SingleSelectableUiState.SelectableUi(LensFacing.FRONT),
+                SingleSelectableUiState.SelectableUi(LensFacing.BACK)
+            ),
+            isEnabled = false
+        )
+        val uiState = LOADING_CAPTURE_UI_STATE_SKELETON.copy(flipLensUiState = availableFlipLens)
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                CaptureScaffold(
+                    captureUiState = { uiState },
+                    surfaceRequest = null,
+                    quickSettingsController = quickSettingsController
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(FLIP_CAMERA_BUTTON)
+            .assertIsNotEnabled()
+            .performTouchInput { click() }
+        composeTestRule.waitForIdle()
+
+        assertThat(requestedLenses).isEmpty()
+    }
+
+    @Test
+    fun captureScaffold_captureModeToggleDisabled_ignoresTapsWithoutShowingRationale() {
+        val snackBars = mutableListOf<SnackbarData>()
+        val requestedModes = mutableListOf<CaptureMode>()
+        val unrelatedRationale = object : DisableRationale {
+            override val reasonTextResId: Int = 0
+        }
+        val uiState = LOADING_CAPTURE_UI_STATE_SKELETON.copy(
+            captureModeToggleUiState = CaptureModeToggleUiState.Available(
+                selectedCaptureMode = CaptureMode.IMAGE_ONLY,
+                imageOnlyUiState = SingleSelectableUiState.SelectableUi(CaptureMode.IMAGE_ONLY),
+                videoOnlyUiState = SingleSelectableUiState.Disabled(
+                    CaptureMode.VIDEO_ONLY,
+                    unrelatedRationale
+                ),
+                isEnabled = false
+            )
+        )
+
+        composeTestRule.setContent {
+            CompositionLocalProvider(LocalDisableAnimations provides true) {
+                CaptureScaffold(
+                    captureUiState = { uiState },
+                    surfaceRequest = null,
+                    quickSettingsController = FakeQuickSettingsController(
+                        setCaptureModeAction = { requestedModes.add(it) }
+                    ),
+                    snackBarController = FakeSnackBarController(
+                        addSnackBarDataAction = { snackBars.add(it) }
+                    )
+                )
+            }
+        }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithTag(CAPTURE_MODE_TOGGLE_BUTTON)
+            .assertIsNotEnabled()
+            .performTouchInput { click() }
+        composeTestRule.waitForIdle()
+
+        assertThat(requestedModes).isEmpty()
+        assertThat(snackBars).isEmpty()
     }
 
     @Test

@@ -38,11 +38,15 @@ sealed interface CaptureModeToggleUiState {
      * @param selectedCaptureMode The currently active [CaptureMode].
      * @param imageOnlyUiState The UI state for the "Image" option in the toggle.
      * @param videoOnlyUiState The UI state for the "Video" option in the toggle.
+     * @param isEnabled Whether the user can change the capture mode with the toggle. When `false`,
+     * the whole toggle is shown disabled and tapping it does nothing, regardless of
+     * [imageOnlyUiState] and [videoOnlyUiState].
      */
     data class Available(
         val selectedCaptureMode: CaptureMode,
         val imageOnlyUiState: SingleSelectableUiState<CaptureMode>,
-        val videoOnlyUiState: SingleSelectableUiState<CaptureMode>
+        val videoOnlyUiState: SingleSelectableUiState<CaptureMode>,
+        val isEnabled: Boolean = true
     ) : CaptureModeToggleUiState {
         init {
             val isSelectedModePresentAndSelectable =

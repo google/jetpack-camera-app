@@ -37,10 +37,13 @@ sealed interface FlipLensUiState {
      * @param selectedLensFacing The currently selected [LensFacing] (e.g., front or back).
      * @param availableLensFacings A list of all available lens facings, each represented by a
      * [SingleSelectableUiState] to indicate its selection status.
+     * @param isEnabled Whether the user can flip the lens. When `false`, the flip button is shown
+     * disabled and flipping from the viewfinder is ignored.
      */
     data class Available(
         val selectedLensFacing: LensFacing,
-        val availableLensFacings: List<SingleSelectableUiState<LensFacing>>
+        val availableLensFacings: List<SingleSelectableUiState<LensFacing>>,
+        val isEnabled: Boolean = true
     ) : FlipLensUiState {
         init {
             val isSelectedModePresentAndSelectable = availableLensFacings.any { state ->

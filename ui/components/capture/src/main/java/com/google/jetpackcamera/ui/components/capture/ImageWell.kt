@@ -39,6 +39,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -61,6 +62,9 @@ private object ImageWellTokens {
     /** The default shape of the image well container. */
     val ContainerShape = RoundedCornerShape(12.dp)
 
+    /** The opacity of the thumbnail while the image well is disabled. */
+    val DisabledThumbnailAlpha = 0.38f
+
     /**
      * The inset between the edge of the container and the thumbnail, which leaves a frame of the
      * container color around the thumbnail.
@@ -82,7 +86,9 @@ private object ImageWellTokens {
  * @param onClick the callback for when the image well is clicked
  * @param modifier the modifier for this component
  * @param shape the shape of the image well's outer container
- * @param enabled true if the image well is enabled
+ * @param enabled true if the image well is enabled. The image well is also disabled when
+ * [ImageWellUiState.Content.isEnabled] is `false`. A disabled image well ignores taps and dims its
+ * thumbnail.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalAnimationApi::class)
 @Composable
@@ -94,6 +100,7 @@ fun ImageWell(
     enabled: Boolean = true
 ) {
     if (imageWellUiState is ImageWellUiState.Content) {
+        val isEnabled = enabled && imageWellUiState.isEnabled
         val disableAnimations = LocalDisableAnimations.current
         val animationSpec: FiniteAnimationSpec<IntOffset> =
             if (disableAnimations) snap() else tween(300)
@@ -108,9 +115,10 @@ fun ImageWell(
                 .size(IconButtonDefaults.mediumContainerSize())
                 .clip(shape)
                 .background(containerColor)
-                .clickable(onClick = onClick, enabled = enabled)
+                .clickable(onClick = onClick, enabled = isEnabled)
                 .padding(ImageWellTokens.ThumbnailInset)
                 .clip(ImageWellTokens.ThumbnailShape)
+                .alpha(if (isEnabled) 1f else ImageWellTokens.DisabledThumbnailAlpha)
         ) {
             AnimatedContent(
                 targetState = imageWellUiState.mediaDescriptor,

@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasParent
@@ -122,6 +123,29 @@ class CaptureModeCarouselTest {
         composeTestRule.onNodeWithTag(secondId.carouselOptionTag)
             .assertIsDisplayed()
             .assertIsNotSelected()
+    }
+
+    @Test
+    fun carousel_whenDisabled_ignoresTapsAndFlings() {
+        val selections = mutableListOf<CaptureSubModeId>()
+        composeTestRule.setContent {
+            MaterialTheme {
+                CaptureModeCarousel(
+                    uiState = availableState(CaptureSubModeId.DEFAULT).copy(isEnabled = false),
+                    onSelectSubMode = { selections += it }
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(secondId.carouselOptionTag)
+            .assertIsNotEnabled()
+            .performClick()
+        flickTowardsNextItem()
+        composeTestRule.waitForIdle()
+
+        assertThat(selections).isEmpty()
+        composeTestRule.onNodeWithTag(CaptureSubModeId.DEFAULT.carouselOptionTag)
+            .assertIsSelected()
     }
 
     @Test

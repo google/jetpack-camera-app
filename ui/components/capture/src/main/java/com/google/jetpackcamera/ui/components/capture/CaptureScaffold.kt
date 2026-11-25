@@ -22,7 +22,11 @@ import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Transition
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.animation.fadeIn
@@ -55,8 +59,12 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.tooling.preview.Preview
 import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.InitialRecordingSettings
@@ -92,6 +100,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -101,6 +110,14 @@ import kotlinx.coroutines.launch
  * giving the user a brief hold to read the final duration.
  */
 private const val ELAPSED_TIME_EXIT_DELAY_MS = 1_500
+
+/** Duration of the fade when a group of controls is hidden or shown again. */
+private const val CHROME_FADE_OUT_DURATION_MS = 400
+private const val CHROME_FADE_IN_DURATION_MS = 300
+
+// Delay before hidden controls fade back in, so that a host that leaves the capture screen as
+// soon as the capture ends does not flash them first.
+internal const val CHROME_FADE_IN_DELAY_MS = 500L
 
 /**
  * Shared recording-visibility [Transition] provided by [CaptureScaffold] to its
@@ -583,7 +600,8 @@ object CaptureScaffoldDefaults {
     }
 
     /**
-     * Default Quick Settings toggle button, hidden while [isRecording] is `true`.
+     * Default Quick Settings toggle button, hidden while [isRecording] is `true`. It is disabled
+     * when [enabled] is `false` or [uiState] is not [QuickSettingsUiState.Available].
      */
     @Composable
     fun QuickSettingsButton(
@@ -591,10 +609,11 @@ object CaptureScaffoldDefaults {
         isRecording: Boolean,
         isQuickSettingsOpen: Boolean,
         onToggleQuickSettings: () -> Unit,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        enabled: Boolean = true
     ) {
         val isQuickSettingsVisible = !isRecording
-        val isQuickSettingsEnabled = uiState is QuickSettingsUiState.Available
+        val isQuickSettingsEnabled = enabled && uiState is QuickSettingsUiState.Available
         val disableAnimations = LocalDisableAnimations.current
         AnimatedVisibility(
             visible = isQuickSettingsVisible,
@@ -968,12 +987,16 @@ fun CaptureScaffold(
         val quickSettingsState = remember {
             derivedStateOf { currentUiState().quickSettingsUiState }
         }
+        val isQuickSettingsButtonEnabled = remember {
+            derivedStateOf { currentUiState().isQuickSettingsButtonEnabled }
+        }
         CaptureScaffoldDefaults.QuickSettingsButton(
             uiState = quickSettingsState.value,
             isRecording = isRecording,
             isQuickSettingsOpen = isQuickSettingsOpen,
             onToggleQuickSettings = ::toggleQuickSettings,
-            modifier = slotModifier
+            modifier = slotModifier,
+            enabled = isQuickSettingsButtonEnabled.value
         )
     },
     elapsedTimeDisplay: @Composable CaptureSlotScope.(Modifier) -> Unit = { slotModifier ->
@@ -1154,7 +1177,7 @@ fun CaptureScaffold(
     val onFlipCamera = remember(quickSettingsController) {
         {
             val currentFlipLens = flipLensState.value
-            if (currentFlipLens is FlipLensUiState.Available) {
+            if (currentFlipLens is FlipLensUiState.Available && currentFlipLens.isEnabled) {
                 quickSettingsController?.setLensFacing(
                     currentFlipLens.selectedLensFacing.flip()
                 )
@@ -1182,6 +1205,18 @@ fun CaptureScaffold(
         if (blocksPreview && state.isQuickSettingsOpen) {
             state.dismissQuickSettings()
         }
+    }
+
+    val isQuickSettingsButtonEnabled by remember {
+        derivedStateOf { currentCaptureUiStateProvider().isQuickSettingsButtonEnabled }
+    }
+    LaunchedEffect(isQuickSettingsButtonEnabled) {
+        if (!isQuickSettingsButtonEnabled && state.isQuickSettingsOpen) {
+            state.dismissQuickSettings()
+        }
+    }
+    val chromeVisibility by remember {
+        derivedStateOf { currentCaptureUiStateProvider().chromeVisibility }
     }
 
     val previewDisplayState = remember {
@@ -1334,7 +1369,10 @@ fun CaptureScaffold(
                 onAnimateZoomTo = onAnimateZoomTo,
                 onSetAbsoluteZoom = onSetAbsoluteZoom
             )
-            slotScope.zoomControls(slotModifier)
+            val chromeModifier = rememberChromeVisibilityModifier(
+                chromeVisibility.isZoomControlsVisible
+            )
+            slotScope.zoomControls(slotModifier.then(chromeModifier))
         },
         elapsedTimeDisplay = { slotModifier ->
             CompositionLocalProvider(LocalElapsedTimeTransition provides elapsedTimeTransition) {
@@ -1362,7 +1400,10 @@ fun CaptureScaffold(
                 onAnimateZoomTo = onAnimateZoomTo,
                 onSetAbsoluteZoom = onSetAbsoluteZoom
             )
-            slotScope.quickSettingsButton(slotModifier)
+            val chromeModifier = rememberChromeVisibilityModifier(
+                chromeVisibility.isQuickSettingsButtonVisible
+            )
+            slotScope.quickSettingsButton(slotModifier.then(chromeModifier))
         },
         indicatorRow = { slotModifier ->
             if (!blocksPreview) {
@@ -1376,7 +1417,10 @@ fun CaptureScaffold(
                     onAnimateZoomTo = onAnimateZoomTo,
                     onSetAbsoluteZoom = onSetAbsoluteZoom
                 )
-                slotScope.topBar(slotModifier)
+                val chromeModifier = rememberChromeVisibilityModifier(
+                    chromeVisibility.isTopBarVisible
+                )
+                slotScope.topBar(slotModifier.then(chromeModifier))
             }
         },
         captureModeToggle = { slotModifier ->
@@ -1440,7 +1484,10 @@ fun CaptureScaffold(
                     onAnimateZoomTo = onAnimateZoomTo,
                     onSetAbsoluteZoom = onSetAbsoluteZoom
                 )
-                slotScope.topStartContent(slotModifier)
+                val chromeModifier = rememberChromeVisibilityModifier(
+                    chromeVisibility.isViewfinderOverlayVisible
+                )
+                slotScope.topStartContent(slotModifier.then(chromeModifier))
             }
         },
         viewfinderTopEndContent = { slotModifier ->
@@ -1455,7 +1502,10 @@ fun CaptureScaffold(
                     onAnimateZoomTo = onAnimateZoomTo,
                     onSetAbsoluteZoom = onSetAbsoluteZoom
                 )
-                slotScope.viewfinderTopEndContent(slotModifier)
+                val chromeModifier = rememberChromeVisibilityModifier(
+                    chromeVisibility.isViewfinderOverlayVisible
+                )
+                slotScope.viewfinderTopEndContent(slotModifier.then(chromeModifier))
             }
         },
         topBarLeadingContent = topBarLeadingContent?.let { leadingContent ->
@@ -1470,7 +1520,10 @@ fun CaptureScaffold(
                     onAnimateZoomTo = onAnimateZoomTo,
                     onSetAbsoluteZoom = onSetAbsoluteZoom
                 )
-                slotScope.leadingContent(slotModifier)
+                val chromeModifier = rememberChromeVisibilityModifier(
+                    chromeVisibility.isViewfinderOverlayVisible
+                )
+                slotScope.leadingContent(slotModifier.then(chromeModifier))
             }
         },
         onRequiresImmersiveChange = onRequiresImmersiveChange,
@@ -1484,6 +1537,55 @@ fun CaptureScaffold(
             }
         }
     )
+}
+
+/**
+ * Returns a [Modifier] that fades a group of controls out while [visible] is `false` and back in
+ * when it is `true`, keeping their space in the layout.
+ *
+ * Hidden controls are removed from the semantics tree and stop receiving touch input as soon as
+ * [visible] turns `false`, rather than when the fade ends. When [visible] turns `true`, the
+ * controls wait [CHROME_FADE_IN_DELAY_MS] before they fade in and accept input again. The fades
+ * snap, without the delay, when [LocalDisableAnimations] is set.
+ */
+@Composable
+private fun rememberChromeVisibilityModifier(visible: Boolean): Modifier {
+    val disableAnimations = LocalDisableAnimations.current
+    var isShown by remember { mutableStateOf(visible) }
+    LaunchedEffect(visible, disableAnimations) {
+        if (visible && !disableAnimations) delay(CHROME_FADE_IN_DELAY_MS)
+        isShown = visible
+    }
+    val alpha = animateFloatAsState(
+        targetValue = if (isShown) 1f else 0f,
+        animationSpec = when {
+            disableAnimations -> snap()
+            // Start slowly, so that the fade stays visible after the viewfinder's capture blink.
+            !isShown -> tween(CHROME_FADE_OUT_DURATION_MS, easing = FastOutLinearInEasing)
+            else -> tween(CHROME_FADE_IN_DURATION_MS, easing = LinearOutSlowInEasing)
+        },
+        label = "CaptureChromeAlpha"
+    )
+    val fade = Modifier.graphicsLayer { this.alpha = alpha.value }
+    return if (visible && isShown) {
+        fade
+    } else {
+        fade
+            .clearAndSetSemantics {}
+            .blockPointerInput()
+    }
+}
+
+/**
+ * Consumes every pointer event before the content below this modifier sees it, so that the content
+ * ignores touches.
+ */
+private fun Modifier.blockPointerInput(): Modifier = pointerInput(Unit) {
+    awaitPointerEventScope {
+        while (true) {
+            awaitPointerEvent(PointerEventPass.Initial).changes.forEach { it.consume() }
+        }
+    }
 }
 
 /**

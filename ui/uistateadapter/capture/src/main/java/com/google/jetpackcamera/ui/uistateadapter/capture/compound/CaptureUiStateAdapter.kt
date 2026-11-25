@@ -89,8 +89,9 @@ fun captureUiState(
         currentSettings.filterNotNull(),
         systemConstraints.filterNotNull(),
         currentCameraState,
-        trackedCaptureUiState
-    ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState ->
+        trackedCaptureUiState,
+        captureLock(currentCameraState)
+    ) { cameraAppSettings, systemConstraints, cameraState, trackedUiState, captureLock ->
         val videoRecordingState = cameraState.videoRecordingState
         val roundedVideoRecordingState =
             roundVideoRecordingState(videoRecordingState, timePrecision)
@@ -232,7 +233,7 @@ fun captureUiState(
             ),
             screenFlashUiState = ScreenFlashUiState.from(trackedUiState),
             cameraErrorUiState = CameraErrorUiState.from(roundedCameraState)
-        )
+        ).withCaptureLock(captureLock)
     }
 }
 

@@ -27,7 +27,17 @@ sealed interface ImageWellUiState {
      */
     data object Unavailable : ImageWellUiState
 
-    data class Content(val mediaDescriptor: MediaDescriptor.Content) : ImageWellUiState
+    /**
+     * The image well shows a thumbnail of [mediaDescriptor].
+     *
+     * @param mediaDescriptor The most recently captured media.
+     * @param isEnabled Whether tapping the image well opens the media. When `false`, the image
+     * well is shown disabled and ignores taps.
+     */
+    data class Content(
+        val mediaDescriptor: MediaDescriptor.Content,
+        val isEnabled: Boolean = true
+    ) : ImageWellUiState
 
     companion object
 }
