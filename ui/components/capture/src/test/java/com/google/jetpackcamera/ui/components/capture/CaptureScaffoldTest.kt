@@ -52,6 +52,7 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
@@ -495,6 +496,36 @@ class CaptureScaffoldTest {
 
         composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertIsDisplayed()
         composeTestRule.onNodeWithTag(TOP_START_BUTTON_TAG).assertIsDisplayed()
+    }
+
+    @Test
+    fun captureScaffold_chromeShownAgain_waitsBeforeRestoringControls() {
+        var captureUiState by mutableStateOf(
+            LOADING_CAPTURE_UI_STATE_SKELETON.copy(
+                quickSettingsUiState = availableQuickSettingsUiState,
+                chromeVisibility = CaptureChromeVisibility.Hidden
+            )
+        )
+        composeTestRule.setContent {
+            CaptureScaffold(captureUiState = { captureUiState }, surfaceRequest = null)
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertDoesNotExist()
+
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.runOnIdle {
+            captureUiState = captureUiState.copy(chromeVisibility = CaptureChromeVisibility())
+        }
+        composeTestRule.mainClock.advanceTimeBy(CHROME_FADE_IN_DELAY_MS - 100)
+
+        // Controls stay hidden, and out of the semantics tree, until the delay has passed.
+        composeTestRule.onNodeWithTag(QUICK_SETTINGS_DROP_DOWN).assertDoesNotExist()
+
+        composeTestRule.mainClock.advanceTimeUntil(timeoutMillis = CHROME_FADE_IN_DELAY_MS * 4) {
+            composeTestRule.onAllNodesWithTag(QUICK_SETTINGS_DROP_DOWN)
+                .fetchSemanticsNodes()
+                .isNotEmpty()
+        }
     }
 
     @Test
