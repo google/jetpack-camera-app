@@ -795,6 +795,10 @@ private fun CaptureProgressRing(
 
     val sweep = remember { Animatable(shownProgress.initialSweepFraction(uptimeMillis())) }
     var completedProgress by remember { mutableStateOf<CaptureProgressUiState?>(null) }
+    // Forget the completed progress once the capture ends, so that the next capture can show it.
+    LaunchedEffect(progress == null) {
+        if (progress == null) completedProgress = null
+    }
     LaunchedEffect(shownProgress, disableAnimations) {
         when (shownProgress) {
             is CaptureProgressUiState.Determinate -> {

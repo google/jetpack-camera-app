@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import android.os.SystemClock
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
@@ -37,8 +38,7 @@ internal class StillCaptureProgressPublisher(
     private val captureLatencyMillis: () -> Long?,
     private val uptimeMillis: () -> Long = SystemClock::uptimeMillis
 ) {
-    @Volatile
-    private var published: StillCaptureProgress? = null
+    private val published = AtomicReference<StillCaptureProgress?>(null)
 
     /** Publishes that the camera started capturing frames for this capture. */
     fun onCaptureStarted() {
@@ -52,14 +52,13 @@ internal class StillCaptureProgressPublisher(
 
     /** Publishes the processing progress of this capture, from 0 to 100. */
     fun onCaptureProcessProgressed(percent: Int) {
-        val base = published ?: StillCaptureProgress(startedAtUptimeMillis = uptimeMillis())
+        val base = published.get() ?: StillCaptureProgress(startedAtUptimeMillis = uptimeMillis())
         publish(base.copy(processProgressPercent = percent.coerceIn(0, 100)))
     }
 
     /** Clears the progress of this capture, if it is still the published progress. */
     fun clear() {
-        val previous = published ?: return
-        published = null
+        val previous = published.getAndSet(null) ?: return
         cameraState.update { old ->
             if (old.stillCaptureProgress == previous) {
                 old.copy(stillCaptureProgress = null)
@@ -70,8 +69,7 @@ internal class StillCaptureProgressPublisher(
     }
 
     private fun publish(progress: StillCaptureProgress) {
-        val previous = published
-        published = progress
+        val previous = published.getAndSet(progress)
         cameraState.update { old ->
             // Another capture has replaced this capture's progress; leave it in place.
             if (previous != null && old.stillCaptureProgress != previous) {

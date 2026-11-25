@@ -28,7 +28,7 @@ import com.google.jetpackcamera.ui.uistate.capture.CaptureProgressUiState
  *
  * @param stillCaptureProgress The progress of the capture, or `null` if it has not started.
  */
-fun CaptureProgressUiState.Companion.from(
+internal fun CaptureProgressUiState.Companion.from(
     stillCaptureProgress: StillCaptureProgress?
 ): CaptureProgressUiState {
     if (stillCaptureProgress == null) return CaptureProgressUiState.Indeterminate
