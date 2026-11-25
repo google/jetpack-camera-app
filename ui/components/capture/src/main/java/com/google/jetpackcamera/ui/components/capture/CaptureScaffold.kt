@@ -22,6 +22,8 @@ import androidx.camera.core.SurfaceRequest
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.Transition
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
@@ -98,6 +100,7 @@ import com.google.jetpackcamera.ui.uistate.capture.ZoomControlUiState
 import com.google.jetpackcamera.ui.uistate.capture.ZoomUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.QuickSettingsUiState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -109,7 +112,12 @@ import kotlinx.coroutines.launch
 private const val ELAPSED_TIME_EXIT_DELAY_MS = 1_500
 
 /** Duration of the fade when a group of controls is hidden or shown again. */
-private const val CHROME_FADE_DURATION_MS = 200
+private const val CHROME_FADE_OUT_DURATION_MS = 400
+private const val CHROME_FADE_IN_DURATION_MS = 300
+
+// Delay before hidden controls fade back in, so that a host that leaves the capture screen as
+// soon as the capture ends does not flash them first.
+internal const val CHROME_FADE_IN_DELAY_MS = 500L
 
 /**
  * Shared recording-visibility [Transition] provided by [CaptureScaffold] to its
@@ -1536,19 +1544,30 @@ fun CaptureScaffold(
  * when it is `true`, keeping their space in the layout.
  *
  * Hidden controls are removed from the semantics tree and stop receiving touch input as soon as
- * [visible] turns `false`, rather than when the fade ends. The fade snaps when
- * [LocalDisableAnimations] is set.
+ * [visible] turns `false`, rather than when the fade ends. When [visible] turns `true`, the
+ * controls wait [CHROME_FADE_IN_DELAY_MS] before they fade in and accept input again. The fades
+ * snap, without the delay, when [LocalDisableAnimations] is set.
  */
 @Composable
 private fun rememberChromeVisibilityModifier(visible: Boolean): Modifier {
     val disableAnimations = LocalDisableAnimations.current
+    var isShown by remember { mutableStateOf(visible) }
+    LaunchedEffect(visible, disableAnimations) {
+        if (visible && !disableAnimations) delay(CHROME_FADE_IN_DELAY_MS)
+        isShown = visible
+    }
     val alpha = animateFloatAsState(
-        targetValue = if (visible) 1f else 0f,
-        animationSpec = if (disableAnimations) snap() else tween(CHROME_FADE_DURATION_MS),
+        targetValue = if (isShown) 1f else 0f,
+        animationSpec = when {
+            disableAnimations -> snap()
+            // Start slowly, so that the fade stays visible after the viewfinder's capture blink.
+            !isShown -> tween(CHROME_FADE_OUT_DURATION_MS, easing = FastOutLinearInEasing)
+            else -> tween(CHROME_FADE_IN_DURATION_MS, easing = LinearOutSlowInEasing)
+        },
         label = "CaptureChromeAlpha"
     )
     val fade = Modifier.graphicsLayer { this.alpha = alpha.value }
-    return if (visible) {
+    return if (visible && isShown) {
         fade
     } else {
         fade
