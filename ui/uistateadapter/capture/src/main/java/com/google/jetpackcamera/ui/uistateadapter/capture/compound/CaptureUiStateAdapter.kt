@@ -233,7 +233,7 @@ fun captureUiState(
             ),
             screenFlashUiState = ScreenFlashUiState.from(trackedUiState),
             cameraErrorUiState = CameraErrorUiState.from(roundedCameraState)
-        ).withCaptureLock(captureLock)
+        ).withCaptureLock(captureLock, cameraState.stillCaptureProgress)
     }
 }
 

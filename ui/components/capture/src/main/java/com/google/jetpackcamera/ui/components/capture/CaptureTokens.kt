@@ -51,6 +51,19 @@ internal object CaptureTokens {
         MotionScheme.expressive().defaultEffectsSpec()
 
     /**
+     * Material 3 Expressive default effects spring for [Float] values, used for fades and progress
+     * changes.
+     */
+    val DefaultEffectsFloatSpec: FiniteAnimationSpec<Float> =
+        MotionScheme.expressive().defaultEffectsSpec()
+
+    /**
+     * Material 3 Expressive fast spatial spring for [Float] values, used for scale changes.
+     */
+    val FastSpatialFloatSpec: FiniteAnimationSpec<Float> =
+        MotionScheme.expressive().fastSpatialSpec()
+
+    /**
      * Stiff, slightly underdamped spring used for the press and release of a tap in standard
      * capture mode.
      */

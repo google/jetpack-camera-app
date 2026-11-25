@@ -42,6 +42,8 @@ const val DEFAULT_MAX_IN_FLIGHT_CAPTURES = 4
  * @param inFlightCapturesCount The number of still image captures currently in progress.
  * @param maxInFlightCaptures The maximum number of concurrent still image captures supported by
  * the active camera session.
+ * @param stillCaptureProgress The progress of the still image capture that the camera is taking,
+ * or `null` if no capture has started capturing frames.
  * @param stabilizationMode The current video stabilization mode. This value is updated from the
  * camera's [android.hardware.camera2.TotalCaptureResult].
  * @param lowLightBoostState The current state of the low light boost feature.
@@ -62,6 +64,7 @@ data class CameraState(
     val isCameraRunning: Boolean = false,
     val inFlightCapturesCount: Int = 0,
     val maxInFlightCaptures: Int = DEFAULT_MAX_IN_FLIGHT_CAPTURES,
+    val stillCaptureProgress: StillCaptureProgress? = null,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val lowLightBoostState: LowLightBoostState = LowLightBoostState.Inactive,
     val captureSubModeState: CaptureSubModeState = CaptureSubModeState.Idle,
@@ -84,6 +87,23 @@ data class CameraState(
     val canCaptureImage: Boolean
         get() = isCameraRunning && !isCaptureAtCapacity
 }
+
+/**
+ * The progress of a still image capture, as reported by the camera.
+ *
+ * @param startedAtUptimeMillis The [android.os.SystemClock.uptimeMillis] time at which the camera
+ * started capturing frames for the image.
+ * @param captureLatencyMillis The camera's estimate of the time from [startedAtUptimeMillis] until
+ * it has captured all frames for the image, or `null` if the camera does not report an estimate.
+ * The image can still be processing after this time.
+ * @param processProgressPercent The processing progress reported by the camera, from 0 to 100, or
+ * `null` if the camera has not reported any.
+ */
+data class StillCaptureProgress(
+    val startedAtUptimeMillis: Long,
+    val captureLatencyMillis: Long? = null,
+    val processProgressPercent: Int? = null
+)
 
 /**
  * Represents the runtime state of a capture sub-mode during a camera session.

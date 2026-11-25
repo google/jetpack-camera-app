@@ -53,6 +53,7 @@ import com.google.android.apps.common.testing.accessibility.framework.integratio
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureProgressUiState
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -282,6 +283,35 @@ class CaptureButtonTest {
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assertExists()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
         composeTestRule.onNodeWithTag(CAPTURE_BUTTON).assert(isNotEnabled())
+    }
+
+    @SdkSuppress(minSdkVersion = 34)
+    @Test
+    fun captureButton_capturing_isDisabledAndDescribesCaptureInProgress() {
+        setCenteredContent {
+            CaptureButton(
+                modifier = Modifier.testTag(CAPTURE_BUTTON),
+                onImageCapture = {},
+                onStartRecording = {},
+                onStopRecording = {},
+                onLockVideoRecording = {},
+                onIncrementZoom = {},
+                captureButtonUiState = CaptureButtonUiState.Enabled.Capturing(
+                    CaptureProgressUiState.Indeterminate
+                )
+            )
+        }
+        composeTestRule.onRoot().tryPerformAccessibilityChecks()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON_RING_BORDER).assertDoesNotExist()
+        composeTestRule.onNodeWithTag(CAPTURE_BUTTON)
+            .assert(isNotEnabled())
+            .assertContentDescriptionEquals("Capture photo")
+            .assert(
+                SemanticsMatcher.expectValue(
+                    SemanticsProperties.StateDescription,
+                    "Capture in progress"
+                )
+            )
     }
 
     @Test

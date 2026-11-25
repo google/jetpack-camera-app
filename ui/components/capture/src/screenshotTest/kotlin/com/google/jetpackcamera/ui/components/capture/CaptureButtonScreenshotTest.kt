@@ -234,3 +234,44 @@ fun LockedRecordingBlack60ScreenshotPreview() {
         )
     }
 }
+
+// --- Capture In Progress States ---
+
+@PreviewTest
+@Preview
+@Composable
+fun CapturingIndeterminateScreenshotPreview() {
+    CompositionLocalProvider(LocalDisableAnimations provides true) {
+        CapturingIndeterminateCaptureButtonPreview()
+    }
+}
+
+@PreviewTest
+@Preview
+@Composable
+fun CapturingDeterminateScreenshotPreview() {
+    CompositionLocalProvider(LocalDisableAnimations provides true) {
+        CapturingDeterminateCaptureButtonPreview()
+    }
+}
+
+@PreviewTest
+@Preview
+@Composable
+fun CapturingEstimatedScreenshotPreview() {
+    CompositionLocalProvider(LocalDisableAnimations provides true) {
+        CapturingEstimatedCaptureButtonPreview()
+    }
+}
+
+@PreviewTest
+@Preview
+@Composable
+fun CapturingDeterminateBlack60ScreenshotPreview() {
+    CompositionLocalProvider(
+        LocalCameraControlBackgroundStyle provides CameraControlBackgroundStyle.BLACK_60,
+        LocalDisableAnimations provides true
+    ) {
+        CapturingDeterminateCaptureButtonPreview()
+    }
+}

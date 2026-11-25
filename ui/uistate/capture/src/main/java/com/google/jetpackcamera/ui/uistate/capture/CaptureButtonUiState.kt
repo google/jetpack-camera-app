@@ -61,6 +61,16 @@ sealed interface CaptureButtonUiState {
         ) : Enabled
 
         /**
+         * A photo capture is in progress and cannot be interrupted. The button shows the capture
+         * progress and does not accept input.
+         *
+         * @param progress The progress of the capture.
+         */
+        data class Capturing(val progress: CaptureProgressUiState) : Enabled {
+            override val isEnabled: Boolean get() = false
+        }
+
+        /**
          * The button is in a video recording state.
          */
         sealed interface Recording : Enabled {
