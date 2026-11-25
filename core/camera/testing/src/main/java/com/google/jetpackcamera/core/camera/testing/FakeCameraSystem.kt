@@ -120,15 +120,25 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
         }
-        if (isScreenFlash) {
-            screenFlashEvents.trySend(
-                CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.APPLY_UI) { }
-            )
-            screenFlashEvents.trySend(
-                CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.CLEAR_UI) { }
-            )
+        _currentCameraState.update { old ->
+            old.copy(inFlightCapturesCount = old.inFlightCapturesCount + 1)
         }
-        numPicturesTaken += 1
+        try {
+            onCaptureStarted()
+            if (isScreenFlash) {
+                screenFlashEvents.trySend(
+                    CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.APPLY_UI) { }
+                )
+                screenFlashEvents.trySend(
+                    CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.CLEAR_UI) { }
+                )
+            }
+            numPicturesTaken += 1
+        } finally {
+            _currentCameraState.update { old ->
+                old.copy(inFlightCapturesCount = (old.inFlightCapturesCount - 1).coerceAtLeast(0))
+            }
+        }
     }
 
     @SuppressLint("RestrictedApi")

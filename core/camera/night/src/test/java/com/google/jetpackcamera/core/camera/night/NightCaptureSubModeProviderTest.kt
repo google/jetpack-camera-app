@@ -70,6 +70,11 @@ class NightCaptureSubModeProviderTest {
     }
 
     @Test
+    fun maxInFlightCaptures_isOne() {
+        assertThat(provider.maxInFlightCaptures).isEqualTo(1)
+    }
+
+    @Test
     fun isCompatibleWith_returnsTrueOnlyForImageOnly() {
         assertThat(isCompatible(CameraAppSettings(captureMode = CaptureMode.IMAGE_ONLY))).isTrue()
         assertThat(isCompatible(CameraAppSettings(captureMode = CaptureMode.STANDARD))).isFalse()

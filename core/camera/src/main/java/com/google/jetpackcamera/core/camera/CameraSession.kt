@@ -121,6 +121,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
@@ -144,11 +145,18 @@ context(CameraSessionContext)
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    onImageCaptureCreated: (ImageCapture, LensFacing) -> Unit = { _, _ -> }
+    // Called before the session unbinds its use cases to restart (for example, when the lens
+    // changes). Suspends until it is safe to stop the session, such as when no still captures are
+    // in flight, and returns the restart to pass to onImageCaptureBound.
+    awaitCapturesBeforeRestart: suspend () -> CaptureSessionGate.Restart,
+    // Called from the session's coroutine once the camera is bound after the given restart, with
+    // the session's ImageCapture. The ImageCapture is null if the session cannot take still
+    // captures, for example in video-only capture mode or because the session failed to start.
+    onImageCaptureBound: suspend (CaptureSessionGate.Restart, ImageCapture?, LensFacing) -> Unit
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
-    val initialCameraSelector = transientSettings.filterNotNull().first()
-        .primaryLensFacing.toCameraSelector()
+    val initialLensFacing = transientSettings.filterNotNull().first().primaryLensFacing
+    val initialCameraSelector = initialLensFacing.toCameraSelector()
 
     // only create video use case in standard or video_only
     val videoCaptureUseCase = try {
@@ -181,6 +189,8 @@ internal suspend fun runSingleCameraSession(
                 }
             )
         }
+        // The session cannot start. Fail still captures instead of leaving them to wait for it.
+        onImageCaptureBound(awaitCapturesBeforeRestart(), null, initialLensFacing)
         kotlinx.coroutines.awaitCancellation()
     }
 
@@ -206,7 +216,10 @@ internal suspend fun runSingleCameraSession(
                         )
                 )
         }
-        .collectLatest { currentTransientSettings ->
+        // Rebinding below stops the camera, which aborts any still capture in flight, so wait for
+        // in-flight captures to finish before each rebind.
+        .map { it to awaitCapturesBeforeRestart() }
+        .collectLatest { (currentTransientSettings, restart) ->
             coroutineScope sessionScope@{
                 cameraProvider.unbindAll()
                 val baseSelector = currentTransientSettings.primaryLensFacing
@@ -221,8 +234,8 @@ internal suspend fun runSingleCameraSession(
                     // the calling (typically main) thread.
                     val (currentCameraSelector, cameraInfo) = withContext(backgroundContext) {
                         val activeSubModeKey = sessionSettings.activeCaptureSubMode
-                        val activeBinding = activeSubModeKey
-                            ?.let { captureSubModeProviders[it]?.sessionBinding }
+                        val activeProvider = activeSubModeKey?.let { captureSubModeProviders[it] }
+                        val activeBinding = activeProvider?.sessionBinding
                             as? CameraSessionBinding.SingleCamera
                         if (activeBinding != null) {
                             try {
@@ -232,6 +245,14 @@ internal suspend fun runSingleCameraSession(
                                 )
                                 val resolvedInfo = cameraProvider.getCameraInfo(selector)
                                 boundSubModeId = activeSubModeKey.id
+                                currentCameraState.update { old ->
+                                    old.copy(
+                                        maxInFlightCaptures = minOf(
+                                            maxInFlightCaptures,
+                                            activeProvider.maxInFlightCaptures
+                                        )
+                                    )
+                                }
                                 selector to resolvedInfo
                             } catch (e: CancellationException) {
                                 throw e
@@ -246,6 +267,9 @@ internal suspend fun runSingleCameraSession(
                                 kotlinx.coroutines.awaitCancellation()
                             }
                         } else {
+                            currentCameraState.update { old ->
+                                old.copy(maxInFlightCaptures = maxInFlightCaptures)
+                            }
                             baseSelector to cameraProvider.getCameraInfo(baseSelector)
                         }
                     }
@@ -307,9 +331,6 @@ internal suspend fun runSingleCameraSession(
                         )
                     }.apply {
                         attachPreviewSurfaceProvider(useCaseGroup = this)
-                        getImageCapture()?.let { imageCapture ->
-                            onImageCaptureCreated(imageCapture, cameraInfo.appLensFacing)
-                        }
                     }
 
                     cameraProvider.runWith(
@@ -318,6 +339,13 @@ internal suspend fun runSingleCameraSession(
                     ) { camera ->
                         Log.d(TAG, "Camera session started")
                         updatePreviewOrientation(camera.cameraInfo, useCaseGroup)
+
+                        // The use cases are bound now, so captures can be sent to this session.
+                        onImageCaptureBound(
+                            restart,
+                            useCaseGroup.getImageCapture(),
+                            cameraInfo.appLensFacing
+                        )
 
                         launch {
                             processFocusMeteringEvents(
@@ -501,6 +529,9 @@ internal suspend fun runSingleCameraSession(
                             }
                         )
                     }
+                    // The session cannot start. Fail still captures instead of leaving them to
+                    // wait for it.
+                    onImageCaptureBound(restart, null, currentTransientSettings.primaryLensFacing)
                     kotlinx.coroutines.awaitCancellation()
                 }
             }
@@ -518,6 +549,7 @@ private fun CameraSessionContext.reportCaptureSubModeBindFailure(
     currentCameraState.update { old ->
         old.copy(
             isCameraRunning = false,
+            maxInFlightCaptures = maxInFlightCaptures,
             captureSubModeState = CaptureSubModeState.Error(subModeId = subModeId, error = error)
         )
     }

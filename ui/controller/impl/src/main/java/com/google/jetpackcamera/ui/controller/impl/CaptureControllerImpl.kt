@@ -99,6 +99,19 @@ class CaptureControllerImpl(
         }
         Log.d(TAG, "captureImage")
         scope.launch {
+            val cameraState = cameraSystemProvider().getCurrentCameraState().value
+            // Only a full capture queue drops the request. A capture requested while the camera
+            // session restarts is passed on: the camera system holds it for the next session, so
+            // every accepted request still ends in a capture event.
+            if (cameraState.isCaptureAtCapacity) {
+                Log.d(
+                    TAG,
+                    "captureImage ignored: in-flight captures " +
+                        "(${cameraState.inFlightCapturesCount}) at limit " +
+                        "(${cameraState.maxInFlightCaptures})"
+                )
+                return@launch
+            }
             val (saveLocation, progress) = nextSaveLocation(
                 saveMode,
                 externalCaptureMode,

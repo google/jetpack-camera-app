@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.AudioStreamState
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.core.camera.DEFAULT_MAX_IN_FLIGHT_CAPTURES
 import com.google.jetpackcamera.core.camera.VideoRecordingState
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.settings.model.CameraAppSettings
@@ -44,6 +45,8 @@ class CaptureButtonUiStateAdapterTest {
         assertThat(uiState.isEnabled).isFalse()
         assertThat((uiState as CaptureButtonUiState.Enabled.Idle).captureMode)
             .isEqualTo(CaptureMode.STANDARD)
+        // Not running is short-lived, so the button keeps the delayed disabled appearance.
+        assertThat(uiState.debounceVisualDisable).isTrue()
     }
 
     @Test
@@ -117,5 +120,76 @@ class CaptureButtonUiStateAdapterTest {
         assertThat(uiState)
             .isInstanceOf(CaptureButtonUiState.Enabled.Recording.Starting::class.java)
         assertThat(uiState.isEnabled).isTrue()
+    }
+
+    @Test
+    fun from_cameraRunning_inFlightBelowMax_returnsIdleAndEnabled() {
+        val cameraState = defaultCameraState.copy(
+            inFlightCapturesCount = 1,
+            maxInFlightCaptures = DEFAULT_MAX_IN_FLIGHT_CAPTURES
+        )
+        val uiState = CaptureButtonUiState.from(
+            defaultCameraAppSettings,
+            cameraState,
+            lockedState = false
+        )
+
+        assertThat(uiState).isInstanceOf(CaptureButtonUiState.Enabled.Idle::class.java)
+        assertThat(uiState.isEnabled).isTrue()
+        assertThat((uiState as CaptureButtonUiState.Enabled.Idle).debounceVisualDisable).isTrue()
+    }
+
+    @Test
+    fun from_cameraRunning_inFlightAtSingleCaptureMax_returnsIdleAndDisabledImmediately() {
+        val cameraState = defaultCameraState.copy(
+            inFlightCapturesCount = 1,
+            maxInFlightCaptures = 1
+        )
+        val uiState = CaptureButtonUiState.from(
+            defaultCameraAppSettings,
+            cameraState,
+            lockedState = false
+        )
+
+        assertThat(uiState).isInstanceOf(CaptureButtonUiState.Enabled.Idle::class.java)
+        assertThat(uiState.isEnabled).isFalse()
+        assertThat((uiState as CaptureButtonUiState.Enabled.Idle).debounceVisualDisable).isFalse()
+    }
+
+    @Test
+    fun from_cameraRunning_inFlightAtDefaultMax_returnsIdleAndDisabledImmediately() {
+        val cameraState = defaultCameraState.copy(
+            inFlightCapturesCount = DEFAULT_MAX_IN_FLIGHT_CAPTURES,
+            maxInFlightCaptures = DEFAULT_MAX_IN_FLIGHT_CAPTURES
+        )
+        val uiState = CaptureButtonUiState.from(
+            defaultCameraAppSettings,
+            cameraState,
+            lockedState = false
+        )
+
+        assertThat(uiState).isInstanceOf(CaptureButtonUiState.Enabled.Idle::class.java)
+        assertThat(uiState.isEnabled).isFalse()
+        assertThat((uiState as CaptureButtonUiState.Enabled.Idle).debounceVisualDisable).isFalse()
+    }
+
+    @Test
+    fun from_cameraRunning_sessionRestarting_returnsIdleAndDisabledWithDebounce() {
+        // The old session keeps running while a restart waits for captures in flight.
+        val cameraState = defaultCameraState.copy(
+            inFlightCapturesCount = 1,
+            maxInFlightCaptures = DEFAULT_MAX_IN_FLIGHT_CAPTURES,
+            isSessionRestarting = true
+        )
+        val uiState = CaptureButtonUiState.from(
+            defaultCameraAppSettings,
+            cameraState,
+            lockedState = false
+        )
+
+        assertThat(uiState).isInstanceOf(CaptureButtonUiState.Enabled.Idle::class.java)
+        assertThat(uiState.isEnabled).isFalse()
+        // A restart is usually brief, so the button does not dim straight away.
+        assertThat((uiState as CaptureButtonUiState.Enabled.Idle).debounceVisualDisable).isTrue()
     }
 }

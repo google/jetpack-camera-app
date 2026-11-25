@@ -57,5 +57,11 @@ data class CameraSessionContext(
     val captureSubModeProviders: Map<CaptureSubModeFeatureKey, CaptureSubModeProvider> =
         emptyMap(),
     val sessionSettings: PerpetualSessionSettings? = null,
-    val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap()
+    val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap(),
+    /**
+     * The maximum number of still captures the host application allows in flight at once. The
+     * effective limit is the lower of this and the active capture sub-mode's
+     * [com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider.maxInFlightCaptures].
+     */
+    val maxInFlightCaptures: Int = DEFAULT_MAX_IN_FLIGHT_CAPTURES
 ) : CameraSessionScope

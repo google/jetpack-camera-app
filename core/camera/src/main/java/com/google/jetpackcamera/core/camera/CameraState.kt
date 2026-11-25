@@ -24,6 +24,12 @@ import com.google.jetpackcamera.model.StabilizationMode
 import com.google.jetpackcamera.model.VideoQuality
 
 /**
+ * Default maximum number of image captures allowed in flight concurrently in a standard
+ * single-camera session, matching CameraX's internal `CaptureNode.MAX_IMAGES` capacity.
+ */
+const val DEFAULT_MAX_IN_FLIGHT_CAPTURES = 4
+
+/**
  * Represents the state of the camera.
  *
  * @param videoRecordingState The current state of video recording.
@@ -33,6 +39,13 @@ import com.google.jetpackcamera.model.VideoQuality
  * @param sessionFirstFrameTimestamp The timestamp of the first frame of the current camera session.
  * @param isTorchEnabled Whether the torch is currently enabled.
  * @param isCameraRunning Whether the camera is currently running.
+ * @param inFlightCapturesCount The number of still image captures currently in progress.
+ * @param maxInFlightCaptures The maximum number of concurrent still image captures supported by
+ * the active camera session.
+ * @param isSessionRestarting Whether the camera session is starting or restarting. This is `true`
+ * from when the restart is requested, while the previous session can still be running, until the
+ * next session is bound. A still image capture requested meanwhile is held and taken by the next
+ * session.
  * @param stabilizationMode The current video stabilization mode. This value is updated from the
  * camera's [android.hardware.camera2.TotalCaptureResult].
  * @param lowLightBoostState The current state of the low light boost feature.
@@ -51,6 +64,9 @@ data class CameraState(
     val sessionFirstFrameTimestamp: Long = 0L,
     val isTorchEnabled: Boolean = false,
     val isCameraRunning: Boolean = false,
+    val inFlightCapturesCount: Int = 0,
+    val maxInFlightCaptures: Int = DEFAULT_MAX_IN_FLIGHT_CAPTURES,
+    val isSessionRestarting: Boolean = false,
     val stabilizationMode: StabilizationMode = StabilizationMode.OFF,
     val lowLightBoostState: LowLightBoostState = LowLightBoostState.Inactive,
     val captureSubModeState: CaptureSubModeState = CaptureSubModeState.Idle,
@@ -59,7 +75,21 @@ data class CameraState(
     val focusState: FocusState = FocusState.Unspecified,
     val cameraError: CameraError? = null,
     val isPreviewLandscape: Boolean? = null
-)
+) {
+    /**
+     * Whether the active camera session has reached its maximum concurrent in-flight image
+     * capture capacity.
+     */
+    val isCaptureAtCapacity: Boolean
+        get() = inFlightCapturesCount >= maxInFlightCaptures
+
+    /**
+     * Whether a capture started now runs on the current camera session: the camera is running, the
+     * session is not restarting, and there is capacity for another still image capture.
+     */
+    val canStartCapture: Boolean
+        get() = isCameraRunning && !isSessionRestarting && !isCaptureAtCapacity
+}
 
 /**
  * Represents the runtime state of a capture sub-mode during a camera session.
