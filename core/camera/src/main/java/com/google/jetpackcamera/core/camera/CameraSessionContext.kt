@@ -59,12 +59,6 @@ data class CameraSessionContext(
     val sessionSettings: PerpetualSessionSettings? = null,
     val perLensConstraints: Map<LensFacing, CameraConstraints> = emptyMap(),
     /**
-     * Called before the session unbinds its use cases to restart (for example, when the lens
-     * changes). Suspends until it is safe to stop the session, such as when no still captures are
-     * in flight.
-     */
-    val awaitCapturesBeforeRestart: suspend () -> Unit = {},
-    /**
      * The maximum number of still captures the host application allows in flight at once. The
      * effective limit is the lower of this and the active capture sub-mode's
      * [com.google.jetpackcamera.core.camera.submode.CaptureSubModeProvider.maxInFlightCaptures].

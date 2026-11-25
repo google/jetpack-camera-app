@@ -124,6 +124,7 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
             old.copy(inFlightCapturesCount = old.inFlightCapturesCount + 1)
         }
         try {
+            onCaptureStarted()
             if (isScreenFlash) {
                 screenFlashEvents.trySend(
                     CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.APPLY_UI) { }

@@ -121,8 +121,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -145,13 +145,18 @@ context(CameraSessionContext)
 internal suspend fun runSingleCameraSession(
     sessionSettings: PerpetualSessionSettings.SingleCamera,
     // TODO(tm): ImageCapture should go through an event channel like VideoCapture
-    // Called once the camera is bound with the session's ImageCapture, or null if the session has
-    // no ImageCapture (for example, in video-only capture mode).
-    onImageCaptureBound: suspend (ImageCapture?, LensFacing) -> Unit = { _, _ -> }
+    // Called before the session unbinds its use cases to restart (for example, when the lens
+    // changes). Suspends until it is safe to stop the session, such as when no still captures are
+    // in flight, and returns the restart to pass to onImageCaptureBound.
+    awaitCapturesBeforeRestart: suspend () -> CaptureSessionGate.Restart,
+    // Called from the session's coroutine once the camera is bound after the given restart, with
+    // the session's ImageCapture. The ImageCapture is null if the session cannot take still
+    // captures, for example in video-only capture mode or because the session failed to start.
+    onImageCaptureBound: suspend (CaptureSessionGate.Restart, ImageCapture?, LensFacing) -> Unit
 ) = coroutineScope {
     Log.d(TAG, "Starting new single camera session")
-    val initialCameraSelector = transientSettings.filterNotNull().first()
-        .primaryLensFacing.toCameraSelector()
+    val initialLensFacing = transientSettings.filterNotNull().first().primaryLensFacing
+    val initialCameraSelector = initialLensFacing.toCameraSelector()
 
     // only create video use case in standard or video_only
     val videoCaptureUseCase = try {
@@ -184,6 +189,8 @@ internal suspend fun runSingleCameraSession(
                 }
             )
         }
+        // The session cannot start. Fail still captures instead of leaving them to wait for it.
+        onImageCaptureBound(awaitCapturesBeforeRestart(), null, initialLensFacing)
         kotlinx.coroutines.awaitCancellation()
     }
 
@@ -211,8 +218,8 @@ internal suspend fun runSingleCameraSession(
         }
         // Rebinding below stops the camera, which aborts any still capture in flight, so wait for
         // in-flight captures to finish before each rebind.
-        .onEach { awaitCapturesBeforeRestart() }
-        .collectLatest { currentTransientSettings ->
+        .map { it to awaitCapturesBeforeRestart() }
+        .collectLatest { (currentTransientSettings, restart) ->
             coroutineScope sessionScope@{
                 cameraProvider.unbindAll()
                 val baseSelector = currentTransientSettings.primaryLensFacing
@@ -261,11 +268,7 @@ internal suspend fun runSingleCameraSession(
                             }
                         } else {
                             currentCameraState.update { old ->
-                                if (old.maxInFlightCaptures != maxInFlightCaptures) {
-                                    old.copy(maxInFlightCaptures = maxInFlightCaptures)
-                                } else {
-                                    old
-                                }
+                                old.copy(maxInFlightCaptures = maxInFlightCaptures)
                             }
                             baseSelector to cameraProvider.getCameraInfo(baseSelector)
                         }
@@ -339,6 +342,7 @@ internal suspend fun runSingleCameraSession(
 
                         // The use cases are bound now, so captures can be sent to this session.
                         onImageCaptureBound(
+                            restart,
                             useCaseGroup.getImageCapture(),
                             cameraInfo.appLensFacing
                         )
@@ -525,6 +529,9 @@ internal suspend fun runSingleCameraSession(
                             }
                         )
                     }
+                    // The session cannot start. Fail still captures instead of leaving them to
+                    // wait for it.
+                    onImageCaptureBound(restart, null, currentTransientSettings.primaryLensFacing)
                     kotlinx.coroutines.awaitCancellation()
                 }
             }

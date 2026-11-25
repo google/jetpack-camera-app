@@ -383,7 +383,7 @@ internal fun CaptureButton(
  * @return A [State] holding `true` if the button should be visually disabled, `false` otherwise.
  */
 @Composable
-private fun rememberDebouncedVisuallyDisabled(
+internal fun rememberDebouncedVisuallyDisabled(
     captureButtonUiState: CaptureButtonUiState,
     delayMillis: Long = 1000L
 ): State<Boolean> {

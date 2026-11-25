@@ -420,6 +420,23 @@ class CaptureControllerImplTest {
         assertThat(event).isInstanceOf(ImageCaptureEvent.SingleImageSaved::class.java)
     }
 
+    @Test
+    fun captureImage_sessionRestarting_isPassedToCameraSystem() = runCameraTest {
+        val controller = createCaptureController()
+        fakeCameraSystem.setCurrentCameraState(
+            CameraState(isCameraRunning = true, isSessionRestarting = true)
+        )
+
+        controller.captureImage(contentResolver)
+        advanceUntilIdle()
+
+        // The request is not dropped: the camera system decides when to take it, and the caller
+        // always receives a capture event.
+        assertThat(fakeCameraSystem.numPicturesTaken).isEqualTo(1)
+        assertThat(captureEvents.receive())
+            .isInstanceOf(ImageCaptureEvent.SingleImageSaved::class.java)
+    }
+
     private fun runCameraTest(testBody: suspend TestScope.() -> Unit) = runTest(testDispatcher) {
         backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
             fakeCameraSystem.initialize(DEFAULT_CAMERA_APP_SETTINGS) {}

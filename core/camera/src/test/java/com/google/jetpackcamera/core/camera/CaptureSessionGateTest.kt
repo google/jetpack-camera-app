@@ -21,6 +21,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -36,15 +37,17 @@ class CaptureSessionGateTest {
 
     private val testScope = TestScope(StandardTestDispatcher())
     private var inFlightCaptures = 0
+    private val restartingChanges = mutableListOf<Boolean>()
     private val gate = CaptureSessionGate<String>(
         onInFlightCapturesChanged = { delta -> inFlightCaptures += delta },
+        onRestartingChanged = { isRestarting -> restartingChanges += isRestarting },
         idleTimeoutMillis = IDLE_TIMEOUT_MILLIS,
         acquireTimeoutMillis = ACQUIRE_TIMEOUT_MILLIS
     )
 
     @Test
     fun withCapture_whenOpen_runsOnBoundTargetAndCountsInFlight() = testScope.runTest {
-        gate.open(OLD_SESSION)
+        bindSession(OLD_SESSION)
         val captureFinished = CompletableDeferred<Unit>()
 
         val capture = async {
@@ -66,7 +69,7 @@ class CaptureSessionGateTest {
 
     @Test
     fun closeAndAwaitIdle_waitsForInFlightCaptureBeforeReturning() = testScope.runTest {
-        gate.open(OLD_SESSION)
+        bindSession(OLD_SESSION)
         val captureFinished = CompletableDeferred<Unit>()
         val capture = async {
             gate.withCapture { target ->
@@ -76,26 +79,123 @@ class CaptureSessionGateTest {
         }
         runCurrent()
 
-        var restartAllowed = false
-        launch {
-            gate.closeAndAwaitIdle()
-            restartAllowed = true
-        }
+        val restart = async { gate.closeAndAwaitIdle() }
         runCurrent()
         // The session must not stop while the capture is in flight.
-        assertThat(restartAllowed).isFalse()
+        assertThat(restart.isCompleted).isFalse()
 
         captureFinished.complete(Unit)
         runCurrent()
 
         assertThat(capture.await()).isEqualTo(OLD_SESSION)
-        assertThat(restartAllowed).isTrue()
+        assertThat(restart.isCompleted).isTrue()
+    }
+
+    @Test
+    fun closeAndAwaitIdle_reportsRestartingUntilNextSessionIsBound() = testScope.runTest {
+        bindSession(OLD_SESSION)
+        restartingChanges.clear()
+        val captureFinished = CompletableDeferred<Unit>()
+        launch { gate.withCapture { captureFinished.await() } }
+        runCurrent()
+
+        val restart = async { gate.closeAndAwaitIdle() }
+        runCurrent()
+
+        // Reported as soon as the restart begins, while it still waits for the capture in flight.
+        assertThat(restart.isCompleted).isFalse()
+        assertThat(restartingChanges).containsExactly(true)
+
+        captureFinished.complete(Unit)
+        gate.open(restart.await(), NEW_SESSION)
+
+        assertThat(restartingChanges).containsExactly(true, false).inOrder()
+    }
+
+    @Test
+    fun open_withoutCaptureTarget_reportsRestartFinished() = testScope.runTest {
+        val restart = gate.closeAndAwaitIdle()
+
+        gate.open(restart, null)
+
+        assertThat(restartingChanges).containsExactly(true, false).inOrder()
+    }
+
+    @Test
+    fun open_forRestartThatNewerRestartReplaced_isIgnored() = testScope.runTest {
+        val replacedRestart = gate.closeAndAwaitIdle()
+        val latestRestart = gate.closeAndAwaitIdle()
+
+        // The session of the replaced restart finishes binding after the newer restart began.
+        gate.open(replacedRestart, OLD_SESSION)
+
+        assertThat(gate.currentTarget).isNull()
+        assertThat(restartingChanges).containsExactly(true, true)
+
+        gate.open(latestRestart, NEW_SESSION)
+
+        assertThat(gate.currentTarget).isEqualTo(NEW_SESSION)
+    }
+
+    @Test
+    fun open_fromCancelledSession_doesNotOpen() = testScope.runTest {
+        val restart = gate.closeAndAwaitIdle()
+
+        // Like a session that finishes binding after it was cancelled.
+        launch {
+            cancel()
+            gate.open(restart, OLD_SESSION)
+        }
+        runCurrent()
+
+        assertThat(gate.currentTarget).isNull()
+        assertThat(restartingChanges).containsExactly(true)
+    }
+
+    @Test
+    fun open_whenSessionEnds_closesGateUntilNextSessionIsBound() = testScope.runTest {
+        val session = launch {
+            gate.open(gate.closeAndAwaitIdle(), OLD_SESSION)
+            awaitCancellation()
+        }
+        runCurrent()
+        assertThat(gate.currentTarget).isEqualTo(OLD_SESSION)
+
+        // The camera stops without a restart.
+        session.cancel()
+        runCurrent()
+
+        assertThat(gate.currentTarget).isNull()
+        // A capture requested while the camera is stopped waits for the next session.
+        val capture = async { gate.withCapture { target -> target } }
+        runCurrent()
+        assertThat(capture.isCompleted).isFalse()
+
+        bindSession(NEW_SESSION)
+
+        assertThat(capture.await()).isEqualTo(NEW_SESSION)
+    }
+
+    @Test
+    fun open_whenSessionEndsAfterNextSessionIsBound_keepsGateOpen() = testScope.runTest {
+        val oldSession = launch {
+            gate.open(gate.closeAndAwaitIdle(), OLD_SESSION)
+            awaitCancellation()
+        }
+        runCurrent()
+        // The camera restarts, and the next session is bound before the old one finishes ending.
+        bindSession(NEW_SESSION)
+
+        oldSession.cancel()
+        runCurrent()
+
+        assertThat(gate.currentTarget).isEqualTo(NEW_SESSION)
     }
 
     @Test
     fun withCapture_requestedDuringRestart_runsOnNewSession() = testScope.runTest {
-        gate.open(OLD_SESSION)
-        gate.closeAndAwaitIdle()
+        bindSession(OLD_SESSION)
+        val restart = gate.closeAndAwaitIdle()
 
         // A capture requested after the restart began must not go to the old session.
         val capture = async { gate.withCapture { target -> target } }
@@ -103,7 +203,7 @@ class CaptureSessionGateTest {
         assertThat(capture.isCompleted).isFalse()
         assertThat(inFlightCaptures).isEqualTo(0)
 
-        gate.open(NEW_SESSION)
+        gate.open(restart, NEW_SESSION)
 
         assertThat(capture.await()).isEqualTo(NEW_SESSION)
         assertThat(inFlightCaptures).isEqualTo(0)
@@ -111,7 +211,7 @@ class CaptureSessionGateTest {
 
     @Test
     fun withCapture_whenSessionHasNoCaptureTarget_throwsWithoutWaiting() = testScope.runTest {
-        gate.open(null)
+        bindSession(null)
 
         val result = runCatching { gate.withCapture { target -> target } }
 
@@ -137,30 +237,26 @@ class CaptureSessionGateTest {
 
     @Test
     fun closeAndAwaitIdle_whenCaptureNeverFinishes_returnsAfterIdleTimeout() = testScope.runTest {
-        gate.open(OLD_SESSION)
+        bindSession(OLD_SESSION)
         val neverFinishes = CompletableDeferred<Unit>()
         val capture = launch { gate.withCapture { neverFinishes.await() } }
         runCurrent()
 
-        var restartAllowed = false
-        launch {
-            gate.closeAndAwaitIdle()
-            restartAllowed = true
-        }
+        val restart = async { gate.closeAndAwaitIdle() }
 
         advanceTimeBy(IDLE_TIMEOUT_MILLIS - 1)
         runCurrent()
-        assertThat(restartAllowed).isFalse()
+        assertThat(restart.isCompleted).isFalse()
 
         advanceTimeBy(2)
         runCurrent()
-        assertThat(restartAllowed).isTrue()
+        assertThat(restart.isCompleted).isTrue()
         capture.cancel()
     }
 
     @Test
     fun withCapture_whenBlockThrows_releasesCapture() = testScope.runTest {
-        gate.open(OLD_SESSION)
+        bindSession(OLD_SESSION)
 
         val result = runCatching {
             gate.withCapture { throw IllegalArgumentException("capture failed") }
@@ -173,7 +269,7 @@ class CaptureSessionGateTest {
 
     @Test
     fun withCapture_whenCancelledDuringBlock_releasesCapture() = testScope.runTest {
-        gate.open(OLD_SESSION)
+        bindSession(OLD_SESSION)
         val captureJob = launch {
             gate.withCapture {
                 awaitCancellation()
@@ -205,7 +301,7 @@ class CaptureSessionGateTest {
             idleTimeoutMillis = IDLE_TIMEOUT_MILLIS,
             acquireTimeoutMillis = ACQUIRE_TIMEOUT_MILLIS
         )
-        raceGate.open(OLD_SESSION)
+        raceGate.open(raceGate.closeAndAwaitIdle(), OLD_SESSION)
 
         var blockEntered = false
         captureJob = launch {
@@ -224,14 +320,19 @@ class CaptureSessionGateTest {
     fun currentTarget_reflectsGateState() = testScope.runTest {
         assertThat(gate.currentTarget).isNull()
 
-        gate.open(OLD_SESSION)
+        bindSession(OLD_SESSION)
         assertThat(gate.currentTarget).isEqualTo(OLD_SESSION)
 
-        gate.closeAndAwaitIdle()
+        val restart = gate.closeAndAwaitIdle()
         assertThat(gate.currentTarget).isNull()
 
-        gate.open(null)
+        gate.open(restart, null)
         assertThat(gate.currentTarget).isNull()
+    }
+
+    /** Restarts the gate and binds a session that provides [target], until the test ends. */
+    private suspend fun bindSession(target: String?) {
+        gate.open(gate.closeAndAwaitIdle(), target)
     }
 
     private companion object {
