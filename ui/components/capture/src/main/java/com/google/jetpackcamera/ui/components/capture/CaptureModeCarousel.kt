@@ -51,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -140,6 +141,9 @@ private const val SELECTION_CONFIRMATION_TIMEOUT_MS = 500L
  * The row also follows selection changes made outside of the carousel. These corrections never
  * start while the user is dragging the row or while a fling or tap is moving it.
  *
+ * When [CaptureSubModeUiState.Available.isEnabled] is `false`, the whole carousel is dimmed and
+ * ignores taps and drags.
+ *
  * When the carousel is drawn over the viewfinder, as reported by [OverlapAwareStyleProvider], the
  * unselected labels are drawn with a dark shadow so that they stay legible on bright scenes.
  */
@@ -215,12 +219,16 @@ fun CaptureModeCarousel(
     val selectedIndex = ids.indexOf(uiState.selectedSubMode).coerceAtLeast(0)
     val selectedId = ids[selectedIndex]
 
-    fun isEnabled(index: Int) = items[index] is SingleSelectableUiState.SelectableUi
+    // While the carousel is disabled as a whole, every item is disabled and the row cannot be
+    // dragged, so the row stays on the selected item.
+    val isCarouselEnabled = uiState.isEnabled
+    fun isEnabled(index: Int) =
+        isCarouselEnabled && items[index] is SingleSelectableUiState.SelectableUi
 
     // Each item is anchored at the offset that centers it. Disabled items are laid out but are not
     // anchors, so the row never comes to rest on them. The selected item is always an anchor so
     // that the row can rest on it.
-    val anchoredIndices = remember(items, selectedIndex) {
+    val anchoredIndices = remember(items, selectedIndex, isCarouselEnabled) {
         items.indices.filter { isEnabled(it) || it == selectedIndex }
     }
     val anchors = remember(geometry, anchoredIndices) {
@@ -415,6 +423,7 @@ fun CaptureModeCarousel(
             .anchoredDraggable(
                 state = state,
                 orientation = Orientation.Horizontal,
+                enabled = isCarouselEnabled,
                 interactionSource = interactionSource,
                 flingBehavior = flingBehavior
             )
@@ -466,6 +475,7 @@ fun CaptureModeCarousel(
             modifier = Modifier
                 .fillMaxSize()
                 .clearAndSetSemantics {}
+                .alpha(if (isCarouselEnabled) 1f else DISABLED_CONTENT_ALPHA)
                 .drawWithContent {
                     val pillWidth = geometry.pillWidth(position())
                     val pillHeight = PillHeight.toPx()

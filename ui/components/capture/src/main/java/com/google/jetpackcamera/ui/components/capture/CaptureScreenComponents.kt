@@ -637,7 +637,8 @@ fun AmplitudeToggleButton(
  * A toggle switch that allows the user to switch between image and video capture modes.
  *
  * This component visually represents the selected mode with distinct icons for photo and video.
- * It is only enabled when both capture modes are available to the camera. The track color is
+ * It is only enabled when both capture modes are available to the camera and
+ * [CaptureModeToggleUiState.Available.isEnabled] is `true`. The track color is
  * determined by [LocalCameraControlBackgroundStyle], so that the toggle remains legible when drawn
  * over the viewfinder.
  *
@@ -676,13 +677,15 @@ fun CaptureModeToggleButton(
     }
 
     val enabled =
-        uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
+        uiState.isEnabled &&
+            uiState.isCaptureModeSelectable(CaptureMode.VIDEO_ONLY) &&
             uiState.isCaptureModeSelectable(
                 CaptureMode.IMAGE_ONLY
             ) && uiState.selectedCaptureMode != CaptureMode.STANDARD
 
     val currentOnToggleWhenDisabled by rememberUpdatedState(onToggleWhenDisabled)
-    val disabledReason: DisableRationale? = if (!enabled) {
+    // A toggle that is disabled as a whole has no per-mode rationale to explain.
+    val disabledReason: DisableRationale? = if (!enabled && uiState.isEnabled) {
         (
             uiState.findSelectableStateFor(CaptureMode.VIDEO_ONLY) as?
                 SingleSelectableUiState.Disabled<CaptureMode>
@@ -1442,6 +1445,7 @@ internal fun <T : Any> rememberLastNonNull(value: T?): T? {
  * A button that allows the user to flip between the front and rear cameras.
  *
  * This button is only visible and enabled if the device has more than one camera lens available.
+ * It is also disabled while [FlipLensUiState.Available.isEnabled] is `false`.
  *
  * @param enabled the enabled condition for this component.
  * @param flipLensUiState the [FlipLensUiState] for this component.
@@ -1488,7 +1492,7 @@ fun FlipCameraButton(
         FilledIconButton(
             modifier = modifier.size(56.dp),
             onClick = onClick,
-            enabled = enabled,
+            enabled = enabled && flipLensUiState.isEnabled,
             shape = RoundedCornerShape(12.dp),
             colors = IconButtonDefaults.filledIconButtonColors(
                 containerColor = backgroundStyle.containerColor,

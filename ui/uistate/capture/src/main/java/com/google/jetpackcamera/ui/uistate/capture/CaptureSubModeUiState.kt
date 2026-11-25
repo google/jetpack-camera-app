@@ -36,9 +36,19 @@ data class CaptureSubModeOption(
 sealed interface CaptureSubModeUiState {
     data object Unavailable : CaptureSubModeUiState
 
+    /**
+     * The carousel is shown.
+     *
+     * @param selectedSubMode The selected sub-mode.
+     * @param availableSubModes The sub-modes shown in the carousel, in display order. Each one is
+     * either selectable or disabled with a rationale.
+     * @param isEnabled Whether the user can change the sub-mode with the carousel. When `false`,
+     * the whole carousel is shown disabled and ignores taps and drags.
+     */
     data class Available(
         val selectedSubMode: CaptureSubModeId,
-        val availableSubModes: List<SingleSelectableUiState<CaptureSubModeOption>>
+        val availableSubModes: List<SingleSelectableUiState<CaptureSubModeOption>>,
+        val isEnabled: Boolean = true
     ) : CaptureSubModeUiState
 
     companion object
