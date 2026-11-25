@@ -23,6 +23,7 @@ import androidx.camera.core.SurfaceRequest
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
 import com.google.jetpackcamera.core.camera.OnVideoRecordEvent
+import com.google.jetpackcamera.core.camera.StillCaptureProgress
 import com.google.jetpackcamera.model.AspectRatio
 import com.google.jetpackcamera.model.CameraEffectId
 import com.google.jetpackcamera.model.CameraZoomRatio
@@ -116,6 +117,18 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
             }
     }
 
+    /**
+     * The progress set on [CameraState.stillCaptureProgress] while a capture taken with
+     * [takePicture] is in flight, or `null` to report no progress.
+     */
+    var stillCaptureProgress: StillCaptureProgress? = null
+
+    /**
+     * Called while a capture taken with [takePicture] is in flight, after the capture has started
+     * and [stillCaptureProgress] is published. Suspend in this block to keep the capture in flight.
+     */
+    var onCaptureInFlight: suspend () -> Unit = {}
+
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
         if (!useCasesBinded) {
             throw IllegalStateException("Usecases not bound")
@@ -125,6 +138,10 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
         }
         try {
             onCaptureStarted()
+            stillCaptureProgress?.let { progress ->
+                _currentCameraState.update { it.copy(stillCaptureProgress = progress) }
+            }
+            onCaptureInFlight()
             if (isScreenFlash) {
                 screenFlashEvents.trySend(
                     CameraSystem.ScreenFlashEvent(CameraSystem.ScreenFlashEvent.Type.APPLY_UI) { }
@@ -136,7 +153,10 @@ class FakeCameraSystem(defaultCameraSettings: CameraAppSettings = CameraAppSetti
             numPicturesTaken += 1
         } finally {
             _currentCameraState.update { old ->
-                old.copy(inFlightCapturesCount = (old.inFlightCapturesCount - 1).coerceAtLeast(0))
+                old.copy(
+                    inFlightCapturesCount = (old.inFlightCapturesCount - 1).coerceAtLeast(0),
+                    stillCaptureProgress = null
+                )
             }
         }
     }

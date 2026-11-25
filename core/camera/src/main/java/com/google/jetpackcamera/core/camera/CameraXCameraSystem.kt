@@ -35,6 +35,7 @@ import androidx.camera.core.CameraXConfig
 import androidx.camera.core.DynamicRange as CXDynamicRange
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCapture.OutputFileOptions
+import androidx.camera.core.ImageCaptureLatencyEstimate
 import androidx.camera.core.SurfaceRequest
 import androidx.camera.core.takePicture
 import androidx.camera.lifecycle.ExperimentalCameraProviderConfiguration
@@ -812,16 +813,33 @@ class CameraXCameraSystem(
 
     override suspend fun takePicture(onCaptureStarted: (() -> Unit)) {
         imageCaptureGate.withCapture { bound ->
+            val progress = bound.useCase.newProgressPublisher()
             try {
-                val imageProxy = bound.useCase.takePicture(onCaptureStarted)
+                val imageProxy = bound.useCase.takePicture(
+                    onCaptureStarted = {
+                        progress.onCaptureStarted()
+                        onCaptureStarted()
+                    },
+                    onCaptureProcessProgressed = progress::onCaptureProcessProgressed
+                )
                 Log.d(TAG, "onCaptureSuccess")
                 imageProxy.close()
             } catch (exception: Exception) {
                 Log.d(TAG, "takePicture onError: $exception")
                 throw exception
+            } finally {
+                progress.clear()
             }
         }
     }
+
+    private fun ImageCapture.newProgressPublisher() = StillCaptureProgressPublisher(
+        cameraState = currentCameraState,
+        captureLatencyMillis = {
+            realtimeCaptureLatencyEstimate.captureLatencyMillis
+                .takeIf { it != ImageCaptureLatencyEstimate.UNDEFINED_CAPTURE_LATENCY }
+        }
+    )
 
     // TODO(b/319733374): Return bitmap for external mediastore capture without URI
     override suspend fun takePicture(
@@ -895,12 +913,18 @@ class CameraXCameraSystem(
                 }
             }
 
+            val progress = bound.useCase.newProgressPublisher()
             try {
                 bound.useCase.takePicture(
                     outputFileOptions,
-                    onCaptureStarted
+                    onCaptureStarted = {
+                        progress.onCaptureStarted()
+                        onCaptureStarted()
+                    },
+                    onCaptureProcessProgressed = progress::onCaptureProcessProgressed
                 )
             } finally {
+                progress.clear()
                 closeable?.close()
             }
         }

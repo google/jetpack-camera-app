@@ -16,18 +16,23 @@
 package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.core.camera.StillCaptureProgress
+import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureChromeVisibility
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureProgressUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
 import com.google.jetpackcamera.ui.uistate.capture.ImageWellUiState
 import com.google.jetpackcamera.ui.uistate.capture.compound.CaptureUiState
+import com.google.jetpackcamera.ui.uistateadapter.capture.from
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformLatest
+import kotlinx.coroutines.withTimeoutOrNull
 
 /**
  * How long the capture queue must stay full before the capture screen treats the capture as a
@@ -48,7 +53,7 @@ internal enum class CaptureLock {
 
     /**
      * A long capture is in progress. In addition to [CONTROLS_DISABLED], the controls that are not
-     * needed during the capture are hidden.
+     * needed during the capture are hidden, and the capture button shows the capture progress.
      */
     IN_PROGRESS
 }
@@ -58,7 +63,8 @@ internal enum class CaptureLock {
  *
  * The controls are disabled as soon as the capture queue is full, and hidden if it is still full
  * after [inProgressDelayMillis]. A queue that drains sooner, such as during a quick burst of
- * photos, never hides them.
+ * photos, never hides them. If the camera estimates that the capture takes at least
+ * [inProgressDelayMillis], the controls are hidden as soon as the capture starts.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 internal fun captureLock(
@@ -70,19 +76,44 @@ internal fun captureLock(
     .transformLatest { isQueueFull ->
         if (isQueueFull) {
             emit(CaptureLock.CONTROLS_DISABLED)
-            delay(inProgressDelayMillis)
+            withTimeoutOrNull(inProgressDelayMillis) {
+                cameraState.first { it.isLongCapture(inProgressDelayMillis) }
+            }
             emit(CaptureLock.IN_PROGRESS)
         } else {
             emit(CaptureLock.NONE)
         }
     }
 
+/** Whether the camera estimates that the capture in progress takes at least [thresholdMillis]. */
+private fun CameraState.isLongCapture(thresholdMillis: Long): Boolean =
+    (stillCaptureProgress?.captureLatencyMillis ?: 0L) >= thresholdMillis
+
 /**
  * Returns a copy of this state with the controls that [lock] locks disabled or hidden.
+ *
+ * While a capture is [CaptureLock.IN_PROGRESS], the capture button shows [stillCaptureProgress].
+ *
+ * @param lock The current capture lock.
+ * @param stillCaptureProgress The progress of the capture in progress, or `null` if the camera
+ * has not reported any.
  */
-internal fun CaptureUiState.Ready.withCaptureLock(lock: CaptureLock): CaptureUiState.Ready {
+internal fun CaptureUiState.Ready.withCaptureLock(
+    lock: CaptureLock,
+    stillCaptureProgress: StillCaptureProgress? = null
+): CaptureUiState.Ready {
     if (lock == CaptureLock.NONE) return this
+    val isInProgress = lock == CaptureLock.IN_PROGRESS
     return copy(
+        captureButtonUiState = captureButtonUiState.let {
+            if (isInProgress && it is CaptureButtonUiState.Enabled.Idle) {
+                CaptureButtonUiState.Enabled.Capturing(
+                    CaptureProgressUiState.from(stillCaptureProgress)
+                )
+            } else {
+                it
+            }
+        },
         flipLensUiState = flipLensUiState.let {
             if (it is FlipLensUiState.Available) it.copy(isEnabled = false) else it
         },
@@ -96,7 +127,7 @@ internal fun CaptureUiState.Ready.withCaptureLock(lock: CaptureLock): CaptureUiS
             if (it is ImageWellUiState.Content) it.copy(isEnabled = false) else it
         },
         isQuickSettingsButtonEnabled = false,
-        chromeVisibility = if (lock == CaptureLock.IN_PROGRESS) {
+        chromeVisibility = if (isInProgress) {
             CaptureChromeVisibility.Hidden
         } else {
             chromeVisibility

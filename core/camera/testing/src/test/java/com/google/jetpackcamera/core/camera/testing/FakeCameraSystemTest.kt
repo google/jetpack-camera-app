@@ -18,11 +18,13 @@ package com.google.jetpackcamera.core.camera.testing
 import com.google.common.truth.Truth
 import com.google.jetpackcamera.core.camera.CameraState
 import com.google.jetpackcamera.core.camera.CameraSystem
+import com.google.jetpackcamera.core.camera.StillCaptureProgress
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.FlashMode
 import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.settings.model.DEFAULT_CAMERA_APP_SETTINGS
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -195,6 +197,32 @@ class FakeCameraSystemTest {
         Truth.assertThat(
             cameraSystem.getCurrentCameraState().value.inFlightCapturesCount
         ).isEqualTo(0)
+    }
+
+    @Test
+    fun takePicture_publishesStillCaptureProgressWhileInFlight() = runTest(testDispatcher) {
+        initAndRunCamera()
+        advanceUntilIdle()
+        val progress = StillCaptureProgress(
+            startedAtUptimeMillis = 10L,
+            captureLatencyMillis = 3_000L
+        )
+        val releaseCapture = CompletableDeferred<Unit>()
+        var captureStarted = false
+        cameraSystem.stillCaptureProgress = progress
+        cameraSystem.onCaptureInFlight = { releaseCapture.await() }
+
+        val capture = launch { cameraSystem.takePicture { captureStarted = true } }
+        advanceUntilIdle()
+
+        Truth.assertThat(captureStarted).isTrue()
+        Truth.assertThat(cameraSystem.getCurrentCameraState().value.stillCaptureProgress)
+            .isEqualTo(progress)
+
+        releaseCapture.complete(Unit)
+        capture.join()
+
+        Truth.assertThat(cameraSystem.getCurrentCameraState().value.stillCaptureProgress).isNull()
     }
 
     private fun TestScope.initAndRunCamera() {

@@ -16,6 +16,7 @@
 package com.google.jetpackcamera.ui.components.capture
 
 import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.spring
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -49,6 +50,28 @@ internal object CaptureTokens {
      */
     val DefaultEffectsSpec: FiniteAnimationSpec<Color> =
         MotionScheme.expressive().defaultEffectsSpec()
+
+    /**
+     * Material 3 Expressive default effects spring for [Float] values, used for fades.
+     */
+    val DefaultEffectsFloatSpec: FiniteAnimationSpec<Float> =
+        MotionScheme.expressive().defaultEffectsSpec()
+
+    /**
+     * Non-bouncy, low-stiffness spring for determinate progress, matching Material 3 progress
+     * indicators. Progress reported in steps glides between them instead of jumping.
+     */
+    val ProgressFloatSpec: SpringSpec<Float> = spring(
+        dampingRatio = Spring.DampingRatioNoBouncy,
+        stiffness = Spring.StiffnessVeryLow,
+        visibilityThreshold = 1f / 1000f
+    )
+
+    /**
+     * Material 3 Expressive fast spatial spring for [Float] values, used for scale changes.
+     */
+    val FastSpatialFloatSpec: FiniteAnimationSpec<Float> =
+        MotionScheme.expressive().fastSpatialSpec()
 
     /**
      * Stiff, slightly underdamped spring used for the press and release of a tap in standard

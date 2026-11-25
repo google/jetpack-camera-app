@@ -18,6 +18,7 @@ package com.google.jetpackcamera.ui.uistateadapter.capture.compound
 import android.net.Uri
 import com.google.common.truth.Truth.assertThat
 import com.google.jetpackcamera.core.camera.CameraState
+import com.google.jetpackcamera.core.camera.StillCaptureProgress
 import com.google.jetpackcamera.core.camera.testing.FakeCameraSystem
 import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.model.CaptureSubModeId
@@ -26,8 +27,10 @@ import com.google.jetpackcamera.model.LensFacing
 import com.google.jetpackcamera.model.MediaDescriptor
 import com.google.jetpackcamera.settings.model.TYPICAL_SYSTEM_CONSTRAINTS
 import com.google.jetpackcamera.ui.uistate.SingleSelectableUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureChromeVisibility
 import com.google.jetpackcamera.ui.uistate.capture.CaptureModeToggleUiState
+import com.google.jetpackcamera.ui.uistate.capture.CaptureProgressUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeOption
 import com.google.jetpackcamera.ui.uistate.capture.CaptureSubModeUiState
 import com.google.jetpackcamera.ui.uistate.capture.FlipLensUiState
@@ -137,6 +140,76 @@ internal class CaptureLockTest {
     }
 
     @Test
+    fun captureLock_whenLongCaptureStarts_hidesControlsWithoutWaitingForDelay() = runTest {
+        val locks = mutableListOf<CaptureLock>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            captureLock(cameraState).toList(locks)
+        }
+
+        cameraState.value = queueFull()
+        runCurrent()
+        cameraState.value = cameraState.value.copy(
+            stillCaptureProgress = StillCaptureProgress(
+                startedAtUptimeMillis = 0L,
+                captureLatencyMillis = CAPTURE_IN_PROGRESS_DELAY_MILLIS
+            )
+        )
+        runCurrent()
+
+        assertThat(locks).containsExactly(
+            CaptureLock.NONE,
+            CaptureLock.CONTROLS_DISABLED,
+            CaptureLock.IN_PROGRESS
+        ).inOrder()
+    }
+
+    @Test
+    fun captureLock_whenEstimatedCaptureIsShorterThanDelay_waitsForDelay() = runTest {
+        val locks = mutableListOf<CaptureLock>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            captureLock(cameraState).toList(locks)
+        }
+
+        cameraState.value = queueFull().copy(
+            stillCaptureProgress = StillCaptureProgress(
+                startedAtUptimeMillis = 0L,
+                captureLatencyMillis = CAPTURE_IN_PROGRESS_DELAY_MILLIS - 1
+            )
+        )
+        runCurrent()
+        assertThat(locks.last()).isEqualTo(CaptureLock.CONTROLS_DISABLED)
+
+        advanceTimeBy(CAPTURE_IN_PROGRESS_DELAY_MILLIS)
+        runCurrent()
+        assertThat(locks.last()).isEqualTo(CaptureLock.IN_PROGRESS)
+    }
+
+    @Test
+    fun captureLock_whenProgressClearsWhileQueueStaysFull_staysInProgress() = runTest {
+        val locks = mutableListOf<CaptureLock>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            captureLock(cameraState).toList(locks)
+        }
+
+        cameraState.value = queueFull().copy(
+            stillCaptureProgress = StillCaptureProgress(
+                startedAtUptimeMillis = 0L,
+                captureLatencyMillis = CAPTURE_IN_PROGRESS_DELAY_MILLIS * 3
+            )
+        )
+        runCurrent()
+        cameraState.value = cameraState.value.copy(stillCaptureProgress = null)
+        advanceTimeBy(CAPTURE_IN_PROGRESS_DELAY_MILLIS * 2)
+        runCurrent()
+
+        assertThat(locks).containsExactly(
+            CaptureLock.NONE,
+            CaptureLock.CONTROLS_DISABLED,
+            CaptureLock.IN_PROGRESS
+        ).inOrder()
+    }
+
+    @Test
     fun withCaptureLock_none_returnsSameState() {
         val state = unlockedState()
 
@@ -165,6 +238,53 @@ internal class CaptureLockTest {
         assertThat((locked.flipLensUiState as FlipLensUiState.Available).isEnabled).isFalse()
         assertThat(locked.isQuickSettingsButtonEnabled).isFalse()
         assertThat(locked.chromeVisibility).isEqualTo(CaptureChromeVisibility.Hidden)
+    }
+
+    @Test
+    fun withCaptureLock_controlsDisabled_keepsIdleCaptureButton() {
+        val state = unlockedState()
+
+        val locked = state.withCaptureLock(
+            CaptureLock.CONTROLS_DISABLED,
+            StillCaptureProgress(startedAtUptimeMillis = 0L, captureLatencyMillis = 3_000L)
+        )
+
+        assertThat(locked.captureButtonUiState).isEqualTo(state.captureButtonUiState)
+    }
+
+    @Test
+    fun withCaptureLock_inProgress_showsCaptureProgressOnCaptureButton() {
+        val locked = unlockedState().withCaptureLock(
+            CaptureLock.IN_PROGRESS,
+            StillCaptureProgress(startedAtUptimeMillis = 5L, captureLatencyMillis = 3_000L)
+        )
+
+        assertThat(locked.captureButtonUiState).isEqualTo(
+            CaptureButtonUiState.Enabled.Capturing(
+                CaptureProgressUiState.Estimated(
+                    startedAtUptimeMillis = 5L,
+                    durationMillis = 3_000L
+                )
+            )
+        )
+    }
+
+    @Test
+    fun withCaptureLock_inProgressWithoutProgress_showsIndeterminateProgress() {
+        val locked = unlockedState().withCaptureLock(CaptureLock.IN_PROGRESS)
+
+        assertThat(locked.captureButtonUiState).isEqualTo(
+            CaptureButtonUiState.Enabled.Capturing(CaptureProgressUiState.Indeterminate)
+        )
+    }
+
+    @Test
+    fun withCaptureLock_inProgress_leavesUnavailableCaptureButtonUnchanged() {
+        val locked = unlockedState()
+            .copy(captureButtonUiState = CaptureButtonUiState.Unavailable)
+            .withCaptureLock(CaptureLock.IN_PROGRESS)
+
+        assertThat(locked.captureButtonUiState).isEqualTo(CaptureButtonUiState.Unavailable)
     }
 
     @Test
@@ -208,7 +328,49 @@ internal class CaptureLockTest {
         }
     }
 
+    @Test
+    fun captureUiState_whenLongCaptureStarts_showsCaptureProgressAndHidesChrome() = runTest {
+        val cameraSystem = FakeCameraSystem().apply {
+            setSystemConstraints(TYPICAL_SYSTEM_CONSTRAINTS)
+        }
+        val uiStates = captureUiState(
+            currentSettings = cameraSystem.getCurrentSettings(),
+            systemConstraints = cameraSystem.getSystemConstraints(),
+            currentCameraState = cameraSystem.getCurrentCameraState(),
+            trackedCaptureUiState = MutableStateFlow(TrackedCaptureUiState()),
+            externalCaptureMode = ExternalCaptureMode.Standard
+        )
+        val progress = StillCaptureProgress(
+            startedAtUptimeMillis = 100L,
+            captureLatencyMillis = 3_000L,
+            processProgressPercent = 25
+        )
+
+        cameraSystem.setCurrentCameraState(
+            CameraState(
+                isCameraRunning = true,
+                inFlightCapturesCount = 1,
+                maxInFlightCaptures = 1,
+                stillCaptureProgress = progress
+            )
+        )
+
+        val inProgress = uiStates.first {
+            it is CaptureUiState.Ready &&
+                it.captureButtonUiState is CaptureButtonUiState.Enabled.Capturing
+        } as CaptureUiState.Ready
+        assertThat(inProgress.captureButtonUiState).isEqualTo(
+            CaptureButtonUiState.Enabled.Capturing(CaptureProgressUiState.Determinate(0.25f))
+        )
+        assertThat(inProgress.chromeVisibility).isEqualTo(CaptureChromeVisibility.Hidden)
+    }
+
     private fun unlockedState() = CaptureUiState.Ready(
+        captureButtonUiState = CaptureButtonUiState.Enabled.Idle(
+            captureMode = CaptureMode.STANDARD,
+            isEnabled = false,
+            debounceVisualDisable = false
+        ),
         flipLensUiState = FlipLensUiState.Available(
             selectedLensFacing = LensFacing.BACK,
             availableLensFacings = listOf(

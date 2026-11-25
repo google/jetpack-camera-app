@@ -146,6 +146,8 @@
     <string name="capture_button_lock_video_recording">Lock video recording</string>
     <!-- Accessibility label for the capture button when it is unavailable and cannot be activated; screen readers also announce it as disabled. "Shutter" is a noun naming the camera's shutter button (the control that takes photos and records videos), not a verb. [CHAR LIMIT=NONE] -->
     <string name="capture_button_unavailable">Shutter</string>
+    <!-- Accessibility state description for the capture button while a photo is being taken and the button cannot be activated. Screen readers announce it after the button label "Capture photo". Describes the current state ("a photo capture is in progress"); not a command. [CHAR LIMIT=NONE] -->
+    <string name="capture_button_capture_in_progress">Capture in progress</string>
 
     <!-- Accessibility label for the live camera viewfinder surface where the user can tap to focus. "Camera" is a generic term. [CHAR LIMIT=NONE] -->
     <string name="camera_viewfinder_content_description">Camera viewfinder</string>
