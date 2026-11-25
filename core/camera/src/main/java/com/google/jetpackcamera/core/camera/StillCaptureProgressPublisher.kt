@@ -16,7 +16,7 @@
 package com.google.jetpackcamera.core.camera
 
 import android.os.SystemClock
-import java.util.concurrent.atomic.AtomicReference
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 
@@ -38,7 +38,7 @@ internal class StillCaptureProgressPublisher(
     private val captureLatencyMillis: () -> Long?,
     private val uptimeMillis: () -> Long = SystemClock::uptimeMillis
 ) {
-    private val published = AtomicReference<StillCaptureProgress?>(null)
+    private val published = atomic<StillCaptureProgress?>(null)
 
     /**
      * Publishes that the camera started capturing frames for this capture.
@@ -50,7 +50,7 @@ internal class StillCaptureProgressPublisher(
             StillCaptureProgress(
                 startedAtUptimeMillis = uptimeMillis(),
                 captureLatencyMillis = captureLatencyMillis()?.takeIf { it > 0 },
-                processProgressPercent = published.get()?.processProgressPercent
+                processProgressPercent = published.value?.processProgressPercent
             )
         )
     }
@@ -60,7 +60,7 @@ internal class StillCaptureProgressPublisher(
      * so a lower value than the last one published is ignored.
      */
     fun onCaptureProcessProgressed(percent: Int) {
-        val base = published.get() ?: StillCaptureProgress(startedAtUptimeMillis = uptimeMillis())
+        val base = published.value ?: StillCaptureProgress(startedAtUptimeMillis = uptimeMillis())
         val clampedPercent = percent.coerceIn(0, 100)
         if (clampedPercent < (base.processProgressPercent ?: 0)) return
         publish(base.copy(processProgressPercent = clampedPercent))
