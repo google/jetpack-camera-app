@@ -23,8 +23,8 @@ sealed interface CaptureProgressUiState {
     data object Indeterminate : CaptureProgressUiState
 
     /**
-     * The capture has completed [fraction] of its work. A [fraction] of `1` means the capture is
-     * complete: the progress indicator fills, then hides.
+     * The capture has completed [fraction] of its work. A [fraction] of `1` means the work is
+     * complete: the progress indicator fills, then spins until the capture ends.
      *
      * @param fraction The completed fraction of the capture, from 0 to 1.
      */
@@ -36,7 +36,7 @@ sealed interface CaptureProgressUiState {
 
     /**
      * The capture is expected to take [durationMillis] from [startedAtUptimeMillis]. The progress
-     * indicator fills linearly over that time, then stays full until the capture ends.
+     * indicator fills linearly over that time, then spins until the capture ends.
      *
      * @param startedAtUptimeMillis The [android.os.SystemClock.uptimeMillis] time at which the
      * capture started.

@@ -110,6 +110,34 @@ class StillCaptureProgressPublisherTest {
     }
 
     @Test
+    fun onCaptureStarted_afterProcessProgress_keepsProgress() {
+        val publisher = newPublisher()
+        publisher.onCaptureProcessProgressed(20)
+        now += 700L
+
+        publisher.onCaptureStarted()
+
+        assertThat(cameraState.value.stillCaptureProgress).isEqualTo(
+            StillCaptureProgress(
+                startedAtUptimeMillis = START_UPTIME_MILLIS + 700L,
+                captureLatencyMillis = CAPTURE_LATENCY_MILLIS,
+                processProgressPercent = 20
+            )
+        )
+    }
+
+    @Test
+    fun onCaptureProcessProgressed_lowerThanPublished_isIgnored() {
+        val publisher = newPublisher()
+        publisher.onCaptureStarted()
+        publisher.onCaptureProcessProgressed(60)
+
+        publisher.onCaptureProcessProgressed(30)
+
+        assertThat(cameraState.value.stillCaptureProgress?.processProgressPercent).isEqualTo(60)
+    }
+
+    @Test
     fun clear_removesPublishedProgress() {
         val publisher = newPublisher()
         publisher.onCaptureStarted()

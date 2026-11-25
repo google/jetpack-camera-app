@@ -40,20 +40,30 @@ internal class StillCaptureProgressPublisher(
 ) {
     private val published = AtomicReference<StillCaptureProgress?>(null)
 
-    /** Publishes that the camera started capturing frames for this capture. */
+    /**
+     * Publishes that the camera started capturing frames for this capture.
+     *
+     * Some cameras report processing progress before the capture starts; that progress is kept.
+     */
     fun onCaptureStarted() {
         publish(
             StillCaptureProgress(
                 startedAtUptimeMillis = uptimeMillis(),
-                captureLatencyMillis = captureLatencyMillis()?.takeIf { it > 0 }
+                captureLatencyMillis = captureLatencyMillis()?.takeIf { it > 0 },
+                processProgressPercent = published.get()?.processProgressPercent
             )
         )
     }
 
-    /** Publishes the processing progress of this capture, from 0 to 100. */
+    /**
+     * Publishes the processing progress of this capture, from 0 to 100. Progress never decreases,
+     * so a lower value than the last one published is ignored.
+     */
     fun onCaptureProcessProgressed(percent: Int) {
         val base = published.get() ?: StillCaptureProgress(startedAtUptimeMillis = uptimeMillis())
-        publish(base.copy(processProgressPercent = percent.coerceIn(0, 100)))
+        val clampedPercent = percent.coerceIn(0, 100)
+        if (clampedPercent < (base.processProgressPercent ?: 0)) return
+        publish(base.copy(processProgressPercent = clampedPercent))
     }
 
     /** Clears the progress of this capture, if it is still the published progress. */

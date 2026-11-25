@@ -22,11 +22,13 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.AnimationVector1D
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.snap
@@ -57,7 +59,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
@@ -68,7 +69,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -109,9 +109,9 @@ import com.google.jetpackcamera.model.CaptureMode
 import com.google.jetpackcamera.ui.uistate.capture.CaptureButtonUiState
 import com.google.jetpackcamera.ui.uistate.capture.CaptureProgressUiState
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 private const val TAG = "CaptureButton"
@@ -133,14 +133,13 @@ private const val PRESS_RELEASE_DELAY_MS = 50L
 private val BORDER_WIDTH = 3.dp
 private val LOCKED_CORNER_RADIUS = 8.dp
 
+// width of the progress arc, which fills the band between the button edge and the inner disk
 private val PROGRESS_RING_STROKE_WIDTH = 6.dp
-
-// space between the progress ring and the nucleus while a capture is in progress
-private val PROGRESS_RING_INNER_PADDING = 5.dp
-private const val ALPHA_PROGRESS_RING_TRACK = 0.2f
 private const val PROGRESS_RING_START_ANGLE = -90f
 private const val PROGRESS_RING_INDETERMINATE_SWEEP_FRACTION = 0.25f
 private const val PROGRESS_RING_ROTATION_DURATION_MS = 1_000
+private const val PROGRESS_RING_SPIN_TRANSITION_DURATION_MS = 500
+private const val PROGRESS_RING_COMPLETE_DURATION_MS = 300
 
 // scales against the size of the capture button
 private const val LOCK_SWITCH_PRESSED_NUCLEUS_SCALE = .5f
@@ -768,10 +767,11 @@ internal val LocalCaptureProgressClock = staticCompositionLocalOf<() -> Long> {
 /**
  * The progress ring drawn around the edge of the capture button while a capture is in progress.
  *
- * The ring is a white arc that starts at 12 o'clock and runs clockwise over a translucent track.
- * It fades in, and its stroke grows from zero width, when [progress] becomes non-null. It fades
- * out when [progress] becomes `null`, and after it fills for a complete
- * [CaptureProgressUiState.Determinate]. The ring is decorative and has no semantics.
+ * The ring is a white arc in the outer band of the button that starts at 12 o'clock and runs
+ * clockwise. It fades in, and its stroke grows from zero width, when [progress] becomes non-null,
+ * and fades out when [progress] becomes `null`. Progress moves smoothly and never moves backwards
+ * during a capture. Once the progress is complete, the arc spins until the capture ends. The ring
+ * is decorative and has no semantics.
  *
  * @param progress The progress to show, or `null` to hide the ring.
  * @param captureButtonSize Diameter of the capture button ring in dp.
@@ -785,78 +785,14 @@ private fun CaptureProgressRing(
 ) {
     val disableAnimations = LocalDisableAnimations.current
     val uptimeMillis = LocalCaptureProgressClock.current
-
-    // Keep drawing the last progress while the ring fades out.
-    var lastProgress by remember { mutableStateOf(progress) }
-    SideEffect {
-        if (progress != null) lastProgress = progress
-    }
-    val shownProgress = progress ?: lastProgress
-
-    val sweep = remember { Animatable(shownProgress.initialSweepFraction(uptimeMillis())) }
-    var completedProgress by remember { mutableStateOf<CaptureProgressUiState?>(null) }
-    // Forget the completed progress once the capture ends, so that the next capture can show it.
-    LaunchedEffect(progress == null) {
-        if (progress == null) completedProgress = null
-    }
-    LaunchedEffect(shownProgress, disableAnimations) {
-        when (shownProgress) {
-            is CaptureProgressUiState.Determinate -> {
-                if (disableAnimations) {
-                    sweep.snapTo(shownProgress.fraction)
-                } else {
-                    sweep.animateTo(shownProgress.fraction, CaptureTokens.DefaultEffectsFloatSpec)
-                }
-                if (shownProgress.fraction >= 1f) {
-                    completedProgress = shownProgress
-                }
-            }
-
-            is CaptureProgressUiState.Estimated -> {
-                val nowUptimeMillis = uptimeMillis()
-                sweep.snapTo(shownProgress.initialSweepFraction(nowUptimeMillis))
-                val remainingMillis = shownProgress.durationMillis -
-                    (nowUptimeMillis - shownProgress.startedAtUptimeMillis)
-                if (!disableAnimations && remainingMillis > 0) {
-                    val durationMillis = remainingMillis.coerceAtMost(Int.MAX_VALUE.toLong())
-                    sweep.animateTo(
-                        targetValue = 1f,
-                        animationSpec = tween(durationMillis.toInt(), easing = LinearEasing)
-                    )
-                }
-            }
-
-            CaptureProgressUiState.Indeterminate, null -> {}
-        }
+    val scope = rememberCoroutineScope()
+    val state = remember { CaptureProgressRingState(progress, uptimeMillis()) }
+    LaunchedEffect(progress, disableAnimations) {
+        state.update(progress, scope, animate = !disableAnimations, uptimeMillis = uptimeMillis)
     }
 
-    val isVisible = progress != null && progress != completedProgress
-    val alpha = animateFloatAsState(
-        targetValue = if (isVisible) 1f else 0f,
-        animationSpec = if (disableAnimations) snap() else CaptureTokens.DefaultEffectsFloatSpec,
-        label = "Capture Progress Ring Alpha"
-    )
-    val strokeScale = remember { Animatable(if (isVisible) 1f else 0f) }
-    LaunchedEffect(isVisible, disableAnimations) {
-        if (isVisible) {
-            if (disableAnimations) {
-                strokeScale.snapTo(1f)
-            } else {
-                strokeScale.animateTo(1f, CaptureTokens.FastSpatialFloatSpec)
-            }
-        } else {
-            // Reset once faded out, so that the next capture grows the ring from zero width.
-            snapshotFlow { alpha.value }.first { it == 0f }
-            strokeScale.snapTo(0f)
-            sweep.snapTo(0f)
-        }
-    }
-
-    val isDrawn by remember { derivedStateOf { alpha.value > 0f } }
-    val rotation = if (isDrawn &&
-        shownProgress is CaptureProgressUiState.Indeterminate &&
-        !disableAnimations
-    ) {
+    val isDrawn by remember { derivedStateOf { state.alpha.value > 0f } }
+    val rotation = if (isDrawn && state.isSpinning && !disableAnimations) {
         rememberInfiniteTransition(label = "Capture Progress Ring Rotation").animateFloat(
             initialValue = 0f,
             targetValue = 360f,
@@ -873,48 +809,187 @@ private fun CaptureProgressRing(
         modifier = modifier
             .size(captureButtonSize.dp)
             .clearAndSetSemantics {}
-            .graphicsLayer { this.alpha = alpha.value }
+            .graphicsLayer { alpha = state.alpha.value }
             .drawBehind {
-                val strokeWidth = PROGRESS_RING_STROKE_WIDTH.toPx() * strokeScale.value
-                if (!isDrawn || strokeWidth <= 0f) return@drawBehind
-                // Inset by half the stroke so the outer edge matches the button bounds.
-                drawCircle(
-                    color = Color.White.copy(alpha = ALPHA_PROGRESS_RING_TRACK),
-                    radius = (size.minDimension - strokeWidth) / 2f,
-                    style = Stroke(width = strokeWidth)
-                )
-                val isIndeterminate = shownProgress is CaptureProgressUiState.Indeterminate
-                val sweepFraction = if (isIndeterminate) {
-                    PROGRESS_RING_INDETERMINATE_SWEEP_FRACTION
+                val strokeWidth = PROGRESS_RING_STROKE_WIDTH.toPx() * state.strokeScale.value
+                val sweepFraction = state.sweep.value.coerceIn(0f, 1f)
+                if (!isDrawn || strokeWidth <= 0f || sweepFraction <= 0f) return@drawBehind
+                // While spinning, the leading end of the arc keeps rotating and the trailing end
+                // follows it, so a full ring shortens into the spinner without moving backwards.
+                val startAngle = if (state.isSpinning) {
+                    PROGRESS_RING_START_ANGLE + (rotation?.value ?: 0f) +
+                        (1f - sweepFraction) * 360f
                 } else {
-                    sweep.value.coerceIn(0f, 1f)
+                    PROGRESS_RING_START_ANGLE
                 }
-                if (sweepFraction > 0f) {
-                    drawArc(
-                        color = Color.White,
-                        startAngle = PROGRESS_RING_START_ANGLE + (rotation?.value ?: 0f),
-                        sweepAngle = sweepFraction * 360f,
-                        useCenter = false,
-                        topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f),
-                        size = Size(size.width - strokeWidth, size.height - strokeWidth),
-                        style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                    )
-                }
+                // Inset by half the stroke so the outer edge matches the button bounds.
+                drawArc(
+                    color = Color.White,
+                    startAngle = startAngle,
+                    sweepAngle = sweepFraction * 360f,
+                    useCenter = false,
+                    topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f),
+                    size = Size(size.width - strokeWidth, size.height - strokeWidth),
+                    style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                )
             }
     )
 }
 
 /**
- * Returns the fraction of the progress ring to fill when the ring first shows this progress at
- * [nowUptimeMillis].
+ * Animation state of [CaptureProgressRing] across the captures it shows.
+ *
+ * @param initialProgress The progress shown when the ring is first composed. The ring starts in
+ * its final state for this progress, so that previews render without animating.
+ * @param nowUptimeMillis The current [SystemClock.uptimeMillis] time.
  */
-private fun CaptureProgressUiState?.initialSweepFraction(nowUptimeMillis: Long): Float =
-    when (this) {
-        is CaptureProgressUiState.Determinate -> fraction
-        is CaptureProgressUiState.Estimated ->
-            ((nowUptimeMillis - startedAtUptimeMillis).toFloat() / durationMillis).coerceIn(0f, 1f)
-        CaptureProgressUiState.Indeterminate, null -> 0f
+private class CaptureProgressRingState(
+    initialProgress: CaptureProgressUiState?,
+    nowUptimeMillis: Long
+) {
+    /** Opacity of the ring. */
+    val alpha = Animatable(if (initialProgress != null) 1f else 0f)
+
+    /** Stroke width of the ring, as a fraction of [PROGRESS_RING_STROKE_WIDTH]. */
+    val strokeScale = Animatable(if (initialProgress != null) 1f else 0f)
+
+    /** Fraction of the ring that the arc covers. */
+    val sweep = Animatable(
+        if (initialProgress.isComplete(nowUptimeMillis)) {
+            PROGRESS_RING_INDETERMINATE_SWEEP_FRACTION
+        } else {
+            initialProgress.fractionAt(nowUptimeMillis)
+        }
+    )
+
+    /** Whether the arc spins, because the progress is unknown or complete. */
+    var isSpinning by mutableStateOf(initialProgress.isComplete(nowUptimeMillis))
+        private set
+
+    private var isCapturing = initialProgress != null
+    private var visibilityJob: Job? = null
+    private var progressJob: Job? = null
+
+    /**
+     * Animates the ring to show [progress].
+     *
+     * @param progress The progress of the capture, or `null` if no capture is in progress.
+     * @param scope The scope that runs the animations. They outlive a single [progress] value.
+     * @param animate Whether to animate changes, or apply them immediately.
+     * @param uptimeMillis Returns the current [SystemClock.uptimeMillis] time.
+     */
+    fun update(
+        progress: CaptureProgressUiState?,
+        scope: CoroutineScope,
+        animate: Boolean,
+        uptimeMillis: () -> Long
+    ) {
+        if (progress == null) {
+            if (isCapturing) hide(scope, animate)
+            return
+        }
+        val isNewCapture = !isCapturing
+        // A capture that starts while the previous ring is still fading out continues from it.
+        val restart = isNewCapture && alpha.value == 0f
+        if (isNewCapture) show(scope, animate, restart)
+        progressJob?.cancel()
+        progressJob = scope.launch {
+            if (restart) {
+                isSpinning = false
+                sweep.snapTo(0f)
+            }
+            animateProgress(progress, animate, uptimeMillis)
+        }
     }
+
+    private fun show(scope: CoroutineScope, animate: Boolean, restart: Boolean) {
+        isCapturing = true
+        visibilityJob?.cancel()
+        visibilityJob = scope.launch {
+            if (restart) strokeScale.snapTo(0f)
+            launch { alpha.animateToOrSnap(1f, CaptureTokens.DefaultEffectsFloatSpec, animate) }
+            strokeScale.animateToOrSnap(1f, CaptureTokens.FastSpatialFloatSpec, animate)
+        }
+    }
+
+    private fun hide(scope: CoroutineScope, animate: Boolean) {
+        isCapturing = false
+        progressJob?.cancel()
+        visibilityJob?.cancel()
+        visibilityJob = scope.launch {
+            alpha.animateToOrSnap(0f, CaptureTokens.DefaultEffectsFloatSpec, animate)
+        }
+    }
+
+    private suspend fun animateProgress(
+        progress: CaptureProgressUiState,
+        animate: Boolean,
+        uptimeMillis: () -> Long
+    ) {
+        // Once complete, the arc keeps spinning until the capture ends.
+        if (isSpinning) return
+        when (progress) {
+            CaptureProgressUiState.Indeterminate -> startSpinning(animate)
+
+            is CaptureProgressUiState.Determinate -> {
+                val target = maxOf(progress.fraction, sweep.value)
+                // The progress spring settles slowly near its target, so finish with a tween to
+                // start spinning as soon as the ring fills.
+                val spec = if (target >= 1f) {
+                    tween(PROGRESS_RING_COMPLETE_DURATION_MS, easing = FastOutSlowInEasing)
+                } else {
+                    CaptureTokens.ProgressFloatSpec
+                }
+                sweep.animateToOrSnap(target, spec, animate)
+                if (target >= 1f) startSpinning(animate)
+            }
+
+            is CaptureProgressUiState.Estimated -> {
+                val nowUptimeMillis = uptimeMillis()
+                val start = maxOf(progress.fractionAt(nowUptimeMillis), sweep.value)
+                sweep.snapTo(start)
+                val remainingMillis = ((1f - start) * progress.durationMillis).toLong()
+                    .coerceAtMost(Int.MAX_VALUE.toLong())
+                    .toInt()
+                if (animate && remainingMillis > 0) {
+                    sweep.animateTo(1f, tween(remainingMillis, easing = LinearEasing))
+                }
+                if (sweep.value >= 1f) startSpinning(animate)
+            }
+        }
+    }
+
+    private suspend fun startSpinning(animate: Boolean) {
+        isSpinning = true
+        // Shorten the arc while it starts to spin, so the progress flows into the spinner.
+        sweep.animateToOrSnap(
+            PROGRESS_RING_INDETERMINATE_SWEEP_FRACTION,
+            tween(PROGRESS_RING_SPIN_TRANSITION_DURATION_MS, easing = FastOutSlowInEasing),
+            animate
+        )
+    }
+}
+
+private suspend fun Animatable<Float, AnimationVector1D>.animateToOrSnap(
+    targetValue: Float,
+    animationSpec: AnimationSpec<Float>,
+    animate: Boolean
+) {
+    if (animate) animateTo(targetValue, animationSpec) else snapTo(targetValue)
+}
+
+/** Returns the fraction of this progress that is complete at [nowUptimeMillis]. */
+private fun CaptureProgressUiState?.fractionAt(nowUptimeMillis: Long): Float = when (this) {
+    is CaptureProgressUiState.Determinate -> fraction
+    is CaptureProgressUiState.Estimated ->
+        ((nowUptimeMillis - startedAtUptimeMillis).toFloat() / durationMillis).coerceIn(0f, 1f)
+    CaptureProgressUiState.Indeterminate, null -> 0f
+}
+
+/** Whether the ring spins for this progress at [nowUptimeMillis]. */
+private fun CaptureProgressUiState?.isComplete(nowUptimeMillis: Long): Boolean =
+    this is CaptureProgressUiState.Indeterminate ||
+        (this != null && fractionAt(nowUptimeMillis) >= 1f)
 
 /**
  * A nucleus for the capture button can be dragged to lock the pressed video recording.
@@ -1139,10 +1214,8 @@ internal fun CaptureButtonNucleus(
                 (captureButtonSize * idleVideoCaptureScale).dp
             NucleusSizeState.PressedImage ->
                 (captureButtonSize * PRESSED_IMAGE_CAPTURE_SCALE).dp
-            // dark disk inside the progress ring, inset by the ring and its padding
-            NucleusSizeState.Capturing ->
-                captureButtonSize.dp -
-                    (PROGRESS_RING_STROKE_WIDTH + PROGRESS_RING_INNER_PADDING) * 2
+            // dark disk inside the progress ring, inset by the ring
+            NucleusSizeState.Capturing -> captureButtonSize.dp - PROGRESS_RING_STROKE_WIDTH * 2
         }
     }
     val centerShapeSize = rawCenterShapeSize.coerceAtLeast(0.dp)
